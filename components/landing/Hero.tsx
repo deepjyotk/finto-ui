@@ -1,0 +1,78 @@
+"use client"
+import { motion } from "framer-motion"
+import GetStartedButton from "@/components/landing/GetStartedButton"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/lib/store"
+import UserInitialsAvatar from "@/components/landing/UserInitialsAvatar"
+
+export default function Hero() {
+  const { user, isAuthenticated } = useSelector((s: RootState) => s.auth)
+  return (
+    <section
+      id="hero"
+      className="relative overflow-hidden"
+      aria-labelledby="hero-heading"
+    >
+      {/* Background gradient */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1000px_400px_at_50%_-50%,rgba(34,211,238,0.15),transparent_60%)]" />
+
+      <div className="mx-auto max-w-7xl px-6 pt-20 pb-16 sm:pt-28 sm:pb-24 text-center">
+        <motion.span
+          initial={{ opacity: 0, y: -6 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[#9AA7B2]"
+        >
+          🪙 Finto — Finance Done Right
+        </motion.span>
+
+        <motion.h1
+          id="hero-heading"
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: 0.05 }}
+          className="mt-6 text-4xl font-semibold tracking-tight sm:text-6xl"
+        >
+          Invest smarter. React faster.
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+          className="mx-auto mt-5 max-w-2xl text-base text-[#9AA7B2] sm:text-lg"
+        >
+          Finto keeps you ahead of market shifts by delivering real-time portfolio insights and risk alerts—right where you already work and chat. No dashboards. No logins. No noise.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: 0.15 }}
+          className="mt-8 flex items-center justify-center gap-3"
+        >
+          {isAuthenticated && user ? (
+            <span className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2">
+              <UserInitialsAvatar name={user.full_name} email={user.email} size={28} />
+              <span className="text-sm">Hi, {user.full_name.split(" ")[0]}!</span>
+            </span>
+          ) : (
+            <GetStartedButton />
+          )}
+          <a
+            href="#showcase"
+            className="rounded-2xl bg-white/10 hover:bg-white/15 text-white font-semibold px-6 py-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+          >
+            See How It Works
+          </a>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
+

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#0B0F14"/>
+  <defs>
+    <radialGradient id="g" cx="50%" cy="0%" r="80%">
+      <stop offset="0%" stop-color="#22D3EE" stop-opacity="0.28"/>
+      <stop offset="60%" stop-color="#0B0F14" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <text x="80" y="180" fill="#E5EAF2" font-family="Inter, system-ui, -apple-system" font-size="64" font-weight="700">
+    Finto
+  </text>
+  <text x="80" y="240" fill="#9AA7B2" font-family="Inter, system-ui, -apple-system" font-size="28">
+    Trade smarter from WhatsApp.
+  </text>
+  <rect x="80" y="300" width="1040" height="240" rx="16" fill="#0F1621" stroke="#1f2937"/>
+  <circle cx="110" cy="330" r="6" fill="#ef4444"/>
+  <circle cx="130" cy="330" r="6" fill="#f59e0b"/>
+  <circle cx="150" cy="330" r="6" fill="#22c55e"/>
+  <rect x="110" y="350" width="980" height="160" rx="12" fill="#121A26" />
+  <text x="130" y="440" fill="#9AA7B2" font-family="Inter, system-ui, -apple-system" font-size="22">
+    Dashboard preview — replace with real screenshot
+  </text>
+</svg>
+
