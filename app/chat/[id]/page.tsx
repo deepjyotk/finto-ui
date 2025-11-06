@@ -28,7 +28,7 @@ export default function ChatPage() {
         dispatch(loadConversation(conversationId))
       } else if (!conversation) {
         // Conversation doesn't exist, redirect to new chat
-        router.replace("/")
+        router.replace("/chat/new")
       }
     }
   }, [conversationId, currentConversationId, dispatch, conversations, router])

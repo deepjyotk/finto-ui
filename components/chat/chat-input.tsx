@@ -6,7 +6,7 @@ import { useDispatch } from "react-redux"
 import { addMessage, startNewConversation } from "@/lib/features/chat/chat-slice"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Paperclip, Send } from "lucide-react"
+import { Send } from "lucide-react"
 import { useSelector } from "react-redux"
 import { useRouter } from "next/navigation"
 import type { RootState } from "@/lib/store"
@@ -31,7 +31,7 @@ export default function ChatInput() {
       id: Date.now().toString(),
       content: input,
       role: "user" as const,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     }
 
     dispatch(addMessage(userMessage))
@@ -49,7 +49,7 @@ export default function ChatInput() {
         id: (Date.now() + 1).toString(),
         content: response.response,
         role: "assistant" as const,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       }
       dispatch(addMessage(aiMessage))
     } catch (error) {
@@ -58,7 +58,7 @@ export default function ChatInput() {
         id: (Date.now() + 1).toString(),
         content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
         role: "assistant" as const,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       }
       dispatch(addMessage(errorMessage))
     }
@@ -72,32 +72,31 @@ export default function ChatInput() {
   }
 
   return (
-    <div className="border-t border-gray-200 px-4 py-4">
+    <div className="border-t border-white/10 bg-[#343541] px-4 py-4">
       <div className="max-w-3xl mx-auto">
         <form onSubmit={handleSubmit} className="relative">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Message Finto..."
-            className="min-h-[60px] max-h-[200px] pr-20 resize-none border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+            placeholder="Ask anything"
+            className="min-h-[52px] max-h-[200px] pr-12 py-3 px-4 resize-none bg-[#40414f] border-none text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-500 shadow-lg text-[15px] leading-6 rounded-lg"
           />
 
           <div className="absolute bottom-3 right-3 flex items-center gap-2">
-            <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-gray-100">
-              <Paperclip className="h-4 w-4 text-gray-500" />
-            </Button>
-
             <Button
               type="submit"
               disabled={!input.trim()}
               size="sm"
-              className="h-8 w-8 p-0 bg-black hover:bg-gray-800 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-8 w-8 p-0 bg-white/10 hover:bg-white/20 text-white rounded disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               <Send className="h-4 w-4" />
             </Button>
           </div>
         </form>
+        <p className="text-center text-xs text-gray-500 mt-2">
+          ChatGPT can make mistakes. Check important info.
+        </p>
       </div>
     </div>
   )

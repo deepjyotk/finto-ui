@@ -6,16 +6,17 @@ import { logout } from "@/lib/features/auth/auth-slice"
 import { toggleSidebar } from "@/lib/features/ui/ui-slice"
 import { signOut } from "@/lib/auth/session"
 import { Button } from "@/components/ui/button"
-import { Menu, Plus } from "lucide-react"
+import { Menu, Plus, Sparkles } from "lucide-react"
 import AuthModal from "@/components/auth/auth-modal"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 
 export default function Header() {
   const dispatch = useDispatch()
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
 
   const handleLogout = async () => {
     try {
@@ -36,10 +37,14 @@ export default function Header() {
     router.push("/chat/new")
   }
 
+  const handleAssistMe = () => {
+    router.push("/chat")
+  }
+
   return (
-    <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+    <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white flex-shrink-0">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={() => dispatch(toggleSidebar())} className="lg:hidden">
+        <Button variant="ghost" size="sm" onClick={() => dispatch(toggleSidebar())} className="lg:hidden text-gray-700 hover:bg-gray-100">
           <Menu className="h-5 w-5" />
         </Button>
         <h1 className="text-xl font-semibold text-gray-900">Finto</h1>
@@ -48,12 +53,20 @@ export default function Header() {
       <div className="flex items-center gap-2">
         {isAuthenticated ? (
           <>
-            <Button variant="ghost" size="sm" onClick={handleNewChat}>
-              <Plus className="h-4 w-4 mr-2" />
-              New chat
-            </Button>
+            {!pathname?.startsWith('/chat') && (
+              <Button variant="default" size="sm" onClick={handleAssistMe} className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Assist me
+              </Button>
+            )}
+            {pathname?.startsWith('/chat') && (
+              <Button variant="ghost" size="sm" onClick={handleNewChat}>
+                <Plus className="h-4 w-4 mr-2" />
+                New chat
+              </Button>
+            )}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">{user?.name}</span>
+              <span className="text-sm text-gray-600">{user?.full_name}</span>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 Log out
               </Button>

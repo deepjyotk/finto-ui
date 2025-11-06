@@ -50,16 +50,6 @@ export interface UserResponse {
   user_id: string
 }
 
-export interface Token {
-  access_token: string
-  token_type: string
-}
-
-export interface AuthVerifyResponse {
-  authenticated: boolean
-  user?: UserResponse
-}
-
 // ============================================================================
 // API Client
 // ============================================================================
@@ -90,15 +80,38 @@ class ApiClient {
     }
 
     const response = await fetch(url, config)
+    const responseText = await response.text()
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        detail: `HTTP ${response.status}: ${response.statusText}`,
-      }))
-      throw new Error(error.detail || error.error || 'API request failed')
+      let errorMessage: string | undefined
+
+      if (responseText) {
+        try {
+          const parsed = JSON.parse(responseText)
+          errorMessage = parsed.detail || parsed.error || parsed.message
+        } catch {
+          errorMessage = responseText
+        }
+      }
+
+      throw new Error(errorMessage || `HTTP ${response.status}: ${response.statusText}`)
     }
 
-    return response.json()
+    if (!responseText.trim()) {
+      return undefined as T
+    }
+
+    const contentType = response.headers.get('content-type') ?? ''
+
+    if (contentType.includes('application/json')) {
+      try {
+        return JSON.parse(responseText) as T
+      } catch {
+        throw new Error('Failed to parse JSON response')
+      }
+    }
+
+    return responseText as unknown as T
   }
 
   // ============================================================================
@@ -121,8 +134,8 @@ class ApiClient {
    * POST /auth/login
    * JWT token is set in httpOnly cookie by backend
    */
-  async login(data: UserLogin): Promise<Token> {
-    return this.request<Token>('/auth/login', {
+  async login(data: UserLogin): Promise<UserResponse> {
+    return this.request<UserResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(data),
     })
@@ -133,8 +146,8 @@ class ApiClient {
    * POST /auth/logout
    * Clears authentication cookie
    */
-  async logout(): Promise<{ message: string }> {
-    return this.request<{ message: string }>('/auth/logout', {
+  async logout(): Promise<void> {
+    return this.request<void>('/auth/logout', {
       method: 'POST',
     })
   }
@@ -153,8 +166,8 @@ class ApiClient {
    * Verify authentication status
    * GET /auth/verify
    */
-  async verifyAuth(): Promise<AuthVerifyResponse> {
-    return this.request<AuthVerifyResponse>('/auth/verify', {
+  async verifyAuth(): Promise<void> {
+    return this.request<void>('/auth/verify', {
       method: 'GET',
     })
   }

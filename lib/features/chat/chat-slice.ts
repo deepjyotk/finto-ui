@@ -4,7 +4,7 @@ export interface Message {
   id: string
   content: string
   role: "user" | "assistant"
-  timestamp: Date
+  timestamp: string // ISO string for Redux serialization
   isStreaming?: boolean
 }
 
@@ -12,8 +12,8 @@ export interface Conversation {
   id: string
   title: string
   messages: Message[]
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string // ISO string for Redux serialization
+  updatedAt: string // ISO string for Redux serialization
 }
 
 export interface ChatState {
@@ -94,7 +94,7 @@ const chatSlice = createSlice({
         const existingConversation = state.conversations.find((c) => c.id === state.currentConversationId)
         if (existingConversation) {
           existingConversation.messages = [...state.messages]
-          existingConversation.updatedAt = new Date()
+          existingConversation.updatedAt = new Date().toISOString()
         }
       }
 
@@ -104,8 +104,8 @@ const chatSlice = createSlice({
         id: newConversationId,
         title: "New conversation",
         messages: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }
 
       state.conversations.unshift(newConversation)
@@ -119,7 +119,7 @@ const chatSlice = createSlice({
         const currentConversation = state.conversations.find((c) => c.id === state.currentConversationId)
         if (currentConversation) {
           currentConversation.messages = [...state.messages]
-          currentConversation.updatedAt = new Date()
+          currentConversation.updatedAt = new Date().toISOString()
         }
       }
 

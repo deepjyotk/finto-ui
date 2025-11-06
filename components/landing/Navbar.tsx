@@ -1,11 +1,14 @@
 "use client"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import GetStartedButton from "@/components/landing/GetStartedButton"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import UserMenu from "@/components/landing/UserMenu"
+import { Button } from "@/components/ui/button"
+import { Sparkles } from "lucide-react"
 
 const navItems = [
   { href: "#features", label: "Features" },
@@ -19,6 +22,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [active, setActive] = useState<string>("#")
   const { user, isAuthenticated } = useSelector((s: RootState) => s.auth)
+  const router = useRouter()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -78,9 +82,21 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link href="#pricing" className="hidden sm:inline-flex rounded-2xl bg-white/10 hover:bg-white/15 px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30">See Pricing</Link>
+          {!isAuthenticated && (
+            <Link href="#pricing" className="hidden sm:inline-flex rounded-2xl bg-white/10 hover:bg-white/15 px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30">See Pricing</Link>
+          )}
           {isAuthenticated && user ? (
-            <UserMenu name={user.full_name} email={user.email} />
+            <>
+              <Button 
+                onClick={() => router.push("/chat")}
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                size="sm"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Assist Me
+              </Button>
+              <UserMenu name={user.full_name} email={user.email} />
+            </>
           ) : (
             <GetStartedButton className="px-4 py-2 text-sm" />
           )}

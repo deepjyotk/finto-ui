@@ -22,16 +22,20 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
   }, [messages])
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-6">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="h-full">
+      <div className="w-full">
         {messages.map((message) => (
           <MessageItem key={message.id} message={message} />
         ))}
 
         {isLoading && (
-          <div className="flex items-center gap-2 text-gray-500">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Thinking...</span>
+          <div className="w-full text-white border-b border-black/10 bg-[#444654]">
+            <div className="flex gap-6 p-4 md:py-6 md:px-6 max-w-3xl mx-auto">
+              <div className="flex-shrink-0 w-8 h-8 rounded-sm bg-[#19c37d] flex items-center justify-center">
+                <Loader2 className="h-4 w-4 animate-spin text-white" />
+              </div>
+              <span className="text-gray-400">Thinking...</span>
+            </div>
           </div>
         )}
 

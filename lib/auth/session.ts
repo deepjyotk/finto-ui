@@ -1,10 +1,25 @@
-import { apiClient, type UserResponse } from '@/lib/api/client'
+import { apiClient } from '@/lib/api/client'
 
 export interface SessionUser {
   user_id: string
   username: string
   email: string
   full_name: string
+}
+
+const toSessionUser = (
+  data?: Partial<SessionUser> & { user_id?: string }
+): SessionUser | null => {
+  if (!data || !data.user_id || !data.username || !data.email || !data.full_name) {
+    return null
+  }
+
+  return {
+    user_id: data.user_id,
+    username: data.username,
+    email: data.email,
+    full_name: data.full_name,
+  }
 }
 
 /**
@@ -14,19 +29,9 @@ export interface SessionUser {
 export async function getSession(): Promise<{ user: SessionUser | null }> {
   try {
     const data = await apiClient.getCurrentUser()
-    
-    if (data && data.user_id) {
-      return {
-        user: {
-          user_id: data.user_id,
-          username: data.username,
-          email: data.email,
-          full_name: data.full_name
-        }
-      }
-    }
-    
-    return { user: null }
+    const user = toSessionUser(data)
+
+    return { user }
   } catch (error) {
     console.error('Error fetching session:', error)
     return { user: null }
@@ -39,23 +44,23 @@ export async function getSession(): Promise<{ user: SessionUser | null }> {
  */
 export async function verifyAuth(): Promise<{ authenticated: boolean; user?: SessionUser }> {
   try {
-    const data = await apiClient.verifyAuth()
-    
-    if (data.authenticated && data.user) {
-      return {
-        authenticated: true,
-        user: {
-          user_id: data.user.user_id,
-          username: data.user.username,
-          email: data.user.email,
-          full_name: data.user.full_name
-        }
-      }
-    }
-    
-    return { authenticated: false }
+    await apiClient.verifyAuth()
   } catch (error) {
     console.error('Error verifying auth:', error)
+    return { authenticated: false }
+  }
+
+  try {
+    const currentUser = await apiClient.getCurrentUser()
+    const user = toSessionUser(currentUser)
+
+    if (user) {
+      return { authenticated: true, user }
+    }
+
+    return { authenticated: false }
+  } catch (error) {
+    console.error('Error fetching current user after verification:', error)
     return { authenticated: false }
   }
 }

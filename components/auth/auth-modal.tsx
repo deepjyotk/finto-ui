@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useDispatch } from "react-redux"
-import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,7 +22,6 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
   const [error, setError] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const dispatch = useDispatch()
-  const router = useRouter()
 
   // Login form state
   const [loginForm, setLoginForm] = useState<LoginFormData>({
@@ -69,14 +67,11 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
     dispatch(setLoading(true))
 
     try {
-      // Login and get token (JWT set in httpOnly cookie)
-      await apiClient.login({
+      // Login and get authenticated user (JWT set in httpOnly cookie)
+      const userData = await apiClient.login({
         username: loginForm.username,
         password: loginForm.password,
       })
-
-      // Fetch user data
-      const userData = await apiClient.getCurrentUser()
 
       // Update Redux store
       dispatch(
@@ -88,9 +83,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
         })
       )
 
-      // Close modal and redirect
+      // Close modal
       handleClose()
-      router.push("/chat")
     } catch (err) {
       console.error("Login error:", err)
       setError(err instanceof Error ? err.message : "Invalid username or password")
@@ -120,7 +114,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
 
     try {
       // Register user
-      const userData = await apiClient.register({
+      await apiClient.register({
         username: registerForm.username,
         email: registerForm.email,
         full_name: registerForm.full_name,
@@ -128,7 +122,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
       })
 
       // Auto-login after registration
-      await apiClient.login({
+      const loginUser = await apiClient.login({
         username: registerForm.username,
         password: registerForm.password,
       })
@@ -136,16 +130,15 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
       // Update Redux store
       dispatch(
         setUser({
-          user_id: userData.user_id,
-          username: userData.username,
-          email: userData.email,
-          full_name: userData.full_name,
+          user_id: loginUser.user_id,
+          username: loginUser.username,
+          email: loginUser.email,
+          full_name: loginUser.full_name,
         })
       )
 
-      // Close modal and redirect
+      // Close modal
       handleClose()
-      router.push("/chat")
     } catch (err) {
       console.error("Registration error:", err)
       setError(err instanceof Error ? err.message : "Registration failed. Username or email may already exist.")
