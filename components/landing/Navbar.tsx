@@ -9,6 +9,7 @@ import type { RootState } from "@/lib/store"
 import UserMenu from "@/components/landing/UserMenu"
 import { Button } from "@/components/ui/button"
 import { Sparkles } from "lucide-react"
+import useKiteConnection from "@/lib/hooks/use-kite-connection"
 
 const navItems = [
   { href: "#features", label: "Features" },
@@ -23,6 +24,7 @@ export default function Navbar() {
   const [active, setActive] = useState<string>("#")
   const { user, isAuthenticated } = useSelector((s: RootState) => s.auth)
   const router = useRouter()
+  const { connected, getLoginUrl } = useKiteConnection()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -95,6 +97,26 @@ export default function Navbar() {
                 <Sparkles className="h-4 w-4 mr-2" />
                 Assist Me
               </Button>
+              {!connected && (
+                <Button
+                  onClick={() => (window.location.href = getLoginUrl())}
+                  size="sm"
+                  variant="outline"
+                  className="border-green-500 text-green-600 hover:bg-green-50"
+                >
+                  Connect Kite
+                </Button>
+              )}
+              {connected && (
+                <Button
+                  onClick={() => router.push('/holdings')}
+                  size="sm"
+                  variant="outline"
+                  className="border-green-500 text-green-600 hover:bg-green-50"
+                >
+                  Holdings
+                </Button>
+              )}
               <UserMenu name={user.full_name} email={user.email} />
             </>
           ) : (

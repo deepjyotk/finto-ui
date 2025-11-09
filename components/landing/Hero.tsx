@@ -4,9 +4,14 @@ import GetStartedButton from "@/components/landing/GetStartedButton"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import UserInitialsAvatar from "@/components/landing/UserInitialsAvatar"
+import useKiteConnection from "@/lib/hooks/use-kite-connection"
+import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 
 export default function Hero() {
   const { user, isAuthenticated } = useSelector((s: RootState) => s.auth)
+  const { connected, getLoginUrl } = useKiteConnection()
+  const router = useRouter()
   return (
     <section
       id="hero"
@@ -62,6 +67,27 @@ export default function Hero() {
             </span>
           ) : (
             <GetStartedButton />
+          )}
+          {isAuthenticated && (
+            !connected ? (
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={() => (window.location.href = getLoginUrl())}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                Connect Kite
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={() => router.push('/holdings')}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                View Holdings
+              </Button>
+            )
           )}
           <a
             href="#showcase"

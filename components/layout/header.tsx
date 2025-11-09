@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Menu, Plus, Sparkles } from "lucide-react"
 import AuthModal from "@/components/auth/auth-modal"
 import { useState } from "react"
+import useKiteConnection from "@/lib/hooks/use-kite-connection"
 import { useRouter, usePathname } from "next/navigation"
 
 export default function Header() {
@@ -17,6 +18,8 @@ export default function Header() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
+
+  const { connected, getLoginUrl } = useKiteConnection()
 
   const handleLogout = async () => {
     try {
@@ -63,6 +66,27 @@ export default function Header() {
               <Button variant="ghost" size="sm" onClick={handleNewChat}>
                 <Plus className="h-4 w-4 mr-2" />
                 New chat
+              </Button>
+            )}
+            {/* Kite connection quick actions */}
+            {!connected && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => (window.location.href = getLoginUrl())}
+                className="border-green-600 text-green-700 hover:bg-green-50"
+              >
+                Connect Kite
+              </Button>
+            )}
+            {connected && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/holdings')}
+                className="border-green-600 text-green-700 hover:bg-green-50"
+              >
+                Holdings
               </Button>
             )}
             <div className="flex items-center gap-2">

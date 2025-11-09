@@ -200,6 +200,61 @@ class ApiClient {
       method: 'GET',
     })
   }
+
+  // ============================================================================
+  // Kite Connect v3 Endpoints (Backend proxy)
+  // ============================================================================
+
+  /**
+   * Get login redirect URL and navigate browser to it.
+   * GET /kite/login -> 302 to Zerodha. Here we just return the URL so the caller can set window.location.
+   */
+  getKiteLoginUrl(): string {
+    // NOTE: FastAPI endpoint returns a redirect. We fetch with redirect:'manual' when supported.
+    // In the browser, fetch will follow redirects by default and we won't see the Location header.
+    // Therefore, prefer opening the endpoint directly in the browser.
+    // This method returns the backend URL to hit for login.
+    return `${this.baseUrl}/kite/login`
+  }
+
+  /**
+   * Check whether current user has connected Kite account
+   * GET /kite/token -> { connected: boolean, session?: any }
+   */
+  async kiteTokenInfo(): Promise<{ connected: boolean; session?: any }> {
+    return this.request<{ connected: boolean; session?: any }>(`/kite/token`, {
+      method: 'GET',
+    })
+  }
+
+  /**
+   * Public status - mostly for debugging
+   * GET /kite/status -> { connected: boolean, user_id: string }
+   */
+  async kiteStatus(): Promise<{ connected: boolean; user_id: string }> {
+    return this.request<{ connected: boolean; user_id: string }>(`/kite/status`, {
+      method: 'GET',
+    })
+  }
+
+  /**
+   * TODO: Portfolio endpoint
+   * The backend snippet did not include a portfolio route. Once available (e.g. /kite/portfolio),
+   * wire it here to fetch and return holdings/positions for the connected user.
+   */
+  // async kitePortfolio(): Promise<PortfolioResponse> {
+  //   return this.request<PortfolioResponse>(`/kite/portfolio`, { method: 'GET' })
+  // }
+
+  /**
+   * Holdings endpoint via backend proxy to KiteConnect holdings().
+   * GET /kite/holdings -> Array of holdings
+   * TODO: Confirm shape from backend and type this response.
+   */
+  async kiteHoldings(): Promise<any> {
+    // Backend may return { holdings: [...] } wrapper; keep type loose.
+    return this.request<any>(`/kite/holdings`, { method: 'GET' })
+  }
 }
 
 // Export singleton instance
