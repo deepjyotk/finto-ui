@@ -50,6 +50,18 @@ export interface UserResponse {
   user_id: string
 }
 
+// WhatsApp Connect Types
+export interface ConnectIntentRequest {
+  user_id: string
+  ttl_minutes?: number
+}
+
+export interface ConnectIntentResponse {
+  code: string
+  deeplink: string
+  expires_at: string
+}
+
 // ============================================================================
 // API Client
 // ============================================================================
@@ -58,6 +70,7 @@ class ApiClient {
   private baseUrl: string
 
   constructor(baseUrl: string = FASTAPI_BASE_URL) {
+    console.log('baseUrl', baseUrl)
     this.baseUrl = baseUrl
   }
 
@@ -254,6 +267,21 @@ class ApiClient {
   async kiteHoldings(): Promise<any> {
     // Backend may return { holdings: [...] } wrapper; keep type loose.
     return this.request<any>(`/kite/holdings`, { method: 'GET' })
+  }
+
+  // ============================================================================
+  // WhatsApp Connect Endpoints
+  // ============================================================================
+
+  /**
+   * Create a WhatsApp connect intent
+   * POST /api/whatsapp/connect-intent
+   */
+  async createWhatsAppConnectIntent(data: ConnectIntentRequest): Promise<ConnectIntentResponse> {
+    return this.request<ConnectIntentResponse>('/api/whatsapp/connect-intent', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
   }
 }
 
