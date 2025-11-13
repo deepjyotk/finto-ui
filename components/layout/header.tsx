@@ -56,6 +56,14 @@ export default function Header() {
       <div className="flex items-center gap-2">
         {isAuthenticated ? (
           <>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => router.push('/integrations')}
+              className="text-gray-700 hover:bg-gray-100"
+            >
+              Integrations
+            </Button>
             {!pathname?.startsWith('/chat') && (
               <Button variant="default" size="sm" onClick={handleAssistMe} className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
                 <Sparkles className="h-4 w-4 mr-2" />

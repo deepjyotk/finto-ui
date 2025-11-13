@@ -8,7 +8,7 @@ import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import UserMenu from "@/components/landing/UserMenu"
 import { Button } from "@/components/ui/button"
-import { Sparkles } from "lucide-react"
+import { Sparkles, Cable } from "lucide-react"
 import useKiteConnection from "@/lib/hooks/use-kite-connection"
 
 const navItems = [
@@ -90,23 +90,21 @@ export default function Navbar() {
           {isAuthenticated && user ? (
             <>
               <Button 
+                onClick={() => router.push("/integrations")}
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                size="sm"
+              >
+                <Cable className="h-4 w-4 mr-2" />
+                Integrations
+              </Button>
+              {/* <Button 
                 onClick={() => router.push("/chat")}
                 className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                 size="sm"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 Assist Me
-              </Button>
-              {!connected && (
-                <Button
-                  onClick={() => (window.location.href = getLoginUrl())}
-                  size="sm"
-                  variant="outline"
-                  className="border-green-500 text-green-600 hover:bg-green-50"
-                >
-                  Connect Kite
-                </Button>
-              )}
+              </Button> */}
               {connected && (
                 <Button
                   onClick={() => router.push('/holdings')}

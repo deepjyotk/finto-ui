@@ -22,7 +22,6 @@ export default function Hero() {
     setIsConnectingWhatsApp(true)
     try {
       const response = await apiClient.createWhatsAppConnectIntent({
-        user_id: user.user_id,
         ttl_minutes: 10
       })
       
@@ -92,7 +91,7 @@ export default function Hero() {
           ) : (
             <GetStartedButton />
           )}
-          {isAuthenticated && (
+          {/* {isAuthenticated && (
             !connected ? (
               <Button
                 size="lg"
@@ -112,8 +111,8 @@ export default function Hero() {
                 View Holdings
               </Button>
             )
-          )}
-          {isAuthenticated && (
+          )} */}
+          {/* {isAuthenticated && (
             <div className="flex flex-col items-center gap-1">
               <Button
                 size="lg"
@@ -128,7 +127,7 @@ export default function Hero() {
                 Chat with Finto directly on WhatsApp for portfolio insights and alerts.
               </span>
             </div>
-          )}
+          )} */}
           <a
             href="#showcase"
             className="rounded-2xl bg-white/10 hover:bg-white/15 text-white font-semibold px-6 py-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"

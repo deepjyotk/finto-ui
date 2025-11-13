@@ -6,13 +6,35 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/healthz": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health Check",
+        "description": "Health check endpoint for container orchestration",
+        "operationId": "health_check_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/register": {
       "post": {
         "tags": [
           "authentication"
         ],
         "summary": "Register a new user",
-        "description": "Create a new user account with username, email, and password.",
+        "description": "Create a new user account and return the created user information.",
         "operationId": "register_auth_register_post",
         "requestBody": {
           "content": {
@@ -57,7 +79,7 @@
           "authentication"
         ],
         "summary": "Login user",
-        "description": "Authenticate user and receive JWT access token in cookie.",
+        "description": "Authenticate user, set JWT access token cookie, and return user information.",
         "operationId": "login_auth_login_post",
         "requestBody": {
           "content": {
@@ -71,11 +93,11 @@
         },
         "responses": {
           "200": {
-            "description": "Successfully authenticated, JWT token set in cookie",
+            "description": "Successfully authenticated; JWT token set in cookie",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Token"
+                  "$ref": "#/components/schemas/UserResponse"
                 }
               }
             }
@@ -171,7 +193,7 @@
           "chat"
         ],
         "summary": "Send a chat message",
-        "description": "Send a message to the chat system and receive a response. Supports conversation history and optional file attachments.",
+        "description": "Send a message to the chat system and receive a     response. Supports conversation history and optional file attachments.",
         "operationId": "chat_chat_post",
         "requestBody": {
           "content": {
@@ -206,17 +228,609 @@
           }
         }
       }
+    },
+    "/holdings": {
+      "post": {
+        "tags": [
+          "holdings"
+        ],
+        "summary": "Create a new equity holding",
+        "description": "Save equity holding information for the authenticated user.",
+        "operationId": "create_holding_holdings_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HoldingsRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Holding successfully created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingsResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated or invalid token"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/holdings/file-upload": {
+      "post": {
+        "tags": [
+          "holdings"
+        ],
+        "summary": "Bulk upload equity holdings from file",
+        "description": "Upload Excel (.xlsx, .xls) or CSV file to create multiple equity holdings.",
+        "operationId": "upload_holdings_file_holdings_file_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_holdings_file_holdings_file_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Holdings successfully uploaded and created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkHoldingsUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid file format or parsing error"
+          },
+          "401": {
+            "description": "Not authenticated or invalid token"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/home": {
+      "get": {
+        "tags": [
+          "home"
+        ],
+        "summary": "Get Home Feed",
+        "description": "Get home feed for authenticated user.\n\nReturns chat integrations including WhatsApp data and available brokers.",
+        "operationId": "get_home_feed_api_home_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeFeedSchema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kite/login": {
+      "get": {
+        "tags": [
+          "kite"
+        ],
+        "summary": "Kite Login",
+        "description": "Redirect authenticated user to Kite login page.\n\nThe user must be logged into this application (JWT cookie). After a\nsuccessful login on Zerodha, Zerodha will redirect to the callback URL\nconfigured in your Kite app settings with a request_token parameter.\n\nTODO: Add state parameter handling to prevent CSRF and map request -\u003E user.",
+        "operationId": "kite_login_kite_login_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kite/callback": {
+      "get": {
+        "tags": [
+          "kite"
+        ],
+        "summary": "Kite Callback",
+        "operationId": "kite_callback_kite_callback_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kite/token": {
+      "get": {
+        "tags": [
+          "kite"
+        ],
+        "summary": "Kite Token Info",
+        "description": "Return whether the current authenticated user has a Kite access token.\nUses jsonable_encoder to ensure datetime (if any) is serialized.",
+        "operationId": "kite_token_info_kite_token_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kite/status": {
+      "get": {
+        "tags": [
+          "kite"
+        ],
+        "summary": "Kite Status",
+        "description": "Public status endpoint for debugging.\n\nReturns whether the current user is connected and some non-sensitive metadata.",
+        "operationId": "kite_status_kite_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kite/holdings": {
+      "get": {
+        "tags": [
+          "kite"
+        ],
+        "summary": "Kite Holdings",
+        "description": "Fetch user's holdings via Kite Connect.\nRequires user to have completed the auth flow (access token stored).\nTODO: Cache results (short TTL) to reduce API calls.",
+        "operationId": "kite_holdings_kite_holdings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/whatsapp": {
+      "get": {
+        "tags": [
+          "whatsapp"
+        ],
+        "summary": "Verify",
+        "operationId": "verify_webhooks_whatsapp_get",
+        "parameters": [
+          {
+            "name": "hub.mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hub.Mode"
+            }
+          },
+          {
+            "name": "hub.challenge",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hub.Challenge"
+            }
+          },
+          {
+            "name": "hub.verify_token",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hub.Verify Token"
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mode"
+            }
+          },
+          {
+            "name": "challenge",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Challenge"
+            }
+          },
+          {
+            "name": "verify_token",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Verify Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "whatsapp"
+        ],
+        "summary": "Receive",
+        "operationId": "receive_webhooks_whatsapp_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/whatsapp/send-text": {
+      "post": {
+        "tags": [
+          "whatsapp"
+        ],
+        "summary": "Send Text",
+        "operationId": "send_text_api_whatsapp_send_text_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendTextRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendTextResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/whatsapp/send-template": {
+      "post": {
+        "tags": [
+          "whatsapp"
+        ],
+        "summary": "Send Template",
+        "operationId": "send_template_api_whatsapp_send_template_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/whatsapp/connect-intent": {
+      "post": {
+        "tags": [
+          "whatsapp"
+        ],
+        "summary": "Create Connect Intent",
+        "operationId": "create_connect_intent_api_whatsapp_connect_intent_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectIntentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectIntentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "Body_upload_holdings_file_holdings_file_upload_post": {
+        "properties": {
+          "broker_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Broker Id",
+            "description": "Broker ID"
+          },
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "Excel or CSV file with holdings data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "broker_id",
+          "file"
+        ],
+        "title": "Body_upload_holdings_file_holdings_file_upload_post"
+      },
+      "BrokerPayload": {
+        "properties": {
+          "broker_id": {
+            "type": "string",
+            "title": "Broker Id"
+          },
+          "broker_name": {
+            "type": "string",
+            "title": "Broker Name"
+          },
+          "broker_type": {
+            "type": "string",
+            "title": "Broker Type"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country"
+          }
+        },
+        "type": "object",
+        "required": [
+          "broker_id",
+          "broker_name",
+          "broker_type",
+          "country"
+        ],
+        "title": "BrokerPayload",
+        "description": "Broker information payload"
+      },
+      "BulkHoldingsUploadResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "Whether the upload was successful"
+          },
+          "records_processed": {
+            "type": "integer",
+            "title": "Records Processed",
+            "description": "Number of records processed"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "records_processed",
+          "message"
+        ],
+        "title": "BulkHoldingsUploadResponse",
+        "description": "Schema for bulk holdings upload response"
+      },
+      "ChatIntegration": {
+        "properties": {
+          "whatsapp": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WhatsAppPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ChatIntegration",
+        "description": "Chat integration wrapper"
+      },
       "ChatRequest": {
         "properties": {
           "message": {
             "type": "string",
             "title": "Message",
             "description": "User message to send",
-            "example": "Hello, how are you?"
+            "examples": [
+              "Hello, how are you?"
+            ]
           },
           "file": {
             "anyOf": [
@@ -228,7 +842,8 @@
               }
             ],
             "title": "File",
-            "description": "Optional file path or identifier"
+            "description": "Optional file path or identifier",
+            "examples": [null]
           },
           "conversation_history": {
             "items": {
@@ -237,10 +852,19 @@
             "type": "array",
             "title": "Conversation History",
             "description": "Previous messages in the conversation",
-            "default": [],
-            "example": [
-              "Hello",
-              "Hi there!"
+            "examples": [
+              [
+                "Hello",
+                "Hi there!"
+              ]
+            ]
+          },
+          "model": {
+            "$ref": "#/components/schemas/LLMModel",
+            "description": "AI model to use for the chat",
+            "default": "gpt-4o-mini",
+            "examples": [
+              "gpt-4o-mini"
             ]
           }
         },
@@ -254,7 +878,8 @@
             "Hello",
             "Hi! How can I help you?"
           ],
-          "message": "What is the weather today?"
+          "message": "What is the weather today?",
+          "model_name": "gpt-4o-mini"
         }
       },
       "ChatResponse": {
@@ -263,7 +888,9 @@
             "type": "string",
             "title": "Response",
             "description": "AI response message",
-            "example": "Hello! How can I help you?"
+            "examples": [
+              "Hello! How can I help you?"
+            ]
           }
         },
         "type": "object",
@@ -274,6 +901,48 @@
         "example": {
           "response": "Hello! How can I help you today?"
         }
+      },
+      "ConnectIntentRequest": {
+        "properties": {
+          "ttl_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttl Minutes",
+            "default": 10
+          }
+        },
+        "type": "object",
+        "title": "ConnectIntentRequest"
+      },
+      "ConnectIntentResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "deeplink": {
+            "type": "string",
+            "title": "Deeplink"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "deeplink",
+          "expires_at"
+        ],
+        "title": "ConnectIntentResponse"
       },
       "HTTPValidationError": {
         "properties": {
@@ -288,29 +957,458 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "Token": {
+      "HoldingsRequestSchema": {
         "properties": {
-          "access_token": {
+          "broker_id": {
             "type": "string",
-            "title": "Access Token",
-            "description": "JWT access token"
+            "format": "uuid",
+            "title": "Broker Id",
+            "description": "ID of the broker",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
           },
-          "token_type": {
+          "symbol": {
             "type": "string",
-            "title": "Token Type",
-            "description": "Token type",
-            "default": "bearer"
+            "title": "Symbol",
+            "description": "Trading symbol",
+            "example": "RELIANCE"
+          },
+          "isin": {
+            "type": "string",
+            "title": "Isin",
+            "description": "ISIN code",
+            "example": "INE002A01018"
+          },
+          "sector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector",
+            "description": "Sector of the equity",
+            "example": "Energy"
+          },
+          "qty_available": {
+            "type": "integer",
+            "title": "Qty Available",
+            "description": "Available quantity",
+            "default": 0,
+            "example": 100
+          },
+          "qty_discrepant": {
+            "type": "integer",
+            "title": "Qty Discrepant",
+            "description": "Discrepant quantity",
+            "default": 0,
+            "example": 0
+          },
+          "qty_long_term": {
+            "type": "integer",
+            "title": "Qty Long Term",
+            "description": "Long term quantity",
+            "default": 0,
+            "example": 50
+          },
+          "qty_pledged_margin": {
+            "type": "integer",
+            "title": "Qty Pledged Margin",
+            "description": "Quantity pledged for margin",
+            "default": 0,
+            "example": 0
+          },
+          "qty_pledged_loan": {
+            "type": "integer",
+            "title": "Qty Pledged Loan",
+            "description": "Quantity pledged for loan",
+            "default": 0,
+            "example": 0
+          },
+          "avg_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Avg Price",
+            "description": "Average purchase price",
+            "example": 2450.75
+          },
+          "prev_close_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Prev Close Price",
+            "description": "Previous closing price",
+            "example": 2500
+          },
+          "unrealized_pnl": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Unrealized Pnl",
+            "description": "Unrealized profit/loss",
+            "example": 4925
+          },
+          "unrealized_pnl_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Unrealized Pnl Pct",
+            "description": "Unrealized PnL percentage",
+            "example": 2.01
           }
         },
         "type": "object",
         "required": [
-          "access_token"
+          "broker_id",
+          "symbol",
+          "isin",
+          "avg_price",
+          "prev_close_price",
+          "unrealized_pnl",
+          "unrealized_pnl_pct"
         ],
-        "title": "Token",
+        "title": "HoldingsRequestSchema",
+        "description": "Schema for creating a new equity holding",
         "example": {
-          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-          "token_type": "bearer"
+          "avg_price": 2450.75,
+          "broker_id": "123e4567-e89b-12d3-a456-426614174000",
+          "isin": "INE002A01018",
+          "prev_close_price": 2500,
+          "qty_available": 100,
+          "qty_discrepant": 0,
+          "qty_long_term": 50,
+          "qty_pledged_loan": 0,
+          "qty_pledged_margin": 0,
+          "sector": "Energy",
+          "symbol": "RELIANCE",
+          "unrealized_pnl": 4925,
+          "unrealized_pnl_pct": 2.01
         }
+      },
+      "HoldingsResponseSchema": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "Unique holding identifier"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id",
+            "description": "User identifier"
+          },
+          "broker_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Broker Id",
+            "description": "Broker identifier"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Trading symbol"
+          },
+          "isin": {
+            "type": "string",
+            "title": "Isin",
+            "description": "ISIN code"
+          },
+          "sector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector",
+            "description": "Sector of the equity"
+          },
+          "qty_available": {
+            "type": "integer",
+            "title": "Qty Available",
+            "description": "Available quantity"
+          },
+          "qty_discrepant": {
+            "type": "integer",
+            "title": "Qty Discrepant",
+            "description": "Discrepant quantity"
+          },
+          "qty_long_term": {
+            "type": "integer",
+            "title": "Qty Long Term",
+            "description": "Long term quantity"
+          },
+          "qty_pledged_margin": {
+            "type": "integer",
+            "title": "Qty Pledged Margin",
+            "description": "Quantity pledged for margin"
+          },
+          "qty_pledged_loan": {
+            "type": "integer",
+            "title": "Qty Pledged Loan",
+            "description": "Quantity pledged for loan"
+          },
+          "avg_price": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Avg Price",
+            "description": "Average purchase price"
+          },
+          "prev_close_price": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Prev Close Price",
+            "description": "Previous closing price"
+          },
+          "unrealized_pnl": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Unrealized Pnl",
+            "description": "Unrealized profit/loss"
+          },
+          "unrealized_pnl_pct": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Unrealized Pnl Pct",
+            "description": "Unrealized PnL percentage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "broker_id",
+          "symbol",
+          "isin",
+          "qty_available",
+          "qty_discrepant",
+          "qty_long_term",
+          "qty_pledged_margin",
+          "qty_pledged_loan",
+          "avg_price",
+          "prev_close_price",
+          "unrealized_pnl",
+          "unrealized_pnl_pct"
+        ],
+        "title": "HoldingsResponseSchema",
+        "description": "Schema for equity holding response"
+      },
+      "HomeFeedSchema": {
+        "properties": {
+          "chat_integrations": {
+            "items": {
+              "$ref": "#/components/schemas/ChatIntegration"
+            },
+            "type": "array",
+            "title": "Chat Integrations"
+          },
+          "available_brokers": {
+            "items": {
+              "$ref": "#/components/schemas/BrokerPayload"
+            },
+            "type": "array",
+            "title": "Available Brokers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_integrations",
+          "available_brokers"
+        ],
+        "title": "HomeFeedSchema",
+        "description": "Home feed response schema"
+      },
+      "LLMModel": {
+        "type": "string",
+        "enum": [
+          "gpt-4o-mini",
+          "gpt-4.1"
+        ],
+        "title": "LLMModel",
+        "description": "Supported AI models."
+      },
+      "SendTemplateRequest": {
+        "properties": {
+          "to": {
+            "type": "string",
+            "title": "To",
+            "description": "E.164 phone number"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Template name"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language",
+            "description": "Language code",
+            "default": "en_US"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateComponent"
+            },
+            "type": "array",
+            "title": "Components"
+          }
+        },
+        "type": "object",
+        "required": [
+          "to",
+          "name"
+        ],
+        "title": "SendTemplateRequest"
+      },
+      "SendTemplateResponse": {
+        "properties": {
+          "messaging_product": {
+            "type": "string",
+            "title": "Messaging Product"
+          },
+          "contacts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Contacts"
+          },
+          "messages": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "messaging_product",
+          "contacts",
+          "messages"
+        ],
+        "title": "SendTemplateResponse"
+      },
+      "SendTextRequest": {
+        "properties": {
+          "to": {
+            "type": "string",
+            "title": "To",
+            "description": "E.164 phone number"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "to",
+          "text"
+        ],
+        "title": "SendTextRequest"
+      },
+      "SendTextResponse": {
+        "properties": {
+          "messaging_product": {
+            "type": "string",
+            "title": "Messaging Product"
+          },
+          "contacts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Contacts"
+          },
+          "messages": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "messaging_product",
+          "contacts",
+          "messages"
+        ],
+        "title": "SendTextResponse"
+      },
+      "TemplateComponent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "parameters": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateParameter"
+            },
+            "type": "array",
+            "title": "Parameters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "parameters"
+        ],
+        "title": "TemplateComponent"
+      },
+      "TemplateParameter": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "text"
+        ],
+        "title": "TemplateParameter"
       },
       "UserCreate": {
         "properties": {
@@ -457,17 +1555,44 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WhatsAppPayload": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "user_e164": {
+            "type": "string",
+            "title": "User E164"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_e164"
+        ],
+        "title": "WhatsAppPayload",
+        "description": "WhatsApp integration payload"
       }
     }
   },
   "tags": [
     {
       "name": "authentication",
-      "description": "User authentication operations including register, login, and token management"
+      "description": "User authentication operations including register, login, and             token management"
     },
     {
       "name": "chat",
       "description": "Chat and conversation endpoints"
+    },
+    {
+      "name": "holdings",
+      "description": "Equity holdings management endpoints"
+    },
+    {
+      "name": "home",
+      "description": "Home feed endpoints for user integrations"
     }
   ]
 }

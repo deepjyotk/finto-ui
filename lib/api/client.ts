@@ -52,7 +52,6 @@ export interface UserResponse {
 
 // WhatsApp Connect Types
 export interface ConnectIntentRequest {
-  user_id: string
   ttl_minutes?: number
 }
 
@@ -60,6 +59,28 @@ export interface ConnectIntentResponse {
   code: string
   deeplink: string
   expires_at: string
+}
+
+// Home Feed Types
+export interface WhatsAppPayload {
+  id: string
+  user_e164: string
+}
+
+export interface ChatIntegration {
+  whatsapp: WhatsAppPayload | null
+}
+
+export interface BrokerPayload {
+  broker_id: string
+  broker_name: string
+  broker_type: string
+  country: string
+}
+
+export interface HomeFeedSchema {
+  chat_integrations: ChatIntegration[]
+  available_brokers: BrokerPayload[]
 }
 
 // ============================================================================
@@ -281,6 +302,20 @@ class ApiClient {
     return this.request<ConnectIntentResponse>('/api/whatsapp/connect-intent', {
       method: 'POST',
       body: JSON.stringify(data),
+    })
+  }
+
+  // ============================================================================
+  // Home Feed Endpoints
+  // ============================================================================
+
+  /**
+   * Get home feed with chat integrations and available brokers
+   * GET /api/home
+   */
+  async getHomeFeed(): Promise<HomeFeedSchema> {
+    return this.request<HomeFeedSchema>('/api/home', {
+      method: 'GET',
     })
   }
 }

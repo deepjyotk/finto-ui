@@ -10,7 +10,7 @@ import { deleteConversation } from "@/lib/features/chat/chat-slice"
 import { logout } from "@/lib/features/auth/auth-slice"
 import { signOut } from "@/lib/auth/session"
 import { Button } from "@/components/ui/button"
-import { Plus, MessageSquare, X, Trash2, MoreHorizontal, LogOut } from "lucide-react"
+import { Plus, MessageSquare, X, Trash2, MoreHorizontal, LogOut, Cable } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -177,7 +177,18 @@ export default function Sidebar() {
           </div>
 
           {/* Footer - User section */}
-          <div className="p-2 border-t border-white/10">
+          <div className="p-2 border-t border-white/10 space-y-1">
+            <Button
+              onClick={() => {
+                router.push("/integrations")
+                dispatch(setSidebarOpen(false))
+              }}
+              variant="ghost"
+              className="w-full justify-start text-white hover:bg-white/10 rounded-md"
+            >
+              <Cable className="h-4 w-4 mr-2" />
+              Integrations
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center gap-2 p-2 rounded-md hover:bg-white/10 cursor-pointer">
