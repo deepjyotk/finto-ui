@@ -1,44 +1,62 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { useSelector, useDispatch } from "react-redux"
-import type { RootState } from "@/lib/store"
-import { loadConversation, startNewConversation } from "@/lib/features/chat/chat-slice"
-import ChatInterface from "@/components/chat/chat-interface"
+import React, { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useSelector, useDispatch } from "react-redux";
+import type { RootState } from "@/lib/store";
+import {
+  loadConversation,
+  startNewConversation,
+} from "@/lib/features/chat/chat-slice";
+import ChatInterface from "@/components/chat/chat-interface";
 
 export default function ChatPage() {
-  const params = useParams()
-  const router = useRouter()
-  const dispatch = useDispatch()
-  const { conversations, currentConversationId } = useSelector((state: RootState) => state.chat)
+  const params = useParams();
+  const router = useRouter();
+  const dispatch = useDispatch();
 
-  const conversationId = params.id as string
+  const { conversations, currentConversationId } = useSelector(
+    (state: RootState) => state.chat
+  );
 
+  const conversationId = params.id as string;
+
+  // Keep your existing conversation selection logic (URL ↔ Redux)
   useEffect(() => {
     if (conversationId === "new") {
-      // Only create new conversation if we don't have a current one
+      // Only create a new conversation if we don't have a current one
       if (!currentConversationId) {
-        dispatch(startNewConversation())
+        dispatch(startNewConversation());
       }
     } else {
-      // Check if conversation exists and load it if different from current
-      const conversation = conversations.find((c) => c.id === conversationId)
+      const conversation = conversations.find((c) => c.id === conversationId);
+
       if (conversation && currentConversationId !== conversationId) {
-        dispatch(loadConversation(conversationId))
+        dispatch(loadConversation(conversationId));
       } else if (!conversation) {
-        // Conversation doesn't exist, redirect to new chat
-        router.replace("/chat/new")
+        // Conversation doesn't exist, redirect to a "new" chat
+        router.replace("/chat/new");
       }
     }
-  }, [conversationId, currentConversationId, dispatch, conversations, router])
+  }, [conversationId, currentConversationId, dispatch, conversations, router]);
 
-  // Handle redirect after new conversation is created
+  // Redirect `/chat/new` → `/chat/{realId}` once a new conversation is created
   useEffect(() => {
-    if (conversationId === "new" && currentConversationId && currentConversationId !== "new") {
-      router.replace(`/chat/${currentConversationId}`)
+    if (
+      conversationId === "new" &&
+      currentConversationId &&
+      currentConversationId !== "new"
+    ) {
+      router.replace(`/chat/${currentConversationId}`);
     }
-  }, [conversationId, currentConversationId, router])
+  }, [conversationId, currentConversationId, router]);
 
-  return <ChatInterface />
+  // For Thesys, we use the URL id (or the resolved currentConversationId) as a key
+  // so that switching chats remounts the C1Chat instance cleanly.
+  const effectiveConversationId =
+    conversationId === "new"
+      ? currentConversationId ?? "new"
+      : conversationId;
+
+  return <ChatInterface conversationId={effectiveConversationId} />;
 }

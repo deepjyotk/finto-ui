@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import GetStartedButton from "@/components/landing/GetStartedButton"
 import { useSelector } from "react-redux"
@@ -24,7 +24,11 @@ export default function Navbar() {
   const [active, setActive] = useState<string>("#")
   const { user, isAuthenticated } = useSelector((s: RootState) => s.auth)
   const router = useRouter()
+  const pathname = usePathname()
   const { connected, getLoginUrl } = useKiteConnection()
+  
+  // Check if we're on the integrations page
+  const isOnIntegrationsPage = pathname === "/integrations"
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -89,14 +93,16 @@ export default function Navbar() {
           )}
           {isAuthenticated && user ? (
             <>
-              <Button 
-                onClick={() => router.push("/integrations")}
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                size="sm"
-              >
-                <Cable className="h-4 w-4 mr-2" />
-                Integrations
-              </Button>
+              {!isOnIntegrationsPage && (
+                <Button 
+                  onClick={() => router.push("/integrations")}
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                  size="sm"
+                >
+                  <Cable className="h-4 w-4 mr-2" />
+                  Integrations
+                </Button>
+              )}
               {/* <Button 
                 onClick={() => router.push("/chat")}
                 className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"

@@ -11,6 +11,7 @@ import { WhatsAppIntegrationCard } from "@/components/home/whatsapp-integration-
 import { ConnectBrokerModal } from "@/components/home/connect-broker-modal"
 import { apiClient, type HomeFeedSchema, type WhatsAppPayload } from "@/lib/api/client"
 import { useToast } from "@/hooks/use-toast"
+import Navbar from "@/components/landing/Navbar"
 
 export default function IntegrationsPage() {
   const router = useRouter()
@@ -19,6 +20,7 @@ export default function IntegrationsPage() {
   const [error, setError] = useState<string | null>(null)
   const [homeFeed, setHomeFeed] = useState<HomeFeedSchema | null>(null)
   const [showBrokerModal, setShowBrokerModal] = useState(false)
+  const [isConnectingWhatsApp, setIsConnectingWhatsApp] = useState(false)
 
   // Fetch home feed data
   useEffect(() => {
@@ -55,31 +57,60 @@ export default function IntegrationsPage() {
 
   // Handle WhatsApp connection
   const handleConnectWhatsApp = async () => {
+    setIsConnectingWhatsApp(true)
     try {
-      // TODO: Implement WhatsApp connection flow
-      toast({
-        title: "Coming soon",
-        description: "WhatsApp connection will be implemented",
+      const response = await apiClient.createWhatsAppConnectIntent({
+        ttl_minutes: 10
       })
+      
+      // Open the WhatsApp deeplink in a new tab
+      window.open(response.deeplink, '_blank')
+      
+      toast({
+        title: "Connection initiated",
+        description: "Please complete the connection in the WhatsApp window that opened.",
+      })
+      
+      // Refresh home feed after a short delay to check if connection was successful
+      setTimeout(async () => {
+        try {
+          const data = await apiClient.getHomeFeed()
+          setHomeFeed(data)
+        } catch (err) {
+          // Silently fail refresh, user can manually refresh if needed
+        }
+      }, 2000)
     } catch (err) {
       toast({
         title: "Error",
-        description: err instanceof Error ? err.message : "Failed to connect WhatsApp",
+        description: err instanceof Error ? err.message : "Failed to connect WhatsApp. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsConnectingWhatsApp(false)
     }
   }
 
   // Handle WhatsApp deletion
   const handleDeleteWhatsApp = async () => {
+    if (!whatsappData?.id) {
+      toast({
+        title: "Error",
+        description: "Integration ID not found",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
-      // TODO: Implement API call to delete WhatsApp integration
+      await apiClient.deleteWhatsAppIntegration(whatsappData.id)
+      
       toast({
         title: "WhatsApp disconnected",
         description: "Your WhatsApp integration has been removed",
       })
       
-      // Refresh home feed
+      // Refresh home feed to reflect the deletion
       const data = await apiClient.getHomeFeed()
       setHomeFeed(data)
     } catch (err) {
@@ -120,34 +151,42 @@ export default function IntegrationsPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 max-w-6xl">
-        <div className="space-y-6">
-          <div>
-            <Skeleton className="h-10 w-48 mb-2" />
-            <Skeleton className="h-4 w-96" />
-          </div>
-          <div className="grid gap-6 md:grid-cols-2">
-            <Skeleton className="h-64" />
-            <Skeleton className="h-64" />
+      <>
+        <Navbar />
+        <div className="container mx-auto p-6 max-w-6xl">
+          <div className="space-y-6">
+            <div>
+              <Skeleton className="h-10 w-48 mb-2" />
+              <Skeleton className="h-4 w-96" />
+            </div>
+            <div className="grid gap-6 md:grid-cols-2">
+              <Skeleton className="h-64" />
+              <Skeleton className="h-64" />
+            </div>
           </div>
         </div>
-      </div>
+      </>
     )
   }
 
   if (error) {
     return (
-      <div className="container mx-auto p-6 max-w-6xl">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
+      <>
+        <Navbar />
+        <div className="container mx-auto p-6 max-w-6xl">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </div>
+      </>
     )
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <>
+      <Navbar />
+      <div className="container mx-auto p-6 max-w-6xl">
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -164,6 +203,7 @@ export default function IntegrationsPage() {
             whatsappData={whatsappData}
             onConnect={handleConnectWhatsApp}
             onDelete={handleDeleteWhatsApp}
+            isConnecting={isConnectingWhatsApp}
           />
 
           {/* Broker Connection Card */}
@@ -220,7 +260,8 @@ export default function IntegrationsPage() {
         brokers={homeFeed?.available_brokers || []}
         onSubmit={handleConnectBroker}
       />
-    </div>
+      </div>
+    </>
   )
 }
 

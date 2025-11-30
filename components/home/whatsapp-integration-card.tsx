@@ -12,12 +12,14 @@ interface WhatsAppIntegrationCardProps {
   whatsappData: WhatsAppPayload | null
   onConnect: () => void
   onDelete: () => void
+  isConnecting?: boolean
 }
 
 export function WhatsAppIntegrationCard({
   whatsappData,
   onConnect,
   onDelete,
+  isConnecting = false,
 }: WhatsAppIntegrationCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
@@ -73,9 +75,13 @@ export function WhatsAppIntegrationCard({
               </Button>
             </div>
           ) : (
-            <Button onClick={onConnect} className="w-full">
+            <Button 
+              onClick={onConnect} 
+              className="w-full"
+              disabled={isConnecting}
+            >
               <Plus className="mr-2 h-4 w-4" />
-              Connect WhatsApp
+              {isConnecting ? "Connecting..." : "Connect WhatsApp"}
             </Button>
           )}
         </CardContent>

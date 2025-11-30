@@ -1,5 +1,17 @@
 "use client"
 
+/**
+ * @deprecated This component is legacy code.
+ * 
+ * The chat interface now uses the Thesys C1Chat component from @thesysai/genui-sdk
+ * which handles its own input, message rendering, and streaming internally.
+ * 
+ * This component is kept for reference or potential custom implementations
+ * that don't use the C1Chat component (e.g., using @crayonai/react-ui/Shell directly).
+ * 
+ * See: components/chat/chat-interface.tsx for the active implementation
+ */
+
 import type React from "react"
 import { useState } from "react"
 import { useDispatch } from "react-redux"
@@ -12,6 +24,7 @@ import { useRouter } from "next/navigation"
 import type { RootState } from "@/lib/store"
 import { apiClient } from "@/lib/api/client"
 
+/** @deprecated Use C1Chat component instead */
 export default function ChatInput() {
   const dispatch = useDispatch()
   const router = useRouter()

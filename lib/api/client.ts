@@ -10,6 +10,7 @@ const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://localhos
 // Type Definitions (from OpenAPI spec)
 // ============================================================================
 
+// Legacy Chat Types (deprecated - use Thesys C1Chat instead)
 export interface ChatRequest {
   message: string
   file?: string | null
@@ -18,6 +19,21 @@ export interface ChatRequest {
 
 export interface ChatResponse {
   response: string
+}
+
+// Thesys C1Chat Types (from OpenAPI spec)
+export type C1MessageRole = 'user' | 'assistant' | 'system' | 'tool'
+
+export interface C1Message {
+  role: C1MessageRole
+  content: string
+  id?: string | null
+}
+
+export interface C1ChatRequest {
+  prompt: C1Message
+  threadId: string
+  responseId: string
 }
 
 export interface ValidationError {
@@ -211,7 +227,8 @@ class ApiClient {
   // ============================================================================
 
   /**
-   * Send a chat message
+   * @deprecated Use Thesys C1Chat component instead which handles streaming
+   * Send a chat message (legacy non-streaming)
    * POST /chat
    */
   async chat(data: ChatRequest): Promise<ChatResponse> {
@@ -219,6 +236,15 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(data),
     })
+  }
+
+  /**
+   * Thesys C1 Chat endpoint URL
+   * Used by the C1Chat component for streaming chat
+   * The actual calls are handled by C1Chat internally via /api/thesys/chat proxy route
+   */
+  getThesysChatUrl(): string {
+    return '/api/thesys/chat'
   }
 
   // ============================================================================
@@ -302,6 +328,16 @@ class ApiClient {
     return this.request<ConnectIntentResponse>('/api/whatsapp/connect-intent', {
       method: 'POST',
       body: JSON.stringify(data),
+    })
+  }
+
+  /**
+   * Delete a WhatsApp integration
+   * DELETE /api/whatsapp/{integration_id}
+   */
+  async deleteWhatsAppIntegration(integrationId: string): Promise<void> {
+    return this.request<void>(`/api/whatsapp/${integrationId}`, {
+      method: 'DELETE',
     })
   }
 
