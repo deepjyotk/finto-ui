@@ -53,18 +53,8 @@ export default function ChatInput() {
 
     // Call the actual chat API
     try {
-      const response = await apiClient.chat({
-        message: userInput,
-        conversation_history: [], // TODO: Add actual conversation history from Redux
-      })
-
-      const aiMessage = {
-        id: (Date.now() + 1).toString(),
-        content: response.response,
-        role: "assistant" as const,
-        timestamp: new Date().toISOString(),
-      }
-      dispatch(addMessage(aiMessage))
+      // This is deprecated - use C1Chat component with /api/v1/thesys/chat instead
+      throw new Error("This chat input is deprecated. Use C1Chat component with /api/v1/thesys/chat endpoint.")
     } catch (error) {
       console.error('Chat API error:', error)
       const errorMessage = {

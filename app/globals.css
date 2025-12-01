@@ -120,4 +120,15 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Hide the duplicate Crayon shell sidebar immediately on first paint */
+  .chat-shell .crayon-shell-sidebar-container,
+  .chat-shell .crayon-shell-sidebar-container__overlay {
+    display: none !important;
+  }
+
+  /* Let chat content fill the width when the sidebar is hidden */
+  .chat-shell .crayon-shell-container {
+    padding: 0;
+  }
 }

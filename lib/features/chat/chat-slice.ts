@@ -39,23 +39,8 @@ const generateConversationTitle = (firstMessage: string): string => {
 }
 
 export const sendMessage = createAsyncThunk("chat/sendMessage", async (content: string) => {
-  // Call A2A agent server directly (no Next.js proxy)
-  const A2A_BASE_URL = process.env.NEXT_PUBLIC_A2A_AGENT_BASE_URL || "http://localhost:8080"
-  
-  const response = await fetch(`${A2A_BASE_URL}/chat`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ message: content }),
-  })
-
-  if (!response.ok) {
-    throw new Error("Failed to send message")
-  }
-
-  const data = await response.json()
-  return data
+  // This is deprecated - use C1Chat component with /api/v1/thesys/chat instead
+  throw new Error("sendMessage is deprecated. Use C1Chat component with /api/v1/thesys/chat endpoint.")
 })
 
 const chatSlice = createSlice({

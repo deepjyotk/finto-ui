@@ -37,6 +37,7 @@ export interface AuthState {
 
 export interface UIState {
   sidebarOpen: boolean
+  sidebarCollapsed: boolean
   theme: "light" | "dark"
   isTyping: boolean
 }

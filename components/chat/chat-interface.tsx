@@ -10,12 +10,11 @@
  * - Dark theme support
  * - Conversation threading
  *
- * Backend API: /api/thesys/chat (proxied via Next.js API route to FastAPI)
+ * Backend API: /api/thesys/chat (proxied via Next.js API route to FastAPI /api/v1/thesys/chat)
  *
  * C1ChatRequest schema:
- * - prompt: { role: "user"|"assistant"|"system"|"tool", content: string, id?: string }
- * - threadId: string (conversation ID)
- * - responseId: string (unique response ID)
+ * - message_payload: { content: string }
+ * - session_id: string
  *
  * The C1Chat component handles:
  * - User input
@@ -32,10 +31,16 @@ import "@crayonai/react-ui/styles/index.css";
 import { themePresets } from "@crayonai/react-ui";
 
 type ChatInterfaceProps = {
-  conversationId?: string;
+  sessionId?: string | null;
+  isNewChat?: boolean;
+  onSessionCreated?: (sessionId: string) => void;
 };
 
-export default function ChatInterface({ conversationId }: ChatInterfaceProps) {
+export default function ChatInterface({
+  sessionId,
+  isNewChat = false,
+  onSessionCreated,
+}: ChatInterfaceProps) {
   // Use authenticated user info to personalize the agent name
   const { user } = useSelector((state: RootState) => state.auth);
 
@@ -47,23 +52,39 @@ export default function ChatInterface({ conversationId }: ChatInterfaceProps) {
     [user?.full_name]
   );
 
-  // Using the conversationId as a React key so that changing URL / id
+  // Using the sessionId as a React key so that changing session
   // remounts C1Chat and resets its internal state for that thread.
   const chatKey = useMemo(
     () =>
-      conversationId && conversationId.length > 0
-        ? conversationId
+      sessionId && sessionId.length > 0
+        ? sessionId
+        : isNewChat
+        ? "new-chat"
         : "chat-default",
-    [conversationId]
+    [sessionId, isNewChat]
   );
+
+  // Create a custom API URL that includes session management
+  const apiUrl = useMemo(() => {
+    // We'll use a query parameter to pass session info
+    const params = new URLSearchParams();
+    if (sessionId) {
+      params.set("session_id", sessionId);
+    }
+    if (isNewChat && !sessionId) {
+      params.set("new_chat", "true");
+    }
+    return `/api/thesys/chat${params.toString() ? `?${params.toString()}` : ""}`;
+  }, [isNewChat, sessionId]);
 
   return (
     <div className="chat-shell flex min-h-[calc(100vh-64px)] flex-1 flex-col bg-[#050509]">
       <C1Chat
         key={chatKey}
-        // Next.js API route that proxies to FastAPI /api/thesys/chat
-        // Handles SSE streaming for real-time responses
-        apiUrl="/api/thesys/chat"
+        // Next.js API route that proxies to FastAPI /api/v1/thesys/chat
+        // Handles SSE streaming for real-time responses and session management
+        // Session ID is passed via URL parameter; API route creates session if missing
+        apiUrl={apiUrl}
         // Full-page layout for immersive chat experience
         formFactor="full-page"
         // Dark theme using Candy preset from Crayon UI
@@ -73,30 +94,7 @@ export default function ChatInterface({ conversationId }: ChatInterfaceProps) {
         logoUrl="/logo-brokerbuddy.svg"
         // Auto-scroll behavior for streaming messages
         scrollVariant="always"
-        // Handle custom actions from generative UI if needed
-        // (C1Chat handles built-in actions like continue_conversation, open_url)
-        // onAction={(event) => {
-        //   switch (event.type) {
-        //     case "download_report":
-        //       // Custom action handling
-        //       break;
-        //     default:
-        //       break;
-        //   }
-        // }}
       />
-      <style jsx global>{`
-        /* Hide the Shell sidebar to remove the redundant left drawer */
-        .chat-shell .crayon-shell-sidebar-container,
-        .chat-shell .crayon-shell-sidebar-container__overlay {
-          display: none !important;
-        }
-
-        /* Let the chat fill the freed-up space */
-        .chat-shell .crayon-shell-container {
-          padding: 0;
-        }
-      `}</style>
     </div>
   );
 }

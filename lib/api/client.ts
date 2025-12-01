@@ -10,30 +10,29 @@ const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://localhos
 // Type Definitions (from OpenAPI spec)
 // ============================================================================
 
-// Legacy Chat Types (deprecated - use Thesys C1Chat instead)
-export interface ChatRequest {
-  message: string
-  file?: string | null
-  conversation_history?: string[]
-}
-
-export interface ChatResponse {
-  response: string
-}
-
 // Thesys C1Chat Types (from OpenAPI spec)
-export type C1MessageRole = 'user' | 'assistant' | 'system' | 'tool'
-
 export interface C1Message {
-  role: C1MessageRole
   content: string
-  id?: string | null
 }
 
 export interface C1ChatRequest {
-  prompt: C1Message
-  threadId: string
-  responseId: string
+  message_payload: C1Message
+  session_id: string
+}
+
+// Session Types (from OpenAPI spec)
+export interface SessionItem {
+  session_id: string
+  started_at: string
+}
+
+export interface SessionResponse {
+  session_id: string
+  started_at: string
+}
+
+export interface SessionsListResponse {
+  sessions: SessionItem[]
 }
 
 export interface ValidationError {
@@ -170,10 +169,10 @@ class ApiClient {
 
   /**
    * Register a new user
-   * POST /auth/register
+   * POST /api/v1/auth/register
    */
   async register(data: UserCreate): Promise<UserResponse> {
-    return this.request<UserResponse>('/auth/register', {
+    return this.request<UserResponse>('/api/v1/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     })
@@ -181,11 +180,11 @@ class ApiClient {
 
   /**
    * Login user
-   * POST /auth/login
+   * POST /api/v1/auth/login
    * JWT token is set in httpOnly cookie by backend
    */
   async login(data: UserLogin): Promise<UserResponse> {
-    return this.request<UserResponse>('/auth/login', {
+    return this.request<UserResponse>('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify(data),
     })
@@ -193,50 +192,38 @@ class ApiClient {
 
   /**
    * Logout user
-   * POST /auth/logout
+   * POST /api/v1/auth/logout
    * Clears authentication cookie
    */
   async logout(): Promise<void> {
-    return this.request<void>('/auth/logout', {
+    return this.request<void>('/api/v1/auth/logout', {
       method: 'POST',
     })
   }
 
   /**
    * Get current authenticated user
-   * GET /auth/me
+   * GET /api/v1/auth/me
    */
   async getCurrentUser(): Promise<UserResponse> {
-    return this.request<UserResponse>('/auth/me', {
+    return this.request<UserResponse>('/api/v1/auth/me', {
       method: 'GET',
     })
   }
 
   /**
    * Verify authentication status
-   * GET /auth/verify
+   * GET /api/v1/auth/verify
    */
   async verifyAuth(): Promise<void> {
-    return this.request<void>('/auth/verify', {
+    return this.request<void>('/api/v1/auth/verify', {
       method: 'GET',
     })
   }
 
   // ============================================================================
-  // Chat Endpoints
+  // Thesys Chat Endpoints
   // ============================================================================
-
-  /**
-   * @deprecated Use Thesys C1Chat component instead which handles streaming
-   * Send a chat message (legacy non-streaming)
-   * POST /chat
-   */
-  async chat(data: ChatRequest): Promise<ChatResponse> {
-    return this.request<ChatResponse>('/chat', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
 
   /**
    * Thesys C1 Chat endpoint URL
@@ -247,16 +234,36 @@ class ApiClient {
     return '/api/thesys/chat'
   }
 
+  /**
+   * Get all chat sessions for the authenticated user
+   * GET /api/v1/thesys/session
+   */
+  async getSessions(): Promise<SessionsListResponse> {
+    return this.request<SessionsListResponse>('/api/v1/thesys/session', {
+      method: 'GET',
+    })
+  }
+
+  /**
+   * Create a new chat session
+   * POST /api/v1/thesys/session
+   */
+  async createChatSession(): Promise<SessionResponse> {
+    return this.request<SessionResponse>('/api/v1/thesys/session', {
+      method: 'POST',
+    })
+  }
+
   // ============================================================================
   // Health Check
   // ============================================================================
 
   /**
    * Health check endpoint
-   * GET /health
+   * GET /healthz
    */
   async healthCheck(): Promise<any> {
-    return this.request<any>('/health', {
+    return this.request<any>('/healthz', {
       method: 'GET',
     })
   }
@@ -267,53 +274,43 @@ class ApiClient {
 
   /**
    * Get login redirect URL and navigate browser to it.
-   * GET /kite/login -> 302 to Zerodha. Here we just return the URL so the caller can set window.location.
+   * GET /api/v1/kite/login -> 302 to Zerodha. Here we just return the URL so the caller can set window.location.
    */
   getKiteLoginUrl(): string {
     // NOTE: FastAPI endpoint returns a redirect. We fetch with redirect:'manual' when supported.
     // In the browser, fetch will follow redirects by default and we won't see the Location header.
     // Therefore, prefer opening the endpoint directly in the browser.
     // This method returns the backend URL to hit for login.
-    return `${this.baseUrl}/kite/login`
+    return `${this.baseUrl}/api/v1/kite/login`
   }
 
   /**
    * Check whether current user has connected Kite account
-   * GET /kite/token -> { connected: boolean, session?: any }
+   * GET /api/v1/kite/token -> { connected: boolean, session?: any }
    */
   async kiteTokenInfo(): Promise<{ connected: boolean; session?: any }> {
-    return this.request<{ connected: boolean; session?: any }>(`/kite/token`, {
+    return this.request<{ connected: boolean; session?: any }>(`/api/v1/kite/token`, {
       method: 'GET',
     })
   }
 
   /**
    * Public status - mostly for debugging
-   * GET /kite/status -> { connected: boolean, user_id: string }
+   * GET /api/v1/kite/status -> { connected: boolean, user_id: string }
    */
   async kiteStatus(): Promise<{ connected: boolean; user_id: string }> {
-    return this.request<{ connected: boolean; user_id: string }>(`/kite/status`, {
+    return this.request<{ connected: boolean; user_id: string }>(`/api/v1/kite/status`, {
       method: 'GET',
     })
   }
 
   /**
-   * TODO: Portfolio endpoint
-   * The backend snippet did not include a portfolio route. Once available (e.g. /kite/portfolio),
-   * wire it here to fetch and return holdings/positions for the connected user.
-   */
-  // async kitePortfolio(): Promise<PortfolioResponse> {
-  //   return this.request<PortfolioResponse>(`/kite/portfolio`, { method: 'GET' })
-  // }
-
-  /**
    * Holdings endpoint via backend proxy to KiteConnect holdings().
-   * GET /kite/holdings -> Array of holdings
-   * TODO: Confirm shape from backend and type this response.
+   * GET /api/v1/kite/holdings -> Array of holdings
    */
   async kiteHoldings(): Promise<any> {
     // Backend may return { holdings: [...] } wrapper; keep type loose.
-    return this.request<any>(`/kite/holdings`, { method: 'GET' })
+    return this.request<any>(`/api/v1/kite/holdings`, { method: 'GET' })
   }
 
   // ============================================================================
@@ -322,10 +319,10 @@ class ApiClient {
 
   /**
    * Create a WhatsApp connect intent
-   * POST /api/whatsapp/connect-intent
+   * POST /api/v1/whatsapp/connect-intent
    */
   async createWhatsAppConnectIntent(data: ConnectIntentRequest): Promise<ConnectIntentResponse> {
-    return this.request<ConnectIntentResponse>('/api/whatsapp/connect-intent', {
+    return this.request<ConnectIntentResponse>('/api/v1/whatsapp/connect-intent', {
       method: 'POST',
       body: JSON.stringify(data),
     })
@@ -333,10 +330,10 @@ class ApiClient {
 
   /**
    * Delete a WhatsApp integration
-   * DELETE /api/whatsapp/{integration_id}
+   * DELETE /api/v1/whatsapp/{integration_id}
    */
   async deleteWhatsAppIntegration(integrationId: string): Promise<void> {
-    return this.request<void>(`/api/whatsapp/${integrationId}`, {
+    return this.request<void>(`/api/v1/whatsapp/${integrationId}`, {
       method: 'DELETE',
     })
   }
@@ -347,11 +344,38 @@ class ApiClient {
 
   /**
    * Get home feed with chat integrations and available brokers
-   * GET /api/home
+   * GET /api/v1/home
    */
   async getHomeFeed(): Promise<HomeFeedSchema> {
-    return this.request<HomeFeedSchema>('/api/home', {
+    return this.request<HomeFeedSchema>('/api/v1/home', {
       method: 'GET',
+    })
+  }
+
+  // ============================================================================
+  // Holdings Endpoints
+  // ============================================================================
+
+  /**
+   * Create a new equity holding
+   * POST /api/v1/holdings
+   */
+  async createHolding(data: any): Promise<any> {
+    return this.request<any>('/api/v1/holdings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  /**
+   * Bulk upload equity holdings from file
+   * POST /api/v1/holdings/file-upload
+   */
+  async uploadHoldingsFile(formData: FormData): Promise<any> {
+    return this.request<any>('/api/v1/holdings/file-upload', {
+      method: 'POST',
+      body: formData,
+      headers: {}, // Let browser set Content-Type for FormData
     })
   }
 }

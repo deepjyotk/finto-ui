@@ -4,31 +4,102 @@ import { NextRequest, NextResponse } from 'next/server'
  * Thesys C1Chat API Route
  * 
  * This endpoint proxies requests from the Thesys C1Chat frontend component
- * to the FastAPI backend's /api/thesys/chat endpoint.
+ * to the FastAPI backend's /api/v1/thesys/chat endpoint.
  * 
  * Request schema (C1ChatRequest):
- * - prompt: { role: "user"|"assistant"|"system"|"tool", content: string, id?: string }
- * - threadId: string
- * - responseId: string
+ * - message_payload: { content: string }
+ * - session_id: string
  * 
  * Response: Server-Sent Events (SSE) stream
+ * 
+ * Session management:
+ * - If session_id is missing in the request, a new session will be created
+ * - session_id can be passed via query parameter or in the request body
  */
 
 const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://localhost:8000'
 
+async function createSession(cookieHeader: string): Promise<string> {
+  const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/thesys/session`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cookie': cookieHeader,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to create session: ${response.statusText}`)
+  }
+
+  const data = await response.json()
+  return data.session_id
+}
+
+function transformRequest(body: any, sessionId: string): any {
+  // Handle different possible request formats from C1Chat
+  // Transform to the new schema: { message_payload: { content: string }, session_id: string }
+  
+  let content = ''
+  
+  // Try to extract content from various possible formats
+  if (body.message_payload?.content) {
+    content = body.message_payload.content
+  } else if (body.prompt?.content) {
+    content = body.prompt.content
+  } else if (typeof body.content === 'string') {
+    content = body.content
+  } else if (typeof body.message === 'string') {
+    content = body.message
+  }
+
+  return {
+    message_payload: {
+      content: content,
+    },
+    session_id: sessionId,
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const searchParams = request.nextUrl.searchParams
+    const cookieHeader = request.headers.get('cookie') || ''
+    
+    // Get session_id from query parameter or request body
+    // C1Chat might pass it in different ways, so check multiple locations
+    let sessionId = searchParams.get('session_id') 
+      || searchParams.get('sessionId')
+      || body.session_id 
+      || body.sessionId
 
-    // Forward the request to the FastAPI backend
-    const backendResponse = await fetch(`${FASTAPI_BASE_URL}/api/thesys/chat`, {
+    // If no session_id, create a new session (for new chats)
+    if (!sessionId) {
+      try {
+        sessionId = await createSession(cookieHeader)
+        console.log('[Thesys Chat] Created new session:', sessionId)
+      } catch (error) {
+        console.error('[Thesys Chat] Failed to create session:', error)
+        return NextResponse.json(
+          { error: 'Failed to create chat session' },
+          { status: 500 }
+        )
+      }
+    }
+
+    // Transform request to match backend schema
+    const transformedBody = transformRequest(body, sessionId)
+
+    // Forward the transformed request to the FastAPI backend
+    const backendResponse = await fetch(`${FASTAPI_BASE_URL}/api/v1/thesys/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         // Forward cookies for authentication
-        'Cookie': request.headers.get('cookie') || '',
+        'Cookie': cookieHeader,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(transformedBody),
       // Important: don't consume the body - we need to stream it
     })
 

@@ -28,14 +28,14 @@
         }
       }
     },
-    "/auth/register": {
+    "/api/v1/auth/register": {
       "post": {
         "tags": [
           "authentication"
         ],
         "summary": "Register a new user",
         "description": "Create a new user account and return the created user information.",
-        "operationId": "register_auth_register_post",
+        "operationId": "register_api_v1_auth_register_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -73,14 +73,14 @@
         }
       }
     },
-    "/auth/login": {
+    "/api/v1/auth/login": {
       "post": {
         "tags": [
           "authentication"
         ],
         "summary": "Login user",
         "description": "Authenticate user, set JWT access token cookie, and return user information.",
-        "operationId": "login_auth_login_post",
+        "operationId": "login_api_v1_auth_login_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -118,14 +118,14 @@
         }
       }
     },
-    "/auth/logout": {
+    "/api/v1/auth/logout": {
       "post": {
         "tags": [
           "authentication"
         ],
         "summary": "Logout user",
         "description": "Clear authentication cookie and end user session.",
-        "operationId": "logout_auth_logout_post",
+        "operationId": "logout_api_v1_auth_logout_post",
         "responses": {
           "200": {
             "description": "Successfully logged out",
@@ -140,14 +140,14 @@
         }
       }
     },
-    "/auth/me": {
+    "/api/v1/auth/me": {
       "get": {
         "tags": [
           "authentication"
         ],
         "summary": "Get current user",
         "description": "Retrieve information about the currently authenticated user.",
-        "operationId": "get_current_user_auth_me_get",
+        "operationId": "get_current_user_api_v1_auth_me_get",
         "responses": {
           "200": {
             "description": "User information retrieved successfully",
@@ -165,14 +165,14 @@
         }
       }
     },
-    "/auth/verify": {
+    "/api/v1/auth/verify": {
       "get": {
         "tags": [
           "authentication"
         ],
         "summary": "Verify authentication status",
         "description": "Check if the current JWT token is valid and return authentication status.",
-        "operationId": "verify_token_auth_verify_get",
+        "operationId": "verify_token_api_v1_auth_verify_get",
         "responses": {
           "200": {
             "description": "Authentication status returned",
@@ -187,14 +187,14 @@
         }
       }
     },
-    "/chat": {
+    "/api/v1/chat": {
       "post": {
         "tags": [
           "chat"
         ],
         "summary": "Send a chat message",
         "description": "Send a message to the chat system and receive a     response. Supports conversation history and optional file attachments.",
-        "operationId": "chat_chat_post",
+        "operationId": "chat_api_v1_chat_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -226,59 +226,18 @@
               }
             }
           }
-        }
-      }
-    },
-    "/api/thesys/chat": {
-      "post": {
-        "tags": [
-          "thesys-chat"
-        ],
-        "summary": "Streaming Thesys C1 chat endpoint",
-        "description": "Streaming endpoint consumed by the Thesys C1Chat React component. It receives prompt, threadId, and responseId and forwards the conversation to the C1 model, streaming tokens back as SSE.",
-        "operationId": "thesys_chat_api_thesys_chat_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/C1ChatRequest"
-              }
-            }
-          },
-          "required": true
         },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+        "deprecated": true
       }
     },
-    "/holdings": {
+    "/api/v1/holdings": {
       "post": {
         "tags": [
           "holdings"
         ],
         "summary": "Create a new equity holding",
         "description": "Save equity holding information for the authenticated user.",
-        "operationId": "create_holding_holdings_post",
+        "operationId": "create_holding_api_v1_holdings_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -316,19 +275,19 @@
         }
       }
     },
-    "/holdings/file-upload": {
+    "/api/v1/holdings/file-upload": {
       "post": {
         "tags": [
           "holdings"
         ],
         "summary": "Bulk upload equity holdings from file",
         "description": "Upload Excel (.xlsx, .xls) or CSV file to create multiple equity holdings.",
-        "operationId": "upload_holdings_file_holdings_file_upload_post",
+        "operationId": "upload_holdings_file_api_v1_holdings_file_upload_post",
         "requestBody": {
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_upload_holdings_file_holdings_file_upload_post"
+                "$ref": "#/components/schemas/Body_upload_holdings_file_api_v1_holdings_file_upload_post"
               }
             }
           },
@@ -364,14 +323,14 @@
         }
       }
     },
-    "/api/home": {
+    "/api/v1/home": {
       "get": {
         "tags": [
           "home"
         ],
         "summary": "Get Home Feed",
         "description": "Get home feed for authenticated user.\n\nReturns chat integrations including WhatsApp data and available brokers.",
-        "operationId": "get_home_feed_api_home_get",
+        "operationId": "get_home_feed_api_v1_home_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -386,14 +345,14 @@
         }
       }
     },
-    "/kite/login": {
+    "/api/v1/kite/login": {
       "get": {
         "tags": [
           "kite"
         ],
         "summary": "Kite Login",
         "description": "Redirect authenticated user to Kite login page.\n\nThe user must be logged into this application (JWT cookie). After a\nsuccessful login on Zerodha, Zerodha will redirect to the callback URL\nconfigured in your Kite app settings with a request_token parameter.\n\nTODO: Add state parameter handling to prevent CSRF and map request -\u003E user.",
-        "operationId": "kite_login_kite_login_get",
+        "operationId": "kite_login_api_v1_kite_login_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -408,13 +367,13 @@
         }
       }
     },
-    "/kite/callback": {
+    "/api/v1/kite/callback": {
       "get": {
         "tags": [
           "kite"
         ],
         "summary": "Kite Callback",
-        "operationId": "kite_callback_kite_callback_get",
+        "operationId": "kite_callback_api_v1_kite_callback_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -429,14 +388,14 @@
         }
       }
     },
-    "/kite/token": {
+    "/api/v1/kite/token": {
       "get": {
         "tags": [
           "kite"
         ],
         "summary": "Kite Token Info",
         "description": "Return whether the current authenticated user has a Kite access token.\nUses jsonable_encoder to ensure datetime (if any) is serialized.",
-        "operationId": "kite_token_info_kite_token_get",
+        "operationId": "kite_token_info_api_v1_kite_token_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -451,14 +410,14 @@
         }
       }
     },
-    "/kite/status": {
+    "/api/v1/kite/status": {
       "get": {
         "tags": [
           "kite"
         ],
         "summary": "Kite Status",
         "description": "Public status endpoint for debugging.\n\nReturns whether the current user is connected and some non-sensitive metadata.",
-        "operationId": "kite_status_kite_status_get",
+        "operationId": "kite_status_api_v1_kite_status_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -473,14 +432,14 @@
         }
       }
     },
-    "/kite/holdings": {
+    "/api/v1/kite/holdings": {
       "get": {
         "tags": [
           "kite"
         ],
         "summary": "Kite Holdings",
         "description": "Fetch user's holdings via Kite Connect.\nRequires user to have completed the auth flow (access token stored).\nTODO: Cache results (short TTL) to reduce API calls.",
-        "operationId": "kite_holdings_kite_holdings_get",
+        "operationId": "kite_holdings_api_v1_kite_holdings_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -495,13 +454,97 @@
         }
       }
     },
-    "/webhooks/whatsapp": {
+    "/api/v1/thesys/session": {
+      "get": {
+        "tags": [
+          "thesys-chat"
+        ],
+        "summary": "Get all chat sessions for the authenticated user",
+        "description": "Returns all past chat sessions for the authenticated user, sorted by most recent first.",
+        "operationId": "get_sessions_api_v1_thesys_session_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionsListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "thesys-chat"
+        ],
+        "summary": "Create a new chat session",
+        "description": "Creates a new chat session for the authenticated user and returns the session ID.",
+        "operationId": "create_session_api_v1_thesys_session_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/thesys/chat": {
+      "post": {
+        "tags": [
+          "thesys-chat"
+        ],
+        "summary": "Streaming Thesys C1 chat endpoint",
+        "description": "Streaming endpoint consumed by the Thesys C1Chat React component. It receives prompt, sessionId, and responseId and forwards the conversation to the C1 model, streaming tokens back as SSE.",
+        "operationId": "thesys_chat_api_v1_thesys_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/C1ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/whatsapp": {
       "get": {
         "tags": [
           "whatsapp"
         ],
         "summary": "Verify",
-        "operationId": "verify_webhooks_whatsapp_get",
+        "operationId": "verify_api_v1_webhooks_whatsapp_get",
         "parameters": [
           {
             "name": "hub.mode",
@@ -628,7 +671,7 @@
           "whatsapp"
         ],
         "summary": "Receive",
-        "operationId": "receive_webhooks_whatsapp_post",
+        "operationId": "receive_api_v1_webhooks_whatsapp_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -643,13 +686,13 @@
         }
       }
     },
-    "/api/whatsapp/send-text": {
+    "/api/v1/whatsapp/send-text": {
       "post": {
         "tags": [
           "whatsapp"
         ],
         "summary": "Send Text",
-        "operationId": "send_text_api_whatsapp_send_text_post",
+        "operationId": "send_text_api_v1_whatsapp_send_text_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -684,13 +727,13 @@
         }
       }
     },
-    "/api/whatsapp/send-template": {
+    "/api/v1/whatsapp/send-template": {
       "post": {
         "tags": [
           "whatsapp"
         ],
         "summary": "Send Template",
-        "operationId": "send_template_api_whatsapp_send_template_post",
+        "operationId": "send_template_api_v1_whatsapp_send_template_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -725,13 +768,13 @@
         }
       }
     },
-    "/api/whatsapp/connect-intent": {
+    "/api/v1/whatsapp/connect-intent": {
       "post": {
         "tags": [
           "whatsapp"
         ],
         "summary": "Create Connect Intent",
-        "operationId": "create_connect_intent_api_whatsapp_connect_intent_post",
+        "operationId": "create_connect_intent_api_v1_whatsapp_connect_intent_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -766,14 +809,14 @@
         }
       }
     },
-    "/api/whatsapp/{integration_id}": {
+    "/api/v1/whatsapp/{integration_id}": {
       "delete": {
         "tags": [
           "whatsapp"
         ],
         "summary": "Delete Integration",
         "description": "Delete a WhatsApp integration.\n\nThis endpoint deletes the WhatsApp metadata entry for the specified integration ID.\nOnly the owner of the integration can delete it.\n\n**Authentication required**: Yes (JWT token in cookie)\n\nReturns:\n    Success message upon successful deletion",
-        "operationId": "delete_integration_api_whatsapp__integration_id__delete",
+        "operationId": "delete_integration_api_v1_whatsapp__integration_id__delete",
         "parameters": [
           {
             "name": "integration_id",
@@ -813,7 +856,7 @@
   },
   "components": {
     "schemas": {
-      "Body_upload_holdings_file_holdings_file_upload_post": {
+      "Body_upload_holdings_file_api_v1_holdings_file_upload_post": {
         "properties": {
           "broker_id": {
             "type": "string",
@@ -833,7 +876,7 @@
           "broker_id",
           "file"
         ],
-        "title": "Body_upload_holdings_file_holdings_file_upload_post"
+        "title": "Body_upload_holdings_file_api_v1_holdings_file_upload_post"
       },
       "BrokerPayload": {
         "properties": {
@@ -893,57 +936,30 @@
       },
       "C1ChatRequest": {
         "properties": {
-          "prompt": {
+          "message_payload": {
             "$ref": "#/components/schemas/C1Message"
           },
-          "threadId": {
+          "session_id": {
             "type": "string",
-            "title": "Threadid"
-          },
-          "responseId": {
-            "type": "string",
-            "title": "Responseid"
+            "title": "Session Id"
           }
         },
         "type": "object",
         "required": [
-          "prompt",
-          "threadId",
-          "responseId"
+          "message_payload",
+          "session_id"
         ],
         "title": "C1ChatRequest"
       },
       "C1Message": {
         "properties": {
-          "role": {
-            "type": "string",
-            "enum": [
-              "user",
-              "assistant",
-              "system",
-              "tool"
-            ],
-            "title": "Role"
-          },
           "content": {
             "type": "string",
             "title": "Content"
-          },
-          "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
           }
         },
         "type": "object",
         "required": [
-          "role",
           "content"
         ],
         "title": "C1Message"
@@ -1659,6 +1675,58 @@
         ],
         "title": "SendTextResponse"
       },
+      "SessionItem": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "started_at"
+        ],
+        "title": "SessionItem"
+      },
+      "SessionResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "started_at"
+        ],
+        "title": "SessionResponse"
+      },
+      "SessionsListResponse": {
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/SessionItem"
+            },
+            "type": "array",
+            "title": "Sessions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessions"
+        ],
+        "title": "SessionsListResponse"
+      },
       "TemplateComponent": {
         "properties": {
           "type": {
@@ -1868,7 +1936,7 @@
   "tags": [
     {
       "name": "authentication",
-      "description": "User authentication operations including register, login, and             token management"
+      "description": "User authentication operations including register, login, and token management"
     },
     {
       "name": "chat",

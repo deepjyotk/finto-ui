@@ -4,13 +4,24 @@ import type React from "react"
 
 import { useSelector, useDispatch } from "react-redux"
 import { useRouter, usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
 import type { RootState } from "@/lib/store"
-import { setSidebarOpen } from "@/lib/features/ui/ui-slice"
-import { deleteConversation } from "@/lib/features/chat/chat-slice"
+import { setSidebarOpen, toggleSidebarCollapsed } from "@/lib/features/ui/ui-slice"
 import { logout } from "@/lib/features/auth/auth-slice"
 import { signOut } from "@/lib/auth/session"
+import { apiClient } from "@/lib/api/client"
+import type { SessionItem } from "@/lib/api/client"
 import { Button } from "@/components/ui/button"
-import { Plus, MessageSquare, X, Trash2, MoreHorizontal, LogOut, Cable } from "lucide-react"
+import {
+  Plus,
+  MessageSquare,
+  X,
+  MoreHorizontal,
+  LogOut,
+  Cable,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -18,28 +29,38 @@ export default function Sidebar() {
   const dispatch = useDispatch()
   const router = useRouter()
   const pathname = usePathname()
-  const { sidebarOpen } = useSelector((state: RootState) => state.ui)
-  const { conversations, currentConversationId } = useSelector((state: RootState) => state.chat)
+  const { sidebarOpen, sidebarCollapsed } = useSelector((state: RootState) => state.ui)
   const { user } = useSelector((state: RootState) => state.auth)
+  const [sessions, setSessions] = useState<SessionItem[]>([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (pathname?.startsWith("/chat")) {
+      loadSessions()
+    }
+  }, [pathname])
+
+  const loadSessions = async () => {
+    try {
+      setLoading(true)
+      const response = await apiClient.getSessions()
+      setSessions(response.sessions)
+    } catch (error) {
+      console.error("Failed to load sessions:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleNewChat = () => {
-    router.push("/chat/new")
+    router.push("/chat?new=true")
     dispatch(setSidebarOpen(false))
   }
 
-  const handleConversationClick = (conversationId: string) => {
-    router.push(`/chat/${conversationId}`)
+  const handleSessionClick = (sessionId: string) => {
+    // Navigate to chat page - the page will handle loading the session
+    router.push(`/chat?session=${sessionId}`)
     dispatch(setSidebarOpen(false))
-  }
-
-  const handleDeleteConversation = (conversationId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    dispatch(deleteConversation(conversationId))
-
-    // If we deleted the current conversation, redirect to new chat
-    if (currentConversationId === conversationId) {
-      router.push("/chat/new")
-    }
   }
 
   const formatDate = (date: string) => {
@@ -99,81 +120,119 @@ export default function Sidebar() {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed left-0 top-0 z-50 h-full w-64 bg-[#202123] text-white transform transition-transform duration-200 ease-in-out",
+          "fixed left-0 top-0 z-50 h-full bg-[#202123] text-white transform transition-all duration-200 ease-in-out",
+          sidebarCollapsed ? "w-64 lg:w-20" : "w-64 lg:w-64",
           "lg:relative lg:z-auto lg:transform-none lg:transition-none lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-3">
+        <div className="flex h-full flex-col">
+          {/* Brand + collapse toggle */}
+          <div className="flex items-center justify-between border-b border-white/10 p-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white/10 text-sm font-semibold">
+                F
+              </div>
+              {!sidebarCollapsed && <span className="text-sm font-semibold">Finto</span>}
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => dispatch(toggleSidebarCollapsed())}
+                className="text-white hover:bg-white/10"
+                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {sidebarCollapsed ? (
+                  <PanelLeftOpen className="h-5 w-5" />
+                ) : (
+                  <PanelLeftClose className="h-5 w-5" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => dispatch(setSidebarOpen(false))}
+                className="text-white hover:bg-white/10 lg:hidden"
+                aria-label="Close sidebar"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="p-3">
             <Button
               onClick={handleNewChat}
               variant="ghost"
-              className="flex-1 justify-start text-white hover:bg-white/10 border border-white/20 rounded-md py-2"
+              className={cn(
+                "w-full border border-white/20 text-white hover:bg-white/10",
+                sidebarCollapsed ? "justify-center px-2" : "justify-start",
+              )}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              New chat
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => dispatch(setSidebarOpen(false))}
-              className="lg:hidden ml-2 text-white hover:bg-white/10"
-            >
-              <X className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
+              {!sidebarCollapsed && <span className="ml-2">New chat</span>}
             </Button>
           </div>
 
           {/* Chat History */}
-          <div className="flex-1 overflow-y-auto px-2 mt-2">
-            <div className="space-y-1">
-              {conversations.map((conversation) => {
-                const isActive = pathname === `/chat/${conversation.id}`
+          <div className={cn("mt-1 flex-1 overflow-y-auto px-2", sidebarCollapsed && "px-1")}>
+            {!sidebarCollapsed ? (
+              <div className="space-y-1">
+                {loading ? (
+                  <div className="py-4 text-center text-xs text-gray-500">Loading...</div>
+                ) : sessions.length > 0 ? (
+                  sessions.map((session) => {
+                    const isActive = pathname?.includes(session.session_id)
+                    const sessionDate = formatDate(session.started_at)
 
-                return (
-                  <div
-                    key={conversation.id}
-                    className={cn(
-                      "group flex items-center gap-3 p-3 rounded-md cursor-pointer hover:bg-white/10 transition-colors",
-                      isActive && "bg-white/10",
-                    )}
-                    onClick={() => handleConversationClick(conversation.id)}
-                  >
-                    <MessageSquare className="h-4 w-4 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm truncate">{conversation.title}</div>
+                    return (
+                      <div
+                        key={session.session_id}
+                        className={cn(
+                          "group flex items-center gap-3 rounded-md p-3 transition-colors hover:bg-white/10",
+                          isActive && "bg-white/10",
+                        )}
+                        onClick={() => handleSessionClick(session.session_id)}
+                      >
+                        <MessageSquare className="h-4 w-4 flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm">Chat Session</div>
+                          <div className="text-xs text-gray-400 truncate">{sessionDate}</div>
+                          <div className="text-xs text-gray-500 truncate font-mono" title={session.session_id}>
+                            {session.session_id.substring(0, 8)}...
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="py-8 text-center text-sm text-gray-500">No sessions yet</div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center space-y-1 py-2">
+                {sessions.map((session) => {
+                  const isActive = pathname?.includes(session.session_id)
+                  return (
+                    <div
+                      key={session.session_id}
+                      title={`Session ${new Date(session.started_at).toLocaleDateString()}\nID: ${session.session_id}`}
+                      className={cn(
+                        "flex h-10 w-full items-center justify-center rounded-md hover:bg-white/10",
+                        isActive && "bg-white/10",
+                      )}
+                      onClick={() => handleSessionClick(session.session_id)}
+                    >
+                      <MessageSquare className="h-4 w-4" />
                     </div>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-white/10"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreHorizontal className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-32 bg-[#202123] border-white/10">
-                        <DropdownMenuItem
-                          onClick={(e) => handleDeleteConversation(conversation.id, e)}
-                          className="text-red-400 focus:text-red-400 hover:bg-white/10"
-                        >
-                          <Trash2 className="h-3 w-3 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                )
-              })}
-
-              {conversations.length === 0 && (
-                <div className="text-center text-gray-500 text-sm py-8">No conversations yet</div>
-              )}
-            </div>
+                  )
+                })}
+                {!loading && sessions.length === 0 && (
+                  <div className="px-2 text-center text-xs text-gray-500">Expand to view chats</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Footer - User section */}
@@ -184,19 +243,31 @@ export default function Sidebar() {
                 dispatch(setSidebarOpen(false))
               }}
               variant="ghost"
-              className="w-full justify-start text-white hover:bg-white/10 rounded-md"
+              className={cn(
+                "w-full text-white hover:bg-white/10 rounded-md",
+                sidebarCollapsed ? "justify-center px-2" : "justify-start",
+              )}
             >
               <Cable className="h-4 w-4 mr-2" />
-              Integrations
+              {!sidebarCollapsed && <span>Integrations</span>}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-2 p-2 rounded-md hover:bg-white/10 cursor-pointer">
-                  <div className="w-8 h-8 rounded-sm bg-[#c96a2f] flex items-center justify-center text-white text-xs font-semibold">
+                <div
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2 rounded-md p-2 hover:bg-white/10",
+                    sidebarCollapsed && "justify-center",
+                  )}
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-[#c96a2f] text-xs font-semibold text-white">
                     {getUserInitials()}
                   </div>
-                  <div className="flex-1 text-sm truncate">{user?.full_name || "User"}</div>
-                  <MoreHorizontal className="h-4 w-4" />
+                  {!sidebarCollapsed && (
+                    <>
+                      <div className="flex-1 truncate text-sm">{user?.full_name || "User"}</div>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </>
+                  )}
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 bg-[#202123] border-white/10">
