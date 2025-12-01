@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useSelector, useDispatch } from "react-redux"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import type { RootState } from "@/lib/store"
 import { setSidebarOpen, toggleSidebarCollapsed } from "@/lib/features/ui/ui-slice"
@@ -29,6 +29,7 @@ export default function Sidebar() {
   const dispatch = useDispatch()
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { sidebarOpen, sidebarCollapsed } = useSelector((state: RootState) => state.ui)
   const { user } = useSelector((state: RootState) => state.auth)
   const [sessions, setSessions] = useState<SessionItem[]>([])
@@ -38,7 +39,7 @@ export default function Sidebar() {
     if (pathname?.startsWith("/chat")) {
       loadSessions()
     }
-  }, [pathname])
+  }, [pathname, searchParams?.toString()])
 
   const loadSessions = async () => {
     try {
@@ -183,7 +184,8 @@ export default function Sidebar() {
                   <div className="py-4 text-center text-xs text-gray-500">Loading...</div>
                 ) : sessions.length > 0 ? (
                   sessions.map((session) => {
-                    const isActive = pathname?.includes(session.session_id)
+                    const activeSessionId = searchParams?.get("session")
+                    const isActive = activeSessionId === session.session_id
                     const sessionDate = formatDate(session.started_at)
 
                     return (
@@ -213,7 +215,8 @@ export default function Sidebar() {
             ) : (
               <div className="flex flex-col items-center space-y-1 py-2">
                 {sessions.map((session) => {
-                  const isActive = pathname?.includes(session.session_id)
+                  const activeSessionId = searchParams?.get("session")
+                  const isActive = activeSessionId === session.session_id
                   return (
                     <div
                       key={session.session_id}
