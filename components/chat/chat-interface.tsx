@@ -51,7 +51,7 @@ export default function ChatInterface({
   const [activeSessionId, setActiveSessionId] = useState<string | null>(sessionId ?? null);
   const [chatKey, setChatKey] = useState<string>(() => {
     if (sessionId) return sessionId;
-    if (isNewChat) return "new-chat";
+    if (isNewChat) return `new-chat-${crypto.randomUUID()}`;
     return "chat-default";
   });
   const [newChatMode, setNewChatMode] = useState<boolean>(isNewChat && !sessionId);
@@ -59,6 +59,7 @@ export default function ChatInterface({
   const hasReportedSessionRef = useRef<boolean>(Boolean(sessionId));
   const previousSessionIdRef = useRef<string | null>(sessionId ?? null);
   const previousIsNewChatRef = useRef<boolean>(isNewChat);
+  const newChatInstanceRef = useRef<string | null>(isNewChat && !sessionId ? chatKey : null);
 
   const agentName = useMemo(
     () =>
@@ -85,9 +86,11 @@ export default function ChatInterface({
       creatingSessionRef.current = null;
     } else if ((sessionChanged || newChatFlagChanged) && isNewChat && !incomingSessionId) {
       // Explicitly starting a fresh chat from outside
+      const newInstanceKey = `new-chat-${crypto.randomUUID()}`;
       setActiveSessionId(null);
       setNewChatMode(true);
-      setChatKey("new-chat");
+      setChatKey(newInstanceKey);
+      newChatInstanceRef.current = newInstanceKey;
       hasReportedSessionRef.current = false;
       creatingSessionRef.current = null;
     }
@@ -164,6 +167,9 @@ export default function ChatInterface({
       params.set("session_id", activeSessionId);
     } else if (newChatMode) {
       params.set("new_chat", "true");
+      if (newChatInstanceRef.current) {
+        params.set("new_chat_instance", newChatInstanceRef.current);
+      }
     }
 
     const query = params.toString();
@@ -176,6 +182,10 @@ export default function ChatInterface({
       const userMessage = [...messages].reverse().find((message) => message.role === "user");
 
       const urlParams = new URLSearchParams({ session_id: sessionToUse });
+      // Preserve the new_chat_instance param to keep the cache key stable for the active chat
+      if (newChatInstanceRef.current && newChatMode && !activeSessionId) {
+        urlParams.set("new_chat_instance", newChatInstanceRef.current);
+      }
       const url = `/api/thesys/chat?${urlParams.toString()}`;
 
       return fetch(url, {
