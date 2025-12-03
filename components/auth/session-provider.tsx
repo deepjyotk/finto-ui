@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useDispatch } from 'react-redux'
-import { setUser, logout, setLoading } from '@/lib/features/auth/auth-slice'
+import { setUser, logout, setLoading } from '@/lib/slices/auth'
 import { getSession } from '@/lib/auth/session'
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {

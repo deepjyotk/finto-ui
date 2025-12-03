@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { useDispatch } from "react-redux"
 import { useRouter } from "next/navigation"
-import { logout } from "@/lib/features/auth/auth-slice"
+import { logout } from "@/lib/slices/auth"
 import { signOut } from "@/lib/auth/session"
 import UserInitialsAvatar from "@/components/landing/UserInitialsAvatar"
 import {
@@ -73,5 +73,4 @@ export default function UserMenu({
     </AlertDialog>
   )
 }
-
 

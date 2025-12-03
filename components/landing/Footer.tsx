@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo-brokerbuddy.svg" alt="Finto" className="h-6 w-6" />
+            {/* <img src="/logo-brokerbuddy.svg" alt="Finto" className="h-6 w-6" /> */}
             <span className="font-semibold">Finto</span>
           </div>
           <nav className="flex gap-4 text-sm text-[#9AA7B2]">

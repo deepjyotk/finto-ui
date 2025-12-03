@@ -13,7 +13,7 @@
  */
 
 import React, { useEffect, useRef, useCallback } from "react";
-import type { Message } from "@/lib/features/chat/chat-slice";
+import type { Message } from "@/lib/slices/chat";
 import MessageItem from "./message-item";
 import { Loader2 } from "lucide-react";
 

@@ -496,6 +496,49 @@
         }
       }
     },
+    "/api/v1/thesys/session/{session_id}": {
+      "get": {
+        "tags": [
+          "thesys-chat"
+        ],
+        "summary": "Get messages for a specific session",
+        "description": "Returns all messages for a given session ID, ordered by sequence number.",
+        "operationId": "get_session_api_v1_thesys_session__session_id__get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionMessageConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/thesys/chat": {
       "post": {
         "tags": [
@@ -1561,6 +1604,29 @@
         "title": "LLMModel",
         "description": "Supported AI models with associated LLM kwargs.\n\nEach enum member stores both the model name and its configuration kwargs.\nAccess the model name with `.value['model']` or `.model_name`\nAccess the kwargs with `.value['kwargs']` or `.llm_kwargs`"
       },
+      "MessageItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "seq_no": {
+            "type": "integer",
+            "title": "Seq No"
+          },
+          "message_payload": {
+            "type": "string",
+            "title": "Message Payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "seq_no",
+          "message_payload"
+        ],
+        "title": "MessageItem"
+      },
       "SendTemplateRequest": {
         "properties": {
           "to": {
@@ -1692,6 +1758,27 @@
           "started_at"
         ],
         "title": "SessionItem"
+      },
+      "SessionMessageConfig": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/MessageItem"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "messages"
+        ],
+        "title": "SessionMessageConfig"
       },
       "SessionResponse": {
         "properties": {

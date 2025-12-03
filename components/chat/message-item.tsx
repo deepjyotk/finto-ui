@@ -13,7 +13,7 @@
  */
 
 import React, { useCallback, useState } from "react";
-import type { Message } from "@/lib/features/chat/chat-slice";
+import type { Message } from "@/lib/slices/chat";
 import { Copy, ThumbsUp, ThumbsDown, RotateCcw, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSelector } from "react-redux";

@@ -7,21 +7,24 @@ import UserInitialsAvatar from "@/components/landing/UserInitialsAvatar"
 import useKiteConnection from "@/lib/hooks/use-kite-connection"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
-import { apiClient } from "@/lib/api/client"
+import { ArrowRight } from "lucide-react"
+import { createWhatsAppConnectIntent } from "@/lib/api/integrations_api"
 import { useState } from "react"
+import AuthModal from "@/components/auth/auth-modal"
 
 export default function Hero() {
   const { user, isAuthenticated } = useSelector((s: RootState) => s.auth)
   const { connected, getLoginUrl } = useKiteConnection()
   const router = useRouter()
   const [isConnectingWhatsApp, setIsConnectingWhatsApp] = useState(false)
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
   const handleWhatsAppConnect = async () => {
     if (!user?.user_id) return
     
     setIsConnectingWhatsApp(true)
     try {
-      const response = await apiClient.createWhatsAppConnectIntent({
+      const response = await createWhatsAppConnectIntent({
         ttl_minutes: 10
       })
       
@@ -63,7 +66,7 @@ export default function Hero() {
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.05 }}
           className="mt-6 text-4xl font-semibold tracking-tight sm:text-6xl"
         >
-          Invest smarter. React faster.
+          Your AI layer on top of markets and your portfolio.
         </motion.h1>
 
         <motion.p
@@ -73,7 +76,7 @@ export default function Hero() {
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
           className="mx-auto mt-5 max-w-2xl text-base text-[#9AA7B2] sm:text-lg"
         >
-          Finto keeps you ahead of market shifts by delivering real-time portfolio insights and risk alerts—right where you already work and chat. No dashboards. No logins. No noise.
+          Ask anything about stocks, fundamentals, technicals, or macro. Link your portfolio for personalized risk alerts and smart exposure analysis. No portals. No dashboards. Pure intelligence—delivered where you already work and communicate
         </motion.p>
 
         <motion.div
@@ -128,16 +131,23 @@ export default function Hero() {
               </span>
             </div>
           )} */}
-          <a
-            href="#showcase"
-            className="rounded-2xl bg-white/10 hover:bg-white/15 text-white font-semibold px-6 py-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+          <button
+            onClick={() => {
+              if (isAuthenticated) {
+                router.push('/chat')
+              } else {
+                setShowAuthModal(true)
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-transparent hover:bg-white/10 text-white font-semibold px-6 py-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
           >
-            See How It Works
-          </a>
+            Try Playground
+            <ArrowRight className="h-4 w-4" />
+          </button>
+          <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} defaultMode="register" />
         </motion.div>
       </div>
     </section>
   )
 }
-
 

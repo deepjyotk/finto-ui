@@ -1,9 +1,7 @@
-"use client"
-
-import type React from "react"
+import type { ReactNode } from "react"
 import Sidebar from "@/components/layout/sidebar"
 
-export default function ChatLayout({ children }: { children: React.ReactNode }) {
+export default function ChatLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-screen bg-[#343541] overflow-hidden">
       <Sidebar />
@@ -13,4 +11,3 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
     </div>
   )
 }
-

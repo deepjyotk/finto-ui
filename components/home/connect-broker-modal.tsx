@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import type { BrokerPayload } from "@/lib/api/client"
+import type { BrokerPayload } from "@/lib/api/integrations_api"
 
 interface ConnectBrokerModalProps {
   isOpen: boolean
@@ -172,4 +172,3 @@ export function ConnectBrokerModal({
     </Dialog>
   )
 }
-

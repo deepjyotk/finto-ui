@@ -14,7 +14,7 @@ import useKiteConnection from "@/lib/hooks/use-kite-connection"
 const navItems = [
   { href: "#features", label: "Features" },
   { href: "#how", label: "How it works" },
-  { href: "#showcase", label: "Showcase" },
+  // { href: "#showcase", label: "Showcase" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
 ]

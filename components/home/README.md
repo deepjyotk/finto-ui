@@ -93,7 +93,7 @@ Main home page that orchestrates all components.
 
 ## Type Definitions
 
-All types are defined in `lib/api/client.ts`:
+All types are defined in `lib/api/integrations_api.ts`:
 
 ```typescript
 interface WhatsAppPayload {
@@ -142,4 +142,3 @@ All components use:
 - shadcn/ui components for consistency
 - Lucide React icons
 - Responsive design with mobile-first approach
-

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { apiClient } from '@/lib/api/client'
+import { getKiteLoginUrl, kiteStatus, kiteTokenInfo } from '@/lib/api/integrations_api'
 
 type KiteConnectionState = {
   loading: boolean
@@ -24,7 +24,7 @@ export function useKiteConnection({ shouldPoll = false, intervalMs = 1500 } = {}
 
   const checkOnce = async () => {
     try {
-      const res = await apiClient.kiteTokenInfo()
+      const res = await kiteTokenInfo()
       if (res?.connected) {
         setState({ loading: false, connected: true, session: res?.session, source: 'token' })
         return true
@@ -36,7 +36,7 @@ export function useKiteConnection({ shouldPoll = false, intervalMs = 1500 } = {}
 
     // Fallback: public status endpoint (might show anonymous connection)
     try {
-      const statusRes = await apiClient.kiteStatus()
+      const statusRes = await kiteStatus()
       if (statusRes?.connected) {
         setState((s) => ({ ...s, loading: false, connected: true, source: 'status' }))
         return true
@@ -67,7 +67,7 @@ export function useKiteConnection({ shouldPoll = false, intervalMs = 1500 } = {}
 
   const actions = useMemo(() => ({
     // Prefer to navigate browser directly; returning URL allows buttons to set window.location
-    getLoginUrl: () => apiClient.getKiteLoginUrl(),
+    getLoginUrl: () => getKiteLoginUrl(),
     refresh: () => checkOnce(),
   }), [])
 

@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api/client'
+import { getCurrentUser, logout, verifyAuth as verifyAuthApi } from '@/lib/api/auth_api'
 
 export interface SessionUser {
   user_id: string
@@ -28,7 +28,7 @@ const toSessionUser = (
  */
 export async function getSession(): Promise<{ user: SessionUser | null }> {
   try {
-    const data = await apiClient.getCurrentUser()
+    const data = await getCurrentUser()
     const user = toSessionUser(data)
 
     return { user }
@@ -44,14 +44,14 @@ export async function getSession(): Promise<{ user: SessionUser | null }> {
  */
 export async function verifyAuth(): Promise<{ authenticated: boolean; user?: SessionUser }> {
   try {
-    await apiClient.verifyAuth()
+    await verifyAuthApi()
   } catch (error) {
     console.error('Error verifying auth:', error)
     return { authenticated: false }
   }
 
   try {
-    const currentUser = await apiClient.getCurrentUser()
+    const currentUser = await getCurrentUser()
     const user = toSessionUser(currentUser)
 
     if (user) {
@@ -71,7 +71,7 @@ export async function verifyAuth(): Promise<{ authenticated: boolean; user?: Ses
  */
 export async function signOut(): Promise<{ success: boolean; error?: string }> {
   try {
-    await apiClient.logout()
+    await logout()
     return { success: true }
   } catch (error) {
     console.error('Error signing out:', error)

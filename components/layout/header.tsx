@@ -2,8 +2,8 @@
 
 import { useSelector, useDispatch } from "react-redux"
 import type { RootState } from "@/lib/store"
-import { logout } from "@/lib/features/auth/auth-slice"
-import { toggleSidebar } from "@/lib/features/ui/ui-slice"
+import { logout } from "@/lib/slices/auth"
+import { toggleSidebar } from "@/lib/slices/ui"
 import { signOut } from "@/lib/auth/session"
 import { Button } from "@/components/ui/button"
 import { Menu, Plus, Sparkles } from "lucide-react"

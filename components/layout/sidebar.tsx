@@ -6,11 +6,10 @@ import { useSelector, useDispatch } from "react-redux"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import type { RootState } from "@/lib/store"
-import { setSidebarOpen, toggleSidebarCollapsed } from "@/lib/features/ui/ui-slice"
-import { logout } from "@/lib/features/auth/auth-slice"
+import { setSidebarOpen, toggleSidebarCollapsed } from "@/lib/slices/ui"
+import { logout } from "@/lib/slices/auth"
 import { signOut } from "@/lib/auth/session"
-import { apiClient } from "@/lib/api/client"
-import type { SessionItem } from "@/lib/api/client"
+import { getSessions, type SessionItem } from "@/lib/api/chat_api"
 import { Button } from "@/components/ui/button"
 import {
   Plus,
@@ -44,7 +43,7 @@ export default function Sidebar() {
   const loadSessions = async () => {
     try {
       setLoading(true)
-      const response = await apiClient.getSessions()
+      const response = await getSessions()
       setSessions(response.sessions)
     } catch (error) {
       console.error("Failed to load sessions:", error)

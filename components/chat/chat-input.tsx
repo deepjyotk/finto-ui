@@ -15,14 +15,13 @@
 import type React from "react"
 import { useState } from "react"
 import { useDispatch } from "react-redux"
-import { addMessage, startNewConversation } from "@/lib/features/chat/chat-slice"
+import { addMessage, startNewConversation } from "@/lib/slices/chat"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Send } from "lucide-react"
 import { useSelector } from "react-redux"
 import { useRouter } from "next/navigation"
 import type { RootState } from "@/lib/store"
-import { apiClient } from "@/lib/api/client"
 
 /** @deprecated Use C1Chat component instead */
 export default function ChatInput() {

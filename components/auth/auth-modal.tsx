@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { apiClient } from "@/lib/api/client"
-import { setUser, setLoading } from "@/lib/features/auth/auth-slice"
+import { login, register } from "@/lib/api/auth_api"
+import { setUser, setLoading } from "@/lib/slices/auth"
 import type { LoginFormData, RegisterFormData } from "@/types/auth"
 
 interface AuthModalProps {
@@ -68,7 +68,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
 
     try {
       // Login and get authenticated user (JWT set in httpOnly cookie)
-      const userData = await apiClient.login({
+      const userData = await login({
         username: loginForm.username,
         password: loginForm.password,
       })
@@ -114,7 +114,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
 
     try {
       // Register user
-      await apiClient.register({
+      await register({
         username: registerForm.username,
         email: registerForm.email,
         full_name: registerForm.full_name,
@@ -122,7 +122,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
       })
 
       // Auto-login after registration
-      const loginUser = await apiClient.login({
+      const loginUser = await login({
         username: registerForm.username,
         password: registerForm.password,
       })

@@ -1,13 +1,15 @@
 import { configureStore } from "@reduxjs/toolkit"
-import chatReducer from "./features/chat/chat-slice"
-import authReducer from "./features/auth/auth-slice"
-import uiReducer from "./features/ui/ui-slice"
+import authReducer from "./slices/auth"
+import chatReducer from "./slices/chat"
+import uiReducer from "./slices/ui"
+import welcomeReducer from "./slices/welcome"
 
 export const store = configureStore({
   reducer: {
     chat: chatReducer,
     auth: authReducer,
     ui: uiReducer,
+    welcome: welcomeReducer,
   },
 })
 

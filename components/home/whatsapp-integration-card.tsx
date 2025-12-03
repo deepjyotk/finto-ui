@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { MessageSquare, Trash2, Plus } from "lucide-react"
 import { DeleteWhatsAppModal } from "./delete-whatsapp-modal"
-import type { WhatsAppPayload } from "@/lib/api/client"
+import type { WhatsAppPayload } from "@/lib/api/integrations_api"
 
 interface WhatsAppIntegrationCardProps {
   whatsappData: WhatsAppPayload | null
@@ -96,4 +96,3 @@ export function WhatsAppIntegrationCard({
     </>
   )
 }
-

@@ -1,10 +1,10 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 export interface UIState {
-  sidebarOpen: boolean
-  sidebarCollapsed: boolean
-  theme: "light" | "dark"
-  isTyping: boolean
+  sidebarOpen: boolean;
+  sidebarCollapsed: boolean;
+  theme: "light" | "dark";
+  isTyping: boolean;
 }
 
 const initialState: UIState = {
@@ -12,32 +12,32 @@ const initialState: UIState = {
   sidebarCollapsed: false,
   theme: "light",
   isTyping: false,
-}
+};
 
 const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
     toggleSidebar: (state) => {
-      state.sidebarOpen = !state.sidebarOpen
+      state.sidebarOpen = !state.sidebarOpen;
     },
     setSidebarOpen: (state, action: PayloadAction<boolean>) => {
-      state.sidebarOpen = action.payload
+      state.sidebarOpen = action.payload;
     },
     toggleSidebarCollapsed: (state) => {
-      state.sidebarCollapsed = !state.sidebarCollapsed
+      state.sidebarCollapsed = !state.sidebarCollapsed;
     },
     setSidebarCollapsed: (state, action: PayloadAction<boolean>) => {
-      state.sidebarCollapsed = action.payload
+      state.sidebarCollapsed = action.payload;
     },
     setTheme: (state, action: PayloadAction<"light" | "dark">) => {
-      state.theme = action.payload
+      state.theme = action.payload;
     },
     setTyping: (state, action: PayloadAction<boolean>) => {
-      state.isTyping = action.payload
+      state.isTyping = action.payload;
     },
   },
-})
+});
 
 export const {
   toggleSidebar,
@@ -46,5 +46,5 @@ export const {
   setSidebarCollapsed,
   setTheme,
   setTyping,
-} = uiSlice.actions
-export default uiSlice.reducer
+} = uiSlice.actions;
+export default uiSlice.reducer;
