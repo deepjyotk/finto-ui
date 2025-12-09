@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import type { MessageItem, SessionItem } from "@/lib/api/chat_api"
@@ -21,11 +21,13 @@ export default function ChatPageClient({
 }: ChatPageClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const searchParamsKey = searchParams?.toString()
   const params = useParams<{ sessionId?: string }>()
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? [])
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId)
   const [isLoadingMessages, setIsLoadingMessages] = useState(true)
+  const lastResolvedSessionRef = useRef<string | null>(null)
 
   const normalizeApiMessages = useCallback((items: MessageItem[] | undefined): ChatMessage[] => {
     if (!items || items.length === 0) return []
@@ -52,8 +54,16 @@ export default function ChatPageClient({
       const paramsSessionIdRaw = Array.isArray(params?.sessionId)
         ? params?.sessionId[0]
         : params?.sessionId
-      const searchSessionId = searchParams?.get("session_id") || searchParams?.get("sessionId")
+      const urlSearchParams = new URLSearchParams(searchParamsKey || "")
+      const searchSessionId = urlSearchParams.get("session_id") || urlSearchParams.get("sessionId")
       const normalizedSessionId = (paramsSessionIdRaw || searchSessionId || "").trim()
+      const sessionResolutionKey = normalizedSessionId || "new"
+
+      // Avoid re-running initialization for the same session (prevents duplicate creations)
+      if (lastResolvedSessionRef.current === sessionResolutionKey) {
+        return
+      }
+      lastResolvedSessionRef.current = sessionResolutionKey
       const isNewChat = !normalizedSessionId || normalizedSessionId.toLowerCase() === "new"
 
       // Always start fresh when resolving session
@@ -105,7 +115,14 @@ export default function ChatPageClient({
     }
 
     void initializeSession()
-  }, [params?.sessionId, searchParams, router, initialMessages, initialSessionId, normalizeApiMessages])
+  }, [
+    params?.sessionId,
+    searchParamsKey,
+    router,
+    initialMessages,
+    initialSessionId,
+    normalizeApiMessages,
+  ])
 
   const sendMessage = useCallback(async (messageContent: string) => {
     if (!messageContent.trim() || isLoading || !sessionId) return
