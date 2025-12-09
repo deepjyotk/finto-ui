@@ -10,7 +10,7 @@ import type { RootState } from "@/lib/store"
 import { setSidebarOpen, toggleSidebarCollapsed } from "@/lib/slices/ui"
 import { logout } from "@/lib/slices/auth"
 import { signOut } from "@/lib/auth/session"
-import { getSessions, type SessionItem } from "@/lib/api/chat_api"
+import { getSessions, deleteSession, type SessionItem } from "@/lib/api/chat_api"
 import { Button } from "@/components/ui/button"
 import {
   Plus,
@@ -21,6 +21,7 @@ import {
   Cable,
   PanelLeftClose,
   PanelLeftOpen,
+  Trash2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -85,6 +86,37 @@ export default function Sidebar() {
       }
     } catch (error) {
       console.error('Failed to logout:', error)
+    }
+  }
+
+  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    try {
+      const activeSessionId = pathname?.startsWith("/chat/")
+        ? pathname.split("/")[2] ?? null
+        : null
+      const wasActive = activeSessionId === sessionId
+      
+      await deleteSession(sessionId)
+      // Refresh sessions list
+      const response = await getSessions()
+      const updatedSessions = response.sessions
+      setSessions(updatedSessions)
+      
+      // If deleted session was the active one, redirect to next available session
+      if (wasActive) {
+        if (updatedSessions.length > 0) {
+          // Redirect to the first session (most recent)
+          router.push(`/chat/${updatedSessions[0].session_id}`)
+        } else {
+          // No sessions left, go to new chat
+          router.push("/chat/new")
+        }
+      }
+    } catch (error) {
+      console.error("Failed to delete session:", error)
     }
   }
 
@@ -184,27 +216,50 @@ export default function Sidebar() {
                     const sessionDate = formatDate(session.started_at)
 
                     return (
-                      <Link
+                      <div
                         key={session.session_id}
-                      href={`/chat/${session.session_id}`}
-                      prefetch={false}
-                      className={cn(
-                        "group flex items-center gap-3 rounded-md p-3 transition-colors hover:bg-white/10",
-                        isActive && "bg-white/10",
-                      )}
-                        onClick={() => {
-                          dispatch(setSidebarOpen(false))
-                        }}
+                        className={cn(
+                          "group flex items-center gap-3 rounded-md p-3 transition-colors hover:bg-white/10",
+                          isActive && "bg-white/10",
+                        )}
                       >
-                        <MessageSquare className="h-4 w-4 flex-shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm">Chat Session</div>
-                          <div className="text-xs text-gray-400 truncate">{sessionDate}</div>
-                          <div className="text-xs text-gray-500 truncate font-mono" title={session.session_id}>
-                            {session.session_id.substring(0, 8)}...
+                        <Link
+                          href={`/chat/${session.session_id}`}
+                          prefetch={false}
+                          className="flex items-center gap-3 flex-1 min-w-0"
+                          onClick={() => {
+                            dispatch(setSidebarOpen(false))
+                          }}
+                        >
+                          <MessageSquare className="h-4 w-4 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm">Chat Session</div>
+                            <div className="text-xs text-gray-400 truncate">{sessionDate}</div>
+                            <div className="text-xs text-gray-500 truncate font-mono" title={session.session_id}>
+                              {session.session_id.substring(0, 8)}...
+                            </div>
                           </div>
-                        </div>
-                      </Link>
+                        </Link>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <div
+                              className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 opacity-30 group-hover:opacity-100 transition-opacity flex-shrink-0 relative z-10 rounded-md cursor-pointer"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </div>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 bg-[#202123] border-white/10">
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={(e) => handleDeleteSession(session.session_id, e)}
+                              className="text-red-400 hover:bg-red-500/10 hover:text-red-400 cursor-pointer"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     )
                   })
                 ) : (

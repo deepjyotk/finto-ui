@@ -455,26 +455,6 @@
       }
     },
     "/api/v1/thesys/session": {
-      "get": {
-        "tags": [
-          "thesys-chat"
-        ],
-        "summary": "Get all chat sessions for the authenticated user",
-        "description": "Returns all past chat sessions for the authenticated user, sorted by most recent first.",
-        "operationId": "get_sessions_api_v1_thesys_session_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionsListResponse"
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
         "tags": [
           "thesys-chat"
@@ -489,6 +469,65 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "thesys-chat"
+        ],
+        "summary": "Get chat sessions for the authenticated user (paginated)",
+        "description": "Returns past chat sessions for the authenticated user, sorted by most recent first. Supports optional pagination via page and page_limit query parameters. If not provided, defaults to page=1 and page_limit=10. Maximum page_limit is 100.",
+        "operationId": "get_sessions_api_v1_thesys_session_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Page number (1-indexed). Optional, defaults to 1.",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed). Optional, defaults to 1."
+          },
+          {
+            "name": "page_limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Number of sessions per page. Optional, defaults to 10. Maximum is 100.",
+              "default": 10,
+              "title": "Page Limit"
+            },
+            "description": "Number of sessions per page. Optional, defaults to 10. Maximum is 100."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionsListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -522,6 +561,47 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionMessageConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "thesys-chat"
+        ],
+        "summary": "Delete a chat session",
+        "description": "Deletes a chat session and all its associated messages. Only the owner of the session can delete it.",
+        "operationId": "delete_session_api_v1_thesys_session__session_id__delete",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
                 }
               }
             }
@@ -1023,6 +1103,15 @@
         "type": "object",
         "title": "ChatIntegration",
         "description": "Chat integration wrapper"
+      },
+      "ChatMessageType": {
+        "type": "string",
+        "enum": [
+          "User",
+          "AI"
+        ],
+        "title": "ChatMessageType",
+        "description": "Enum for chat message types."
       },
       "ChatRequest": {
         "properties": {
@@ -1617,13 +1706,17 @@
           "message_payload": {
             "type": "string",
             "title": "Message Payload"
+          },
+          "message_type": {
+            "$ref": "#/components/schemas/ChatMessageType"
           }
         },
         "type": "object",
         "required": [
           "id",
           "seq_no",
-          "message_payload"
+          "message_payload",
+          "message_type"
         ],
         "title": "MessageItem"
       },
@@ -1806,11 +1899,36 @@
             },
             "type": "array",
             "title": "Sessions"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_limit": {
+            "type": "integer",
+            "title": "Page Limit"
+          },
+          "total_sessions": {
+            "type": "integer",
+            "title": "Total Sessions"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          },
+          "has_next_page": {
+            "type": "boolean",
+            "title": "Has Next Page"
           }
         },
         "type": "object",
         "required": [
-          "sessions"
+          "sessions",
+          "page",
+          "page_limit",
+          "total_sessions",
+          "total_pages",
+          "has_next_page"
         ],
         "title": "SessionsListResponse"
       },

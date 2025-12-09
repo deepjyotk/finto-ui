@@ -51,3 +51,8 @@ export const getSessionMessages = (sessionId: string) =>
   apiClient.request<SessionMessagesResponse>(`/api/v1/thesys/session/${sessionId}`, {
     method: "GET",
   });
+
+export const deleteSession = (sessionId: string) =>
+  apiClient.request<void>(`/api/v1/thesys/session/${sessionId}`, {
+    method: "DELETE",
+  });

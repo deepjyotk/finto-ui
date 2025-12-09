@@ -67,7 +67,8 @@ export default function ChatDisplay({ messages, onAction }: ChatDisplayProps) {
                   )}
                 >
                   {message.role === "assistant" ? (
-                    <div className="-mx-4 -my-3 w-full rounded-xl border border-white/5 bg-[var(--chat-surface)]/90 p-4 shadow-lg backdrop-blur">
+                    // comment below div
+                     <div className="-mx-4 -my-3 w-full rounded-xl border border-white/5 bg-[var(--chat-surface)]/90 p-4 shadow-lg backdrop-blur">
                       <C1Component
                         c1Response={message.content}
                         isStreaming={message.isStreaming || false}

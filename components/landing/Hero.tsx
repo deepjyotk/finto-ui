@@ -11,32 +11,14 @@ import { ArrowRight } from "lucide-react"
 import { createWhatsAppConnectIntent } from "@/lib/api/integrations_api"
 import { useState } from "react"
 import AuthModal from "@/components/auth/auth-modal"
+import { apiClient } from "@/lib/api/client"
+import type { SessionsListResponse } from "@/lib/api/chat_api"
 
 export default function Hero() {
   const { user, isAuthenticated } = useSelector((s: RootState) => s.auth)
   const { connected, getLoginUrl } = useKiteConnection()
   const router = useRouter()
-  const [isConnectingWhatsApp, setIsConnectingWhatsApp] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
-
-  const handleWhatsAppConnect = async () => {
-    if (!user?.user_id) return
-    
-    setIsConnectingWhatsApp(true)
-    try {
-      const response = await createWhatsAppConnectIntent({
-        ttl_minutes: 10
-      })
-      
-      // Open the WhatsApp deeplink in a new tab
-      window.open(response.deeplink, '_blank')
-    } catch (error) {
-      console.error('Failed to create WhatsApp connect intent:', error)
-      alert('Failed to connect WhatsApp. Please try again.')
-    } finally {
-      setIsConnectingWhatsApp(false)
-    }
-  }
 
   return (
     <section
@@ -115,26 +97,21 @@ export default function Hero() {
               </Button>
             )
           )} */}
-          {/* {isAuthenticated && (
-            <div className="flex flex-col items-center gap-1">
-              <Button
-                size="lg"
-                variant="secondary"
-                onClick={handleWhatsAppConnect}
-                disabled={isConnectingWhatsApp}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                {isConnectingWhatsApp ? 'Connecting...' : '📱 Connect WhatsApp'}
-              </Button>
-              <span className="text-xs text-[#9AA7B2] max-w-[200px] text-center">
-                Chat with Finto directly on WhatsApp for portfolio insights and alerts.
-              </span>
-            </div>
-          )} */}
           <button
-            onClick={() => {
+            onClick={async () => {
               if (isAuthenticated) {
-                router.push('/chat/new')
+                try {
+                  const sessionResponse = await apiClient.request<SessionsListResponse>(
+                    "/api/v1/thesys/session?page=1&page_limit=1",
+                    { method: "GET" },
+                  )
+
+                  const latestSessionId = sessionResponse.sessions?.[0]?.session_id
+                  router.push(latestSessionId ? `/chat/${latestSessionId}` : "/chat/new")
+                } catch (error) {
+                  console.error("Failed to load sessions:", error)
+                  router.push('/chat/new')
+                }
               } else {
                 setShowAuthModal(true)
               }
@@ -150,4 +127,3 @@ export default function Hero() {
     </section>
   )
 }
-
