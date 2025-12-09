@@ -20,6 +20,7 @@ export interface MessageItem {
   id: string;
   seq_no: number;
   message_payload: string;
+  message_type?: string;
 }
 
 export interface SessionResponse {

@@ -3,23 +3,47 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
-import type { SessionItem } from "@/lib/api/chat_api"
+import type { MessageItem, SessionItem } from "@/lib/api/chat_api"
 import { createChatSession, getSessionMessages } from "@/lib/api/chat_api"
 import ChatDisplay, { type ChatMessage, type C1ActionEvent } from "@/components/chat/chat-display"
 import UserTextEnter from "@/components/chat/user-text-enter"
 
 interface ChatPageClientProps {
   initialSessions: SessionItem[]
+  initialMessages?: ChatMessage[]
+  initialSessionId?: string | null
 }
 
-export default function ChatPageClient({ initialSessions }: ChatPageClientProps) {
+export default function ChatPageClient({
+  initialSessions: _initialSessions,
+  initialMessages,
+  initialSessionId = null,
+}: ChatPageClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const params = useParams<{ sessionId?: string }>()
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? [])
   const [isLoading, setIsLoading] = useState(false)
-  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [sessionId, setSessionId] = useState<string | null>(initialSessionId)
   const [isLoadingMessages, setIsLoadingMessages] = useState(true)
+
+  const normalizeApiMessages = useCallback((items: MessageItem[] | undefined): ChatMessage[] => {
+    if (!items || items.length === 0) return []
+
+    return [...items]
+      .sort((a, b) => (a?.seq_no || 0) - (b?.seq_no || 0))
+      .map((msg) => {
+        const role = (msg?.message_type || "").toLowerCase() === "ai" ? "assistant" : "user"
+
+        const content = msg?.message_payload || ""
+
+        return {
+          id: msg?.id || `msg-${msg?.seq_no ?? Math.random()}`,
+          role,
+          content,
+        }
+      })
+  }, [])
 
   // Initialize session and load messages
   useEffect(() => {
@@ -34,6 +58,19 @@ export default function ChatPageClient({ initialSessions }: ChatPageClientProps)
 
       // Always start fresh when resolving session
       setIsLoadingMessages(true)
+
+      const hasPrefetchedSession =
+        !!initialSessionId &&
+        !!normalizedSessionId &&
+        normalizedSessionId === initialSessionId &&
+        initialMessages !== undefined
+
+      if (hasPrefetchedSession) {
+        setSessionId(initialSessionId)
+        setMessages(initialMessages ?? [])
+        setIsLoadingMessages(false)
+        return
+      }
 
       if (isNewChat) {
         try {
@@ -56,47 +93,9 @@ export default function ChatPageClient({ initialSessions }: ChatPageClientProps)
       try {
         const sessionData = await getSessionMessages(normalizedSessionId)
         if (sessionData?.messages) {
-          // Convert API messages to chat messages
-          const chatMessages: ChatMessage[] = []
-          let currentUserMessage: string | null = null
-
-          for (const msg of sessionData.messages) {
-            try {
-              const payload = JSON.parse(msg.message_payload)
-              if (payload.role === "user") {
-                currentUserMessage = payload.content || ""
-              } else if (payload.role === "assistant" && currentUserMessage) {
-                // Pair user and assistant messages
-                chatMessages.push({
-                  id: `user-${msg.seq_no}`,
-                  role: "user",
-                  content: currentUserMessage,
-                })
-                chatMessages.push({
-                  id: `assistant-${msg.seq_no}`,
-                  role: "assistant",
-                  content: payload.content || "",
-                })
-                currentUserMessage = null
-              }
-            } catch (e) {
-              // If parsing fails, treat as plain text
-              if (currentUserMessage) {
-                chatMessages.push({
-                  id: `user-${msg.seq_no}`,
-                  role: "user",
-                  content: currentUserMessage,
-                })
-                chatMessages.push({
-                  id: `assistant-${msg.seq_no}`,
-                  role: "assistant",
-                  content: msg.message_payload,
-                })
-                currentUserMessage = null
-              }
-            }
-          }
-          setMessages(chatMessages)
+          setMessages(normalizeApiMessages(sessionData.messages))
+        } else {
+          setMessages([])
         }
       } catch (error) {
         console.error("Failed to load messages:", error)
@@ -106,7 +105,7 @@ export default function ChatPageClient({ initialSessions }: ChatPageClientProps)
     }
 
     void initializeSession()
-  }, [params?.sessionId, searchParams, router])
+  }, [params?.sessionId, searchParams, router, initialMessages, initialSessionId, normalizeApiMessages])
 
   const sendMessage = useCallback(async (messageContent: string) => {
     if (!messageContent.trim() || isLoading || !sessionId) return
