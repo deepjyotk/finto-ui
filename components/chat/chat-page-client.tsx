@@ -1,172 +1,283 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Plus, MessageSquare } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import dynamic from "next/dynamic"
+import { useState, useEffect, useCallback } from "react"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { Loader2 } from "lucide-react"
 import type { SessionItem } from "@/lib/api/chat_api"
+import { createChatSession, getSessionMessages } from "@/lib/api/chat_api"
+import ChatDisplay, { type ChatMessage, type C1ActionEvent } from "@/components/chat/chat-display"
+import UserTextEnter from "@/components/chat/user-text-enter"
 
-// Dynamically import ChatInterface to reduce initial bundle size
-// C1Chat and Crayon UI are heavy dependencies that should only load when needed
-const ChatInterface = dynamic(() => import("@/components/chat/chat-interface"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-[calc(100vh-64px)] bg-[#050509]">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-        <p className="text-gray-400">Loading chat interface...</p>
-      </div>
-    </div>
-  ),
-})
-
-type ChatPageClientProps = {
-  initialSessions?: SessionItem[]
+interface ChatPageClientProps {
+  initialSessions: SessionItem[]
 }
 
-export default function ChatPageClient({ initialSessions = [] }: ChatPageClientProps) {
+export default function ChatPageClient({ initialSessions }: ChatPageClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [sessions, setSessions] = useState<SessionItem[]>(initialSessions)
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
-  const [isNewChat, setIsNewChat] = useState(false)
+  const params = useParams<{ sessionId?: string }>()
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true)
 
+  // Initialize session and load messages
   useEffect(() => {
-    const sessionParam = searchParams?.get("session")
-    const isNewParam = searchParams?.get("new") === "true"
+    const initializeSession = async () => {
+      // Extract session ID from dynamic route or query params
+      const paramsSessionIdRaw = Array.isArray(params?.sessionId)
+        ? params?.sessionId[0]
+        : params?.sessionId
+      const searchSessionId = searchParams?.get("session_id") || searchParams?.get("sessionId")
+      const normalizedSessionId = (paramsSessionIdRaw || searchSessionId || "").trim()
+      const isNewChat = !normalizedSessionId || normalizedSessionId.toLowerCase() === "new"
 
-    if (sessionParam) {
-      setSelectedSessionId(sessionParam)
-      setIsNewChat(false)
-    } else if (isNewParam) {
-      setSelectedSessionId(null)
-      setIsNewChat(true)
-    } else {
-      setSelectedSessionId(null)
-      setIsNewChat(true)
-      router.replace("/chat?new=true")
+      // Always start fresh when resolving session
+      setIsLoadingMessages(true)
+
+      if (isNewChat) {
+        try {
+          const response = await createChatSession()
+          const newSessionId = response.session_id
+          setSessionId(newSessionId)
+          setMessages([])
+          // Replace URL with concrete session id to avoid duplicate creations
+          router.replace(`/chat/${newSessionId}`)
+        } catch (error) {
+          console.error("Failed to create session:", error)
+        } finally {
+          setIsLoadingMessages(false)
+        }
+        return
+      }
+
+      // Load existing session messages
+      setSessionId(normalizedSessionId)
+      try {
+        const sessionData = await getSessionMessages(normalizedSessionId)
+        if (sessionData?.messages) {
+          // Convert API messages to chat messages
+          const chatMessages: ChatMessage[] = []
+          let currentUserMessage: string | null = null
+
+          for (const msg of sessionData.messages) {
+            try {
+              const payload = JSON.parse(msg.message_payload)
+              if (payload.role === "user") {
+                currentUserMessage = payload.content || ""
+              } else if (payload.role === "assistant" && currentUserMessage) {
+                // Pair user and assistant messages
+                chatMessages.push({
+                  id: `user-${msg.seq_no}`,
+                  role: "user",
+                  content: currentUserMessage,
+                })
+                chatMessages.push({
+                  id: `assistant-${msg.seq_no}`,
+                  role: "assistant",
+                  content: payload.content || "",
+                })
+                currentUserMessage = null
+              }
+            } catch (e) {
+              // If parsing fails, treat as plain text
+              if (currentUserMessage) {
+                chatMessages.push({
+                  id: `user-${msg.seq_no}`,
+                  role: "user",
+                  content: currentUserMessage,
+                })
+                chatMessages.push({
+                  id: `assistant-${msg.seq_no}`,
+                  role: "assistant",
+                  content: msg.message_payload,
+                })
+                currentUserMessage = null
+              }
+            }
+          }
+          setMessages(chatMessages)
+        }
+      } catch (error) {
+        console.error("Failed to load messages:", error)
+      } finally {
+        setIsLoadingMessages(false)
+      }
     }
-  }, [searchParams, router])
 
-  const handleNewChat = () => {
-    setSelectedSessionId(null)
-    setIsNewChat(true)
-    router.push("/chat?new=true")
-  }
+    void initializeSession()
+  }, [params?.sessionId, searchParams, router])
 
-  const handleSessionClick = (sessionId: string) => {
-    setSelectedSessionId(sessionId)
-    setIsNewChat(false)
-    router.push(`/chat?session=${sessionId}`)
-  }
+  const sendMessage = useCallback(async (messageContent: string) => {
+    if (!messageContent.trim() || isLoading || !sessionId) return
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-
-    if (diffInHours < 24) {
-      return "Today"
-    } else if (diffInHours < 48) {
-      return "Yesterday"
-    } else if (diffInHours < 168) {
-      return `${Math.floor(diffInHours / 24)} days ago`
-    } else {
-      return date.toLocaleDateString()
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: messageContent.trim(),
     }
+
+    setMessages((prev) => [...prev, userMessage])
+    setIsLoading(true)
+
+    // Add placeholder for assistant response
+    const assistantMessageId = `assistant-${Date.now()}`
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: assistantMessageId,
+        role: "assistant",
+        content: "",
+        isStreaming: true,
+      },
+    ])
+
+    try {
+      const response = await fetch("/api/thesys/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message_payload: {
+            content: userMessage.content,
+          },
+          session_id: sessionId,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to send message: ${response.statusText}`)
+      }
+
+      // Check if response is streaming
+      const contentType = response.headers.get("content-type") || ""
+      if (contentType.includes("text/event-stream")) {
+        // Handle streaming response
+        const reader = response.body?.getReader()
+        const decoder = new TextDecoder()
+
+        if (reader) {
+          let accumulatedContent = ""
+
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+
+            const chunk = decoder.decode(value, { stream: true })
+            const cleanedChunk = chunk.replace(/^data:\s*/gm, "")
+
+            if (cleanedChunk.includes("[DONE]")) {
+              continue
+            }
+
+            accumulatedContent += cleanedChunk
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? { ...msg, content: accumulatedContent, isStreaming: true }
+                  : msg
+              )
+            )
+          }
+
+          // Mark streaming as complete
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId ? { ...msg, isStreaming: false } : msg
+            )
+          )
+        }
+      } else {
+        // Handle non-streaming response
+        const data = await response.json()
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? { ...msg, content: data.content || data.message || "No response", isStreaming: false }
+              : msg
+          )
+        )
+      }
+    } catch (error) {
+      console.error("Error sending message:", error)
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId
+            ? { ...msg, content: "Sorry, an error occurred. Please try again.", isStreaming: false }
+            : msg
+        )
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }, [isLoading, sessionId])
+
+  const sanitizeActionMessage = (raw: string) => {
+    if (!raw) return ""
+
+    // Drop any <context> blocks entirely
+    let cleaned = raw.replace(/<context>[\s\S]*?<\/context>/gi, "")
+
+    // If there's a <content> tag, prefer its inner text
+    const contentMatch = cleaned.match(/<content[^>]*>([\s\S]*?)<\/content>/i)
+    cleaned = contentMatch ? contentMatch[1] : cleaned
+
+    // Strip any remaining tags and trim whitespace
+    cleaned = cleaned.replace(/<\/?[^>]+>/g, "").trim()
+
+    return cleaned
   }
 
-  const sessionParam = searchParams?.get("session")
-  const isNewParam = searchParams?.get("new") === "true"
-  const showSessionList = !selectedSessionId && !isNewChat && !sessionParam && !isNewParam
+  const handleC1Action = useCallback(
+    (action: C1ActionEvent) => {
+      if (!action) return
 
-  if (showSessionList) {
+      const actionType = (action.type || "").toLowerCase()
+
+      // Non-conversation actions (e.g., open URL)
+      if (actionType && actionType !== "continue_conversation") {
+        if (actionType === "open_url") {
+          const url = action.params?.url
+          if (typeof window !== "undefined" && url) {
+            window.open(url, "_blank", "noopener,noreferrer")
+          }
+        }
+        return
+      }
+
+      const followUpMessage = sanitizeActionMessage(
+        action.params?.llmFriendlyMessage ||
+          action.llmFriendlyMessage ||
+          action.params?.humanFriendlyMessage ||
+          action.humanFriendlyMessage ||
+          (action.params ? JSON.stringify(action.params) : "")
+      )
+
+      if (followUpMessage) {
+        void sendMessage(followUpMessage)
+      }
+    },
+    [sendMessage]
+  )
+
+
+  if (isLoadingMessages) {
     return (
-      <div className="flex flex-col h-full bg-[#050509]">
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-semibold text-white">Chat Sessions</h1>
-              <Button
-                onClick={handleNewChat}
-                variant="secondary"
-                className="shadow-md hover:brightness-110"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Chat
-              </Button>
-            </div>
-
-            {sessions.length === 0 ? (
-              <div className="text-center text-gray-400 py-12">
-                <p className="mb-4">No chat sessions yet</p>
-                <Button
-                  onClick={handleNewChat}
-                  variant="secondary"
-                  className="shadow-md hover:brightness-110"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Start a new chat
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sessions.map((session) => (
-                  <div
-                    key={session.session_id}
-                    onClick={() => handleSessionClick(session.session_id)}
-                    className="group flex items-start gap-3 rounded-lg p-4 bg-[#202123] hover:bg-[#142135] cursor-pointer transition-colors border border-white/10 hover:border-[#003f7a]"
-                  >
-                    <div className="flex-shrink-0 p-2 rounded-md bg-[rgba(0,63,122,0.18)]">
-                      <MessageSquare className="h-5 w-5 text-[#e6f0ff]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-white truncate">
-                        Chat Session
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {formatDate(session.started_at)}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1 font-mono truncate" title={session.session_id}>
-                        {session.session_id}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
       </div>
     )
   }
 
   return (
-    <ChatInterface
-      sessionId={selectedSessionId}
-      isNewChat={isNewChat || isNewParam || (!selectedSessionId && !sessionParam)}
-      onSessionCreated={(sessionId) => {
-        setSelectedSessionId(sessionId)
-        setIsNewChat(false)
-        setSessions((currentSessions) => {
-          const alreadyExists = currentSessions.some(
-            (session) => session.session_id === sessionId
-          )
-
-          if (alreadyExists) {
-            return currentSessions
-          }
-
-          const newSession: SessionItem = {
-            session_id: sessionId,
-            started_at: new Date().toISOString(),
-          }
-
-          return [newSession, ...currentSessions]
-        })
-        router.push(`/chat?session=${sessionId}`)
-      }}
-    />
+    <div className="flex h-full flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)]">
+      <ChatDisplay messages={messages} onAction={handleC1Action} />
+      <UserTextEnter
+        onSendMessage={sendMessage}
+        disabled={isLoading}
+        sessionId={sessionId}
+      />
+    </div>
   )
 }

@@ -3,7 +3,8 @@
 import type React from "react"
 
 import { useSelector, useDispatch } from "react-redux"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { useRouter, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import type { RootState } from "@/lib/store"
 import { setSidebarOpen, toggleSidebarCollapsed } from "@/lib/slices/ui"
@@ -28,7 +29,6 @@ export default function Sidebar() {
   const dispatch = useDispatch()
   const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const { sidebarOpen, sidebarCollapsed } = useSelector((state: RootState) => state.ui)
   const { user } = useSelector((state: RootState) => state.auth)
   const [sessions, setSessions] = useState<SessionItem[]>([])
@@ -38,7 +38,7 @@ export default function Sidebar() {
     if (pathname?.startsWith("/chat")) {
       loadSessions()
     }
-  }, [pathname, searchParams?.toString()])
+  }, [pathname])
 
   const loadSessions = async () => {
     try {
@@ -53,13 +53,7 @@ export default function Sidebar() {
   }
 
   const handleNewChat = () => {
-    router.push("/chat?new=true")
-    dispatch(setSidebarOpen(false))
-  }
-
-  const handleSessionClick = (sessionId: string) => {
-    // Navigate to chat page - the page will handle loading the session
-    router.push(`/chat?session=${sessionId}`)
+    router.push("/chat/new")
     dispatch(setSidebarOpen(false))
   }
 
@@ -183,18 +177,24 @@ export default function Sidebar() {
                   <div className="py-4 text-center text-xs text-gray-500">Loading...</div>
                 ) : sessions.length > 0 ? (
                   sessions.map((session) => {
-                    const activeSessionId = searchParams?.get("session")
+                    const activeSessionId = pathname?.startsWith("/chat/")
+                      ? pathname.split("/")[2] ?? null
+                      : null
                     const isActive = activeSessionId === session.session_id
                     const sessionDate = formatDate(session.started_at)
 
                     return (
-                      <div
+                      <Link
                         key={session.session_id}
-                        className={cn(
-                          "group flex items-center gap-3 rounded-md p-3 transition-colors hover:bg-white/10",
-                          isActive && "bg-white/10",
-                        )}
-                        onClick={() => handleSessionClick(session.session_id)}
+                      href={`/chat/${session.session_id}`}
+                      prefetch={false}
+                      className={cn(
+                        "group flex items-center gap-3 rounded-md p-3 transition-colors hover:bg-white/10",
+                        isActive && "bg-white/10",
+                      )}
+                        onClick={() => {
+                          dispatch(setSidebarOpen(false))
+                        }}
                       >
                         <MessageSquare className="h-4 w-4 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
@@ -204,7 +204,7 @@ export default function Sidebar() {
                             {session.session_id.substring(0, 8)}...
                           </div>
                         </div>
-                      </div>
+                      </Link>
                     )
                   })
                 ) : (
@@ -214,20 +214,26 @@ export default function Sidebar() {
             ) : (
               <div className="flex flex-col items-center space-y-1 py-2">
                 {sessions.map((session) => {
-                  const activeSessionId = searchParams?.get("session")
+                  const activeSessionId = pathname?.startsWith("/chat/")
+                    ? pathname.split("/")[2] ?? null
+                    : null
                   const isActive = activeSessionId === session.session_id
                   return (
-                    <div
+                    <Link
                       key={session.session_id}
+                      href={`/chat/${session.session_id}`}
+                      prefetch={false}
                       title={`Session ${new Date(session.started_at).toLocaleDateString()}\nID: ${session.session_id}`}
                       className={cn(
                         "flex h-10 w-full items-center justify-center rounded-md hover:bg-white/10",
                         isActive && "bg-white/10",
                       )}
-                      onClick={() => handleSessionClick(session.session_id)}
+                      onClick={() => {
+                        dispatch(setSidebarOpen(false))
+                      }}
                     >
                       <MessageSquare className="h-4 w-4" />
-                    </div>
+                    </Link>
                   )
                 })}
                 {!loading && sessions.length === 0 && (

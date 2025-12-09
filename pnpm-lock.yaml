@@ -105,8 +105,8 @@ importers:
         specifier: latest
         version: 2.11.0(react-redux@9.2.0(@types/react@18.3.27)(react@18.3.1)(redux@5.0.1))(react@18.3.1)
       '@thesysai/genui-sdk':
-        specifier: ^0.7.4
-        version: 0.7.4(799d55ae1ff64acb7df4d54c0766af7f)
+        specifier: ^0.7.5
+        version: 0.7.5(799d55ae1ff64acb7df4d54c0766af7f)
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.22(postcss@8.5.6)
@@ -1456,11 +1456,11 @@ packages:
     resolution: {integrity: sha512-ldZXEhOBb8Is7xLs01fR3YEc3DERiz5silj8tnGkFZytt1abEvl/GhUmCE0PMLaMPTa3Jk4HbKmRlHmu+gCftg==}
     engines: {node: '>=12'}
 
-  '@thesysai/genui-sdk@0.7.4':
-    resolution: {integrity: sha512-VT6/Opg9hPU2r4/DATgB6Aa6tW0jcj+5QHsm5TgMJY6oDWTgfNAbTl/sLKZXR+N4MYVF3dyx35+CuK9uYimK5g==}
+  '@thesysai/genui-sdk@0.7.5':
+    resolution: {integrity: sha512-3w3rGImb8VFXs+Qu+NW7B+EfuQzG/gBtAydEJ+PcaMMWyKAuD3lJxWoSSCXl4HBsUxA7yejzQc38+d3taz8LWQ==}
     peerDependencies:
       '@crayonai/react-core': ^0.7.6
-      '@crayonai/react-ui': ^0.9.0
+      '@crayonai/react-ui': ^0.9.5
       '@radix-ui/react-dialog': ^1.1.15
       lucide-react: ^0.469.0
       react: '>=17.0.0'
@@ -4228,7 +4228,7 @@ snapshots:
 
   '@tanstack/table-core@8.21.3': {}
 
-  '@thesysai/genui-sdk@0.7.4(799d55ae1ff64acb7df4d54c0766af7f)':
+  '@thesysai/genui-sdk@0.7.5(799d55ae1ff64acb7df4d54c0766af7f)':
     dependencies:
       '@crayonai/react-core': 0.7.6(@crayonai/stream@0.6.4(zod-to-json-schema@3.25.0(zod@3.25.76))(zod@3.25.76))(eventsource-parser@3.0.6)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@4.1.17))(tiny-invariant@1.3.3)(zustand@4.5.7(@types/react@18.3.27)(immer@11.0.1)(react@18.3.1))
       '@crayonai/react-ui': 0.9.3(@crayonai/react-core@0.7.6(@crayonai/stream@0.6.4(zod-to-json-schema@3.25.0(zod@3.25.76))(zod@3.25.76))(eventsource-parser@3.0.6)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@4.1.17))(tiny-invariant@1.3.3)(zustand@4.5.7(@types/react@18.3.27)(immer@11.0.1)(react@18.3.1)))(@crayonai/stream@0.6.4(zod-to-json-schema@3.25.0(zod@3.25.76))(zod@3.25.76))(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zustand@4.5.7(@types/react@18.3.27)(immer@11.0.1)(react@18.3.1))

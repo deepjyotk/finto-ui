@@ -134,7 +134,7 @@ export default function Hero() {
           <button
             onClick={() => {
               if (isAuthenticated) {
-                router.push('/chat')
+                router.push('/chat/new')
               } else {
                 setShowAuthModal(true)
               }
