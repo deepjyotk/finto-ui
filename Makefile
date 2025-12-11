@@ -1,15 +1,8 @@
 .PHONY: help install dev build start lint clean type-check preview test format
 .DEFAULT_GOAL := help
 
-# Auto-detect package manager
-PKG_MANAGER := $(shell if command -v pnpm >/dev/null 2>&1; then echo "pnpm"; elif command -v npm >/dev/null 2>&1; then echo "npm"; else echo "npm"; fi)
-
-# Set run command based on package manager
-ifeq ($(PKG_MANAGER),npm)
-  RUN_CMD := run
-else
-  RUN_CMD :=
-endif
+# Package manager (pnpm only)
+PKG_MANAGER := pnpm
 
 # Colors for output
 CYAN := \033[36m
@@ -28,27 +21,27 @@ install: ## Install dependencies
 
 dev: ## Start development server
 	@echo "$(CYAN)Starting development server...$(RESET)"
-	$(PKG_MANAGER) $(RUN_CMD) dev
+	$(PKG_MANAGER) dev
 
 build: ## Build the application for production
 	@echo "$(CYAN)Building application...$(RESET)"
-	$(PKG_MANAGER) $(RUN_CMD) build
+	$(PKG_MANAGER) build
 
 start: ## Start production server
 	@echo "$(CYAN)Starting production server...$(RESET)"
-	$(PKG_MANAGER) $(RUN_CMD) start
+	$(PKG_MANAGER) start
 
 lint: ## Run linter
 	@echo "$(CYAN)Running linter...$(RESET)"
-	$(PKG_MANAGER) $(RUN_CMD) lint
+	$(PKG_MANAGER) lint
 
 lint-fix: ## Run linter and fix auto-fixable issues
 	@echo "$(CYAN)Running linter with auto-fix...$(RESET)"
-	$(PKG_MANAGER) $(RUN_CMD) lint -- --fix
+	$(PKG_MANAGER) lint -- --fix
 
 type-check: ## Run TypeScript type checking
 	@echo "$(CYAN)Running TypeScript type check...$(RESET)"
-	npx tsc --noEmit
+	$(PKG_MANAGER) exec tsc --noEmit
 
 clean: ## Clean build artifacts and dependencies
 	@echo "$(CYAN)Cleaning build artifacts...$(RESET)"
@@ -56,7 +49,7 @@ clean: ## Clean build artifacts and dependencies
 	rm -rf node_modules
 	rm -rf .turbo
 	rm -rf dist
-	@if [ "$(PKG_MANAGER)" = "pnpm" ]; then rm -f pnpm-lock.yaml; else rm -f package-lock.json; fi
+	rm -f pnpm-lock.yaml
 
 clean-cache: ## Clean Next.js cache
 	@echo "$(CYAN)Cleaning Next.js cache...$(RESET)"

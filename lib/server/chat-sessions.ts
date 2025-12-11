@@ -10,21 +10,21 @@ import type {
 
 const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000"
 
-const buildCookieHeader = (): Record<string, string> => {
-  const cookieStore = cookies()
+const buildCookieHeader = async (): Promise<Record<string, string>> => {
+  const cookieStore = await cookies()
   const cookiePairs: string[] = []
-  
+
   cookieStore.getAll().forEach((cookie) => {
     cookiePairs.push(`${cookie.name}=${cookie.value}`)
   })
-  
-  const cookieHeader = cookiePairs.join('; ')
-  return cookieHeader ? { Cookie: cookieHeader } : { Cookie: '' }
+
+  const cookieHeader = cookiePairs.join("; ")
+  return cookieHeader ? { Cookie: cookieHeader } : { Cookie: "" }
 }
 
 export async function fetchSessionsServer(): Promise<SessionItem[]> {
   try {
-    const headers = buildCookieHeader()
+    const headers = await buildCookieHeader()
     const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/thesys/session`, {
       method: "GET",
       headers,
@@ -59,7 +59,7 @@ export async function fetchSessionMessages(sessionId: string): Promise<SessionMe
   try {
     const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/thesys/session/${sessionId}`, {
       method: "GET",
-      headers: buildCookieHeader(),
+      headers: await buildCookieHeader(),
       cache: "no-store",
       credentials: "include",
     })

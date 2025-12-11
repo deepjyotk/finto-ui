@@ -1,12 +1,29 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import type { MessageItem, SessionItem } from "@/lib/api/chat_api"
 import { createChatSession, getSessionMessages } from "@/lib/api/chat_api"
-import ChatDisplay, { type ChatMessage, type C1ActionEvent } from "@/components/chat/chat-display"
+import type { ChatMessage, C1ActionEvent } from "@/components/chat/chat-display"
 import UserTextEnter from "@/components/chat/user-text-enter"
+
+// Avoid SSR for ChatDisplay to prevent hydration mismatches from SDK-generated styles
+const ChatDisplay = dynamic(
+  () => import("@/components/chat/chat-display").then((mod) => mod.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex h-full items-center justify-center text-gray-400">Loading chat...</div>
+      </div>
+    ),
+  }
+)
+
+const isThesysEnabled =
+  (process.env.NEXT_PUBLIC_THESYS_ENABLED ?? "true").toLowerCase() === "true"
 
 interface ChatPageClientProps {
   initialSessions: SessionItem[]
@@ -288,7 +305,7 @@ export default function ChatPageClient({
 
   return (
     <div className="flex h-full flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)]">
-      <ChatDisplay messages={messages} onAction={handleC1Action} />
+      <ChatDisplay messages={messages} onAction={isThesysEnabled ? handleC1Action : undefined} />
       <UserTextEnter
         onSendMessage={sendMessage}
         disabled={isLoading}

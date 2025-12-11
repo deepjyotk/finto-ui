@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
-import "@crayonai/react-ui/styles/index.css";
+import "@crayonai/react-ui/styles/index.css"
 
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
