@@ -1,10 +1,11 @@
 /**
  * Shared API client
- * - Registers the FastAPI base URL
- * - Provides a typed request helper with sensible defaults
+ * - Browser: routes through /api/proxy to avoid cross-origin cookie issues
+ * - Server: calls backend directly
  */
 
 const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000";
+const isBrowser = typeof window !== "undefined";
 
 export class ApiClient {
   private baseUrl: string;
@@ -17,13 +18,24 @@ export class ApiClient {
     return this.baseUrl;
   }
 
+  private getRequestUrl(endpoint: string): string {
+    // Browser: proxy through Next.js to keep cookies on same origin
+    // Endpoint format: /api/v1/xxx -> proxy at /api/proxy/xxx
+    if (isBrowser && endpoint.startsWith("/api/v1/")) {
+      const proxyPath = endpoint.replace("/api/v1/", "/api/proxy/");
+      return proxyPath;
+    }
+    // Server-side: call backend directly
+    return `${this.baseUrl}${endpoint}`;
+  }
+
   /**
    * Perform a typed request to the FastAPI backend.
    * - Always includes credentials for auth cookies
    * - Parses JSON when present, otherwise returns text
    */
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
+    const url = this.getRequestUrl(endpoint);
 
     const headers = new Headers(options.headers as HeadersInit | undefined);
 

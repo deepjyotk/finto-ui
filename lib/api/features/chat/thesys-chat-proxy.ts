@@ -66,6 +66,7 @@ const buildEventStreamResponse = (backendResponse: Response) => {
 const createThesysSession = async (cookieHeader: string) => {
   const response = await fetch(SESSION_ENDPOINT, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       Cookie: cookieHeader,
@@ -89,6 +90,7 @@ const forwardThesysChat = async ({
 }) => {
   return fetch(CHAT_ENDPOINT, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       Cookie: cookieHeader,
