@@ -39,7 +39,20 @@ async function proxyRequest(request: NextRequest, path: string) {
     }
   }
 
-  const response = await fetch(targetUrl, fetchOptions);
+  let response: Response;
+  try {
+    response = await fetch(targetUrl, fetchOptions);
+  } catch (error) {
+    console.error(`[Proxy] Failed to fetch ${targetUrl}:`, error);
+    return NextResponse.json(
+      { 
+        error: "Backend connection failed", 
+        detail: `Could not connect to ${FASTAPI_BASE_URL}. Make sure NEXT_PUBLIC_FASTAPI_URL is set correctly.`,
+        target: targetUrl 
+      },
+      { status: 502 }
+    );
+  }
 
   // Handle Set-Cookie headers from backend
   const responseHeaders = new Headers();
