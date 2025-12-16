@@ -83,6 +83,83 @@ export class ApiClient {
 
     return responseText as unknown as T;
   }
-}
+  // ============================================================================
+  // Kite Connect Endpoints
+  // ============================================================================
+
+  /**
+   * Get current holdings
+   * GET /api/v1/kite/holdings
+   */
+  async kiteHoldings(): Promise<any> {
+    return this.request<any>(`/api/v1/kite/holdings`, { method: "GET" });
+  }
+
+  /**
+   * Get current positions (day + net)
+   * GET /api/v1/kite/positions
+   */
+  async kitePositions(): Promise<any> {
+    return this.request<any>(`/api/v1/kite/positions`, { method: "GET" });
+  }
+
+  /**
+   * Get orders for today
+   * GET /api/v1/kite/orders
+   */
+  async kiteOrders(): Promise<any> {
+    return this.request<any>(`/api/v1/kite/orders`, { method: "GET" });
+  }
+
+  /**
+   * Get trades for today
+   * GET /api/v1/kite/trades
+   */
+  async kiteTrades(): Promise<any> {
+    return this.request<any>(`/api/v1/kite/trades`, { method: "GET" });
+  }
+
+  /**
+   * Get quote (OHLC, depth, etc.) for one or more symbols
+   * GET /api/v1/kite/quote?symbols=NSE:INFY,NSE:TCS
+   */
+  async kiteQuote(symbols: string | string[]): Promise<any> {
+    const symbolStr = Array.isArray(symbols) ? symbols.join(",") : symbols;
+    return this.request<any>(`/api/v1/kite/quote?symbols=${encodeURIComponent(symbolStr)}`, {
+      method: "GET",
+    });
+  }
+
+  /**
+   * Get last traded price for one or more symbols
+   * GET /api/v1/kite/ltp?symbols=NSE:INFY,NSE:TCS
+   */
+  async kiteLtp(symbols: string | string[]): Promise<any> {
+    const symbolStr = Array.isArray(symbols) ? symbols.join(",") : symbols;
+    return this.request<any>(`/api/v1/kite/ltp?symbols=${encodeURIComponent(symbolStr)}`, {
+      method: "GET",
+    });
+  }
+
+  /**
+   * Get historical data (candles) for an instrument
+   * GET /api/v1/kite/historical?instrument_token=...&interval=...&from=...&to=...
+   */
+  async kiteHistorical(
+    instrumentToken: string | number,
+    interval: string,
+    from?: string,
+    to?: string
+  ): Promise<any> {
+    const params = new URLSearchParams({
+      instrument_token: String(instrumentToken),
+      interval,
+      ...(from && { from }),
+      ...(to && { to }),
+    });
+    return this.request<any>(`/api/v1/kite/historical?${params.toString()}`, {
+      method: "GET",
+    });
+  }}
 
 export const apiClient = new ApiClient();
