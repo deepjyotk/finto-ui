@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Building2, AlertCircle } from "lucide-react"
 import Navbar from "@/components/landing/Navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { WhatsAppIntegrationCard } from "@/components/home/whatsapp-integration-card"
 import { ConnectBrokerModal } from "@/components/home/connect-broker-modal"
@@ -20,41 +19,32 @@ import {
   type WhatsAppPayload,
 } from "@/lib/api/integrations_api"
 
-export default function IntegrationsPage() {
+interface IntegrationsPageClientProps {
+  initialData: HomeFeedSchema | null
+  initialError: string | null
+}
+
+export default function IntegrationsPageClient({
+  initialData,
+  initialError,
+}: IntegrationsPageClientProps) {
   const router = useRouter()
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [homeFeed, setHomeFeed] = useState<HomeFeedSchema | null>(null)
+  const [homeFeed, setHomeFeed] = useState<HomeFeedSchema | null>(initialData)
+  const [error] = useState<string | null>(initialError)
   const [showBrokerModal, setShowBrokerModal] = useState(false)
   const [isConnectingWhatsApp, setIsConnectingWhatsApp] = useState(false)
 
-  useEffect(() => {
-    const fetchHomeFeed = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
-        const data = await getHomeFeed()
-        setHomeFeed(data)
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to load home feed"
-        setError(errorMessage)
-
-        if (errorMessage.includes("401") || errorMessage.includes("unauthorized")) {
-          toast({
-            title: "Authentication required",
-            description: "Please log in to continue",
-            variant: "destructive",
-          })
-          router.push("/")
-        }
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchHomeFeed()
-  }, [router, toast])
+  // Handle unauthorized error from server
+  if (initialError === "unauthorized") {
+    toast({
+      title: "Authentication required",
+      description: "Please log in to continue",
+      variant: "destructive",
+    })
+    router.push("/")
+    return null
+  }
 
   const whatsappData: WhatsAppPayload | null =
     homeFeed?.chat_integrations?.[0]?.whatsapp || null
@@ -77,7 +67,7 @@ export default function IntegrationsPage() {
         try {
           const data = await getHomeFeed()
           setHomeFeed(data)
-        } catch (err) {
+        } catch {
           // User can manually refresh if needed.
         }
       }, 2000)
@@ -144,27 +134,7 @@ export default function IntegrationsPage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <>
-        <Navbar />
-        <div className="container mx-auto p-6 max-w-6xl">
-          <div className="space-y-6">
-            <div>
-              <Skeleton className="h-10 w-48 mb-2" />
-              <Skeleton className="h-4 w-96" />
-            </div>
-            <div className="grid gap-6 md:grid-cols-2">
-              <Skeleton className="h-64" />
-              <Skeleton className="h-64" />
-            </div>
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  if (error) {
+  if (error && error !== "unauthorized") {
     return (
       <>
         <Navbar />
@@ -191,12 +161,12 @@ export default function IntegrationsPage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <WhatsAppIntegrationCard
+            {/* <WhatsAppIntegrationCard
               whatsappData={whatsappData}
               onConnect={handleConnectWhatsApp}
               onDelete={handleDeleteWhatsApp}
               isConnecting={isConnectingWhatsApp}
-            />
+            /> */}
 
             <Card>
               <CardHeader>
@@ -217,31 +187,6 @@ export default function IntegrationsPage() {
             </Card>
           </div>
 
-          {homeFeed?.available_brokers && homeFeed.available_brokers.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Available Brokers</CardTitle>
-                <CardDescription>
-                  {homeFeed.available_brokers.length} broker
-                  {homeFeed.available_brokers.length !== 1 ? "s" : ""} available for connection
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {homeFeed.available_brokers.slice(0, 8).map((broker) => (
-                    <div
-                      key={broker.broker_id}
-                      className="flex flex-col items-center p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <Building2 className="h-8 w-8 mb-2 text-muted-foreground" />
-                      <p className="text-sm font-medium text-center">{broker.broker_name}</p>
-                      <p className="text-xs text-muted-foreground">{broker.country}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         <ConnectBrokerModal

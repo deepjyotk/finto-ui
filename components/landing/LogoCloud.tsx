@@ -2,6 +2,7 @@ export default function LogoCloud() {
   return (
     <section aria-label="Platform integrations" className="py-10 sm:py-12">
       <div className="mx-auto max-w-7xl px-6">
+{/* Commented out for v0 - web interface only
         <p className="text-center text-sm text-[#9AA7B2] mb-6">Works seamlessly with</p>
         <div className="flex flex-wrap justify-center items-center gap-8 sm:gap-12 opacity-80">
           <div className="flex items-center gap-3 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 opacity-60">
@@ -28,6 +29,7 @@ export default function LogoCloud() {
             <span className="text-[10px] rounded-full bg-white/10 px-2 py-0.5 text-[#9AA7B2]">soon</span>
           </div>
         </div>
+        */}
         
         <p className="text-center text-xs text-[#9AA7B2] mt-8">Portfolio monitoring for Alpaca, IBKR, Zerodha, AngelOne, Tradier, Robinhood & more</p>
       </div>
