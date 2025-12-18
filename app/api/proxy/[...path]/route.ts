@@ -33,8 +33,9 @@ async function proxyRequest(request: NextRequest, path: string) {
 
   // Forward body for methods that have one
   if (["POST", "PUT", "PATCH"].includes(request.method)) {
-    const body = await request.text();
-    if (body) {
+    // Use arrayBuffer to preserve binary data (e.g., file uploads)
+    const body = await request.arrayBuffer();
+    if (body.byteLength > 0) {
       fetchOptions.body = body;
     }
   }

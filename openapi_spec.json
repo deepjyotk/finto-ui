@@ -454,6 +454,228 @@
         }
       }
     },
+    "/api/v1/kite/positions": {
+      "get": {
+        "tags": [
+          "kite"
+        ],
+        "summary": "Kite Positions",
+        "description": "Fetch user's positions (net and day) via Kite Connect.\nReturns both overnight positions (net) and day positions.",
+        "operationId": "kite_positions_api_v1_kite_positions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/kite/orders": {
+      "get": {
+        "tags": [
+          "kite"
+        ],
+        "summary": "Kite Orders",
+        "description": "Fetch user's orders (order book) for today via Kite Connect.\nIncludes open, pending, and executed orders.",
+        "operationId": "kite_orders_api_v1_kite_orders_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/kite/trades": {
+      "get": {
+        "tags": [
+          "kite"
+        ],
+        "summary": "Kite Trades",
+        "description": "Fetch user's trades for today via Kite Connect.",
+        "operationId": "kite_trades_api_v1_kite_trades_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/kite/quote": {
+      "get": {
+        "tags": [
+          "kite"
+        ],
+        "summary": "Kite Quote",
+        "description": "Fetch quote data (OHLC, depth, etc.) for one or more symbols.\n\nArgs:\n    symbols: Comma-separated symbols (e.g., \"NSE:INFY,NSE:TCS\")",
+        "operationId": "kite_quote_api_v1_kite_quote_get",
+        "parameters": [
+          {
+            "name": "symbols",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbols"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/kite/ltp": {
+      "get": {
+        "tags": [
+          "kite"
+        ],
+        "summary": "Kite Ltp",
+        "description": "Fetch last traded price (LTP) for one or more symbols.\nLightweight endpoint compared to quote.\n\nArgs:\n    symbols: Comma-separated symbols (e.g., \"NSE:INFY,NSE:TCS\")",
+        "operationId": "kite_ltp_api_v1_kite_ltp_get",
+        "parameters": [
+          {
+            "name": "symbols",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbols"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/kite/historical": {
+      "get": {
+        "tags": [
+          "kite"
+        ],
+        "summary": "Kite Historical",
+        "description": "Fetch historical candle data for an instrument.\n\nArgs:\n    instrument_token: Token of the instrument\n    interval: Candle interval (minute, 3minute, 5minute, 15minute, 30minute, 60minute, day, week, month)\n    from_date: Start date (format: YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)\n    to_date: End date (format: YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)\n\nReturns:\n    Candles data with [timestamp, open, high, low, close, volume] format",
+        "operationId": "kite_historical_api_v1_kite_historical_get",
+        "parameters": [
+          {
+            "name": "instrument_token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Instrument Token"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Interval"
+            }
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "From Date"
+            }
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/thesys/session": {
       "post": {
         "tags": [
@@ -1299,13 +1521,6 @@
             "default": 0,
             "example": 100
           },
-          "qty_discrepant": {
-            "type": "integer",
-            "title": "Qty Discrepant",
-            "description": "Discrepant quantity",
-            "default": 0,
-            "example": 0
-          },
           "qty_long_term": {
             "type": "integer",
             "title": "Qty Long Term",
@@ -1317,13 +1532,6 @@
             "type": "integer",
             "title": "Qty Pledged Margin",
             "description": "Quantity pledged for margin",
-            "default": 0,
-            "example": 0
-          },
-          "qty_pledged_loan": {
-            "type": "integer",
-            "title": "Qty Pledged Loan",
-            "description": "Quantity pledged for loan",
             "default": 0,
             "example": 0
           },
@@ -1354,34 +1562,6 @@
             "title": "Prev Close Price",
             "description": "Previous closing price",
             "example": 2500
-          },
-          "unrealized_pnl": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
-              }
-            ],
-            "title": "Unrealized Pnl",
-            "description": "Unrealized profit/loss",
-            "example": 4925
-          },
-          "unrealized_pnl_pct": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
-              }
-            ],
-            "title": "Unrealized Pnl Pct",
-            "description": "Unrealized PnL percentage",
-            "example": 2.01
           }
         },
         "type": "object",
@@ -1390,9 +1570,7 @@
           "symbol",
           "isin",
           "avg_price",
-          "prev_close_price",
-          "unrealized_pnl",
-          "unrealized_pnl_pct"
+          "prev_close_price"
         ],
         "title": "HoldingsRequestSchema",
         "description": "Schema for creating a new equity holding",
@@ -1402,14 +1580,10 @@
           "isin": "INE002A01018",
           "prev_close_price": 2500,
           "qty_available": 100,
-          "qty_discrepant": 0,
           "qty_long_term": 50,
-          "qty_pledged_loan": 0,
           "qty_pledged_margin": 0,
           "sector": "Energy",
-          "symbol": "RELIANCE",
-          "unrealized_pnl": 4925,
-          "unrealized_pnl_pct": 2.01
+          "symbol": "RELIANCE"
         }
       },
       "HoldingsResponseSchema": {
@@ -1459,11 +1633,6 @@
             "title": "Qty Available",
             "description": "Available quantity"
           },
-          "qty_discrepant": {
-            "type": "integer",
-            "title": "Qty Discrepant",
-            "description": "Discrepant quantity"
-          },
           "qty_long_term": {
             "type": "integer",
             "title": "Qty Long Term",
@@ -1473,11 +1642,6 @@
             "type": "integer",
             "title": "Qty Pledged Margin",
             "description": "Quantity pledged for margin"
-          },
-          "qty_pledged_loan": {
-            "type": "integer",
-            "title": "Qty Pledged Loan",
-            "description": "Quantity pledged for loan"
           },
           "avg_price": {
             "type": "string",
@@ -1490,18 +1654,6 @@
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Prev Close Price",
             "description": "Previous closing price"
-          },
-          "unrealized_pnl": {
-            "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Unrealized Pnl",
-            "description": "Unrealized profit/loss"
-          },
-          "unrealized_pnl_pct": {
-            "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Unrealized Pnl Pct",
-            "description": "Unrealized PnL percentage"
           }
         },
         "type": "object",
@@ -1512,14 +1664,10 @@
           "symbol",
           "isin",
           "qty_available",
-          "qty_discrepant",
           "qty_long_term",
           "qty_pledged_margin",
-          "qty_pledged_loan",
           "avg_price",
-          "prev_close_price",
-          "unrealized_pnl",
-          "unrealized_pnl_pct"
+          "prev_close_price"
         ],
         "title": "HoldingsResponseSchema",
         "description": "Schema for equity holding response"

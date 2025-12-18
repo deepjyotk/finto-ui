@@ -70,8 +70,8 @@ export function ConnectBrokerModal({
       await uploadHoldingsFile(formData)
 
       toast({
-        title: "Upload successful",
-        description: "Your holdings file has been uploaded.",
+        title: "Uploaded successfully!",
+        description: "You can now chat about your portfolio.",
       })
       handleClose()
     } catch (err) {

@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
+import { Toaster } from "@/components/ui/toaster"
 import "@crayonai/react-ui/styles/index.css"
 
 
@@ -55,6 +56,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${jetbrains.variable} bg-[#0B0F14] text-[#E5EAF2] antialiased`}> 
         <Providers>
           <main className="min-h-dvh flex flex-col">{children}</main>
+          <Toaster />
         </Providers>
       </body>
     </html>
