@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
-import { fetchSessionMessages, fetchSessionsServer } from "@/lib/server/chat-sessions"
+import { fetchSessionMessages, fetchSessionsServer, fetchChatMetadataServer } from "@/lib/server/chat-sessions"
 import ChatPageClient from "@/components/chat/chat-page-client"
-import type { SessionItem } from "@/lib/api/chat_api"
+import type { SessionItem, UserBrokerItem } from "@/lib/api/chat_api"
 import type { ChatMessage } from "@/components/chat/chat-display"
 
 interface ChatSessionPageProps {
@@ -21,13 +21,19 @@ export default async function ChatSessionPage({ params }: ChatSessionPageProps) 
   }
 
   let sessions: SessionItem[] = []
+  let brokers: UserBrokerItem[] = []
   let initialMessages: ChatMessage[] | undefined
   const isNewSession = normalizedSessionId === "new"
 
+  // Fetch sessions and chat metadata in parallel
   try {
-    sessions = await fetchSessionsServer()
+    const [sessionsResult, chatMetadataResult] = await Promise.all([
+      fetchSessionsServer(),
+      fetchChatMetadataServer(),
+    ])
+    sessions = sessionsResult
+    brokers = chatMetadataResult.brokers ?? []
   } catch (error) {
-    // Error already logged in fetchSessionsServer, just use empty array
     console.error("Error in ChatSessionPage:", error)
   }
 
@@ -51,6 +57,7 @@ export default async function ChatSessionPage({ params }: ChatSessionPageProps) 
       initialSessions={sessions}
       initialMessages={initialMessages}
       initialSessionId={isNewSession ? null : rawSessionId}
+      brokers={brokers}
     />
   )
 }

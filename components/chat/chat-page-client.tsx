@@ -4,10 +4,12 @@ import dynamic from "next/dynamic"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
-import type { MessageItem, SessionItem } from "@/lib/api/chat_api"
+import type { MessageItem, SessionItem, UserBrokerItem } from "@/lib/api/chat_api"
 import { createChatSession, getSessionMessages } from "@/lib/api/chat_api"
 import type { ChatMessage, C1ActionEvent } from "@/components/chat/chat-display"
 import UserTextEnter from "@/components/chat/user-text-enter"
+import BrokerSelectionModal from "@/components/chat/broker-selection-modal"
+import { useToast } from "@/hooks/use-toast"
 
 // Avoid SSR for ChatDisplay to prevent hydration mismatches from SDK-generated styles
 const ChatDisplay = dynamic(
@@ -29,22 +31,30 @@ interface ChatPageClientProps {
   initialSessions: SessionItem[]
   initialMessages?: ChatMessage[]
   initialSessionId?: string | null
+  brokers: UserBrokerItem[]
 }
 
 export default function ChatPageClient({
   initialSessions: _initialSessions,
   initialMessages,
   initialSessionId = null,
+  brokers,
 }: ChatPageClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const searchParamsKey = searchParams?.toString()
   const params = useParams<{ sessionId?: string }>()
+  const { toast } = useToast()
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? [])
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId)
   const [isLoadingMessages, setIsLoadingMessages] = useState(true)
   const lastResolvedSessionRef = useRef<string | null>(null)
+  
+  // Broker selection state
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string | null>(null)
+  const [showBrokerModal, setShowBrokerModal] = useState(false)
+  const brokerInitializedRef = useRef(false)
 
   const normalizeApiMessages = useCallback((items: MessageItem[] | undefined): ChatMessage[] => {
     if (!items || items.length === 0) return []
@@ -62,6 +72,32 @@ export default function ChatPageClient({
           content,
         }
       })
+  }, [])
+
+  // Handle broker selection on mount
+  useEffect(() => {
+    if (brokerInitializedRef.current) return
+    brokerInitializedRef.current = true
+
+    if (brokers.length === 0) {
+      // No brokers available - show toast
+      toast({
+        title: "No broker integration found",
+        description: "Connect a broker to access portfolio features. You can still ask general finance questions.",
+        variant: "default",
+      })
+    } else if (brokers.length === 1) {
+      // Single broker - auto-select
+      setSelectedBrokerId(brokers[0].broker_id)
+    } else {
+      // Multiple brokers - show modal
+      setShowBrokerModal(true)
+    }
+  }, [brokers, toast])
+
+  const handleBrokerSelect = useCallback((brokerId: string) => {
+    setSelectedBrokerId(brokerId)
+    setShowBrokerModal(false)
   }, [])
 
   // Initialize session and load messages
@@ -144,6 +180,15 @@ export default function ChatPageClient({
   const sendMessage = useCallback(async (messageContent: string) => {
     if (!messageContent.trim() || isLoading || !sessionId) return
 
+    // Show warning if no broker is selected but allow general questions
+    if (!selectedBrokerId && brokers.length > 0) {
+      // If there are brokers but none selected, prompt selection
+      if (brokers.length > 1) {
+        setShowBrokerModal(true)
+        return
+      }
+    }
+
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -166,6 +211,9 @@ export default function ChatPageClient({
     ])
 
     try {
+      // Use selected broker or empty string for general questions (no broker integration)
+      const brokerId = selectedBrokerId || ""
+      
       const response = await fetch("/api/thesys/chat", {
         method: "POST",
         headers: {
@@ -176,6 +224,7 @@ export default function ChatPageClient({
             content: userMessage.content,
           },
           session_id: sessionId,
+          broker_id: brokerId,
         }),
       })
 
@@ -244,7 +293,7 @@ export default function ChatPageClient({
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, sessionId])
+  }, [isLoading, sessionId, selectedBrokerId, brokers])
 
   const sanitizeActionMessage = (raw: string) => {
     if (!raw) return ""
@@ -304,13 +353,24 @@ export default function ChatPageClient({
   }
 
   return (
-    <div className="flex h-full flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)]">
-      <ChatDisplay messages={messages} onAction={isThesysEnabled ? handleC1Action : undefined} />
-      <UserTextEnter
-        onSendMessage={sendMessage}
-        disabled={isLoading}
-        sessionId={sessionId}
-      />
-    </div>
+    <>
+      <div className="flex h-full flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)]">
+        <ChatDisplay messages={messages} onAction={isThesysEnabled ? handleC1Action : undefined} />
+        <UserTextEnter
+          onSendMessage={sendMessage}
+          disabled={isLoading}
+          sessionId={sessionId}
+        />
+      </div>
+      
+      {brokers.length > 1 && (
+        <BrokerSelectionModal
+          open={showBrokerModal}
+          onClose={() => setShowBrokerModal(false)}
+          brokers={brokers}
+          onSelectBroker={handleBrokerSelect}
+        />
+      )}
+    </>
   )
 }

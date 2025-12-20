@@ -8,6 +8,17 @@ export interface C1Message {
 export interface C1ChatRequest {
   message_payload: C1Message;
   session_id: string;
+  broker_id: string;
+}
+
+// Chat Metadata Types (from OpenAPI spec)
+export interface UserBrokerItem {
+  broker_id: string;
+  broker_name: string;
+}
+
+export interface ChatMetadataResponse {
+  brokers: UserBrokerItem[];
 }
 
 // Session Types (from OpenAPI spec)

@@ -67,11 +67,11 @@ export function ConnectBrokerModal({
       formData.append("file", selectedFile)
       formData.append("broker_id", selectedBrokerId)
 
-      await uploadHoldingsFile(formData)
+      const response = await uploadHoldingsFile(formData)
 
       toast({
         title: "Uploaded successfully!",
-        description: "You can now chat about your portfolio.",
+        description: response.message || `${response.records_processed} records processed.`,
       })
       handleClose()
     } catch (err) {

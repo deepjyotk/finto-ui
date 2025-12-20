@@ -9,18 +9,19 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { WhatsAppIntegrationCard } from "@/components/home/whatsapp-integration-card"
 import { ConnectBrokerModal } from "@/components/home/connect-broker-modal"
+import { PortfolioUpdatesCard } from "@/components/integrations/portfolio-updates-card"
 import { useToast } from "@/hooks/use-toast"
 import {
   createWhatsAppConnectIntent,
   deleteWhatsAppIntegration,
-  getHomeFeed,
+  getHoldingsMetadata,
   getKiteLoginUrl,
-  type HomeFeedSchema,
+  type HoldingsMetadataSchema,
   type WhatsAppPayload,
 } from "@/lib/api/integrations_api"
 
 interface IntegrationsPageClientProps {
-  initialData: HomeFeedSchema | null
+  initialData: HoldingsMetadataSchema | null
   initialError: string | null
 }
 
@@ -30,7 +31,7 @@ export default function IntegrationsPageClient({
 }: IntegrationsPageClientProps) {
   const router = useRouter()
   const { toast } = useToast()
-  const [homeFeed, setHomeFeed] = useState<HomeFeedSchema | null>(initialData)
+  const [holdingsMetadata, setHoldingsMetadata] = useState<HoldingsMetadataSchema | null>(initialData)
   const [error] = useState<string | null>(initialError)
   const [showBrokerModal, setShowBrokerModal] = useState(false)
   const [isConnectingWhatsApp, setIsConnectingWhatsApp] = useState(false)
@@ -47,7 +48,16 @@ export default function IntegrationsPageClient({
   }
 
   const whatsappData: WhatsAppPayload | null =
-    homeFeed?.chat_integrations?.[0]?.whatsapp || null
+    holdingsMetadata?.chat_integrations?.[0]?.whatsapp || null
+
+  const handleRefreshData = async () => {
+    try {
+      const data = await getHoldingsMetadata()
+      setHoldingsMetadata(data)
+    } catch {
+      // Silent fail, user can manually refresh
+    }
+  }
 
   const handleConnectWhatsApp = async () => {
     setIsConnectingWhatsApp(true)
@@ -65,8 +75,8 @@ export default function IntegrationsPageClient({
 
       setTimeout(async () => {
         try {
-          const data = await getHomeFeed()
-          setHomeFeed(data)
+          const data = await getHoldingsMetadata()
+          setHoldingsMetadata(data)
         } catch {
           // User can manually refresh if needed.
         }
@@ -100,8 +110,8 @@ export default function IntegrationsPageClient({
         description: "Your WhatsApp integration has been removed",
       })
 
-      const data = await getHomeFeed()
-      setHomeFeed(data)
+      const data = await getHoldingsMetadata()
+      setHoldingsMetadata(data)
     } catch (err) {
       toast({
         title: "Error",
@@ -113,7 +123,7 @@ export default function IntegrationsPageClient({
 
   const handleConnectBroker = async (brokerId: string) => {
     try {
-      const selectedBroker = homeFeed?.available_brokers.find(
+      const selectedBroker = holdingsMetadata?.available_brokers.find(
         (b) => b.broker_id === brokerId,
       )
 
@@ -154,9 +164,9 @@ export default function IntegrationsPageClient({
       <div className="container mx-auto p-6 max-w-6xl">
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Integrations</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Portfolio Integrations</h1>
             <p className="text-muted-foreground">
-              Manage your integrations and broker connections
+              Connect your broker or upload a portfolio to get started
             </p>
           </div>
 
@@ -172,27 +182,38 @@ export default function IntegrationsPageClient({
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Building2 className="h-5 w-5 text-primary" />
-                  <CardTitle>Broker Connection</CardTitle>
+                  <CardTitle>Portfolio Access</CardTitle>
                 </div>
                 <CardDescription>
-                  Connect your brokerage account to sync holdings and trades
+                  Connect your brokerage account to sync holdings automatically, or upload your portfolio manually.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button onClick={() => setShowBrokerModal(true)} className="w-full">
                   <Building2 className="mr-2 h-4 w-4" />
-                  Connect Broker
+                  Connect Broker or Upload Portfolio
                 </Button>
               </CardContent>
             </Card>
           </div>
+
+          {/* Portfolio Updates Section */}
+          {holdingsMetadata?.portfolio_updates && holdingsMetadata.portfolio_updates.length > 0 && (
+            <div className="mt-6">
+              <PortfolioUpdatesCard
+                portfolioUpdates={holdingsMetadata.portfolio_updates}
+                availableBrokers={holdingsMetadata.available_brokers}
+                onRefresh={handleRefreshData}
+              />
+            </div>
+          )}
 
         </div>
 
         <ConnectBrokerModal
           isOpen={showBrokerModal}
           onClose={() => setShowBrokerModal(false)}
-          brokers={homeFeed?.available_brokers || []}
+          brokers={holdingsMetadata?.available_brokers || []}
           onSubmit={handleConnectBroker}
         />
       </div>

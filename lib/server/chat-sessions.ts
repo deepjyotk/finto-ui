@@ -6,6 +6,7 @@ import type {
   SessionItem,
   SessionMessagesResponse,
   SessionsListResponse,
+  ChatMetadataResponse,
 } from "@/lib/api/chat_api"
 
 const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000"
@@ -77,5 +78,32 @@ export async function fetchSessionMessages(sessionId: string): Promise<SessionMe
   } catch (error) {
     console.error(`Failed to load chat session ${sessionId}:`, error)
     return null
+  }
+}
+
+export async function fetchChatMetadataServer(): Promise<ChatMetadataResponse> {
+  try {
+    const headers = await buildCookieHeader()
+    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/thesys/chat_metadata`, {
+      method: "GET",
+      headers,
+      cache: "no-store",
+      credentials: "include",
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText)
+      console.error(
+        `Failed to fetch chat metadata: ${response.status} ${response.statusText}`,
+        errorText ? `Response: ${errorText}` : ""
+      )
+      return { brokers: [] }
+    }
+
+    const data: ChatMetadataResponse = await response.json()
+    return data
+  } catch (error) {
+    console.error("Failed to load chat metadata:", error)
+    return { brokers: [] }
   }
 }

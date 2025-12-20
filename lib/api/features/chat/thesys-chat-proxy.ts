@@ -11,6 +11,8 @@ type ThesysChatBody = {
   message?: string;
   session_id?: string;
   sessionId?: string;
+  broker_id?: string;
+  brokerId?: string;
 };
 
 const extractSessionId = (body: ThesysChatBody, searchParams: URLSearchParams) =>
@@ -20,7 +22,14 @@ const extractSessionId = (body: ThesysChatBody, searchParams: URLSearchParams) =
   body.sessionId ||
   null;
 
-const normalizeChatPayload = (body: ThesysChatBody, sessionId: string) => {
+const extractBrokerId = (body: ThesysChatBody, searchParams: URLSearchParams) =>
+  searchParams.get("broker_id") ||
+  searchParams.get("brokerId") ||
+  body.broker_id ||
+  body.brokerId ||
+  null;
+
+const normalizeChatPayload = (body: ThesysChatBody, sessionId: string, brokerId: string) => {
   let content = "";
 
   if (body.message_payload?.content) {
@@ -38,6 +47,7 @@ const normalizeChatPayload = (body: ThesysChatBody, sessionId: string) => {
       content,
     },
     session_id: sessionId,
+    broker_id: brokerId,
   };
 };
 
@@ -85,7 +95,7 @@ const forwardThesysChat = async ({
   payload,
   cookieHeader,
 }: {
-  payload: { message_payload: { content: string }; session_id: string };
+  payload: { message_payload: { content: string }; session_id: string; broker_id: string };
   cookieHeader: string;
 }) => {
   return fetch(CHAT_ENDPOINT, {
@@ -106,13 +116,21 @@ export const handleThesysChatPost = async (request: NextRequest) => {
     const cookieHeader = request.headers.get("cookie") || "";
 
     let sessionId = extractSessionId(body, searchParams);
+    const brokerId = extractBrokerId(body, searchParams);
 
     if (!sessionId) {
       sessionId = await createThesysSession(cookieHeader);
       console.log("[Thesys Chat] Created new session:", sessionId);
     }
 
-    const payload = normalizeChatPayload(body, sessionId);
+    if (!brokerId) {
+      return NextResponse.json(
+        { error: "broker_id is required" },
+        { status: 400 }
+      );
+    }
+
+    const payload = normalizeChatPayload(body, sessionId, brokerId);
     const backendResponse = await forwardThesysChat({ payload, cookieHeader });
 
     if (!backendResponse.ok && !isEventStream(backendResponse)) {

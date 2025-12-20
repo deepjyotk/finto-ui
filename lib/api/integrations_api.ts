@@ -27,9 +27,24 @@ export interface BrokerPayload {
   country: string;
 }
 
-export interface HomeFeedSchema {
+export interface PortfolioUpdates {
+  broker_id: string;
+  broker_name: string;
+  last_updated_at: string;
+  uploaded_via: string;
+  additional_metadata: Record<string, string>;
+}
+
+export interface HoldingsMetadataSchema {
   chat_integrations: ChatIntegration[];
   available_brokers: BrokerPayload[];
+  portfolio_updates: PortfolioUpdates[];
+}
+
+export interface BulkHoldingsUploadResponse {
+  success: boolean;
+  records_processed: number;
+  message: string;
 }
 
 export const createWhatsAppConnectIntent = (data: ConnectIntentRequest) =>
@@ -43,8 +58,8 @@ export const deleteWhatsAppIntegration = (integrationId: string) =>
     method: "DELETE",
   });
 
-export const getHomeFeed = () =>
-  apiClient.request<HomeFeedSchema>("/api/v1/home", {
+export const getHoldingsMetadata = () =>
+  apiClient.request<HoldingsMetadataSchema>("/api/v1/holdings/metadata", {
     method: "GET",
   });
 
@@ -72,7 +87,7 @@ export const createHolding = (data: any) =>
   });
 
 export const uploadHoldingsFile = (formData: FormData) =>
-  apiClient.request<any>("/api/v1/holdings/file-upload", {
+  apiClient.request<BulkHoldingsUploadResponse>("/api/v1/holdings/file-upload", {
     method: "POST",
     body: formData,
     headers: {}, // Let browser set Content-Type for FormData

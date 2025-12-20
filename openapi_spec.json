@@ -230,44 +230,20 @@
         "deprecated": true
       }
     },
-    "/api/v1/holdings": {
-      "post": {
+    "/api/v1/holdings/metadata": {
+      "get": {
         "tags": [
           "holdings"
         ],
-        "summary": "Create a new equity holding",
-        "description": "Save equity holding information for the authenticated user.",
-        "operationId": "create_holding_api_v1_holdings_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/HoldingsRequestSchema"
-              }
-            }
-          },
-          "required": true
-        },
+        "summary": "Get Holdings Metadata",
+        "operationId": "get_holdings_metadata_api_v1_holdings_metadata_get",
         "responses": {
-          "201": {
-            "description": "Holding successfully created",
+          "200": {
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HoldingsResponseSchema"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not authenticated or invalid token"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/HoldingsMetadataSchema"
                 }
               }
             }
@@ -316,28 +292,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/home": {
-      "get": {
-        "tags": [
-          "home"
-        ],
-        "summary": "Get Home Feed",
-        "description": "Get home feed for authenticated user.\n\nReturns chat integrations including WhatsApp data and available brokers.",
-        "operationId": "get_home_feed_api_v1_home_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HomeFeedSchema"
                 }
               }
             }
@@ -841,6 +795,28 @@
         }
       }
     },
+    "/api/v1/thesys/chat_metadata": {
+      "get": {
+        "tags": [
+          "thesys-chat"
+        ],
+        "summary": "Get chat metadata for the authenticated user",
+        "description": "Returns all available brokers that the user has holdings with.",
+        "operationId": "get_chat_metadata_api_v1_thesys_chat_metadata_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMetadataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/thesys/chat": {
       "post": {
         "tags": [
@@ -1287,12 +1263,17 @@
           "session_id": {
             "type": "string",
             "title": "Session Id"
+          },
+          "broker_id": {
+            "type": "string",
+            "title": "Broker Id"
           }
         },
         "type": "object",
         "required": [
           "message_payload",
-          "session_id"
+          "session_id",
+          "broker_id"
         ],
         "title": "C1ChatRequest"
       },
@@ -1334,6 +1315,22 @@
         ],
         "title": "ChatMessageType",
         "description": "Enum for chat message types."
+      },
+      "ChatMetadataResponse": {
+        "properties": {
+          "brokers": {
+            "items": {
+              "$ref": "#/components/schemas/UserBrokerItem"
+            },
+            "type": "array",
+            "title": "Brokers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "brokers"
+        ],
+        "title": "ChatMetadataResponse"
       },
       "ChatRequest": {
         "properties": {
@@ -1480,199 +1477,7 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "HoldingsRequestSchema": {
-        "properties": {
-          "broker_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Broker Id",
-            "description": "ID of the broker",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "symbol": {
-            "type": "string",
-            "title": "Symbol",
-            "description": "Trading symbol",
-            "example": "RELIANCE"
-          },
-          "isin": {
-            "type": "string",
-            "title": "Isin",
-            "description": "ISIN code",
-            "example": "INE002A01018"
-          },
-          "sector": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sector",
-            "description": "Sector of the equity",
-            "example": "Energy"
-          },
-          "qty_available": {
-            "type": "integer",
-            "title": "Qty Available",
-            "description": "Available quantity",
-            "default": 0,
-            "example": 100
-          },
-          "qty_long_term": {
-            "type": "integer",
-            "title": "Qty Long Term",
-            "description": "Long term quantity",
-            "default": 0,
-            "example": 50
-          },
-          "qty_pledged_margin": {
-            "type": "integer",
-            "title": "Qty Pledged Margin",
-            "description": "Quantity pledged for margin",
-            "default": 0,
-            "example": 0
-          },
-          "avg_price": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
-              }
-            ],
-            "title": "Avg Price",
-            "description": "Average purchase price",
-            "example": 2450.75
-          },
-          "prev_close_price": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
-              }
-            ],
-            "title": "Prev Close Price",
-            "description": "Previous closing price",
-            "example": 2500
-          }
-        },
-        "type": "object",
-        "required": [
-          "broker_id",
-          "symbol",
-          "isin",
-          "avg_price",
-          "prev_close_price"
-        ],
-        "title": "HoldingsRequestSchema",
-        "description": "Schema for creating a new equity holding",
-        "example": {
-          "avg_price": 2450.75,
-          "broker_id": "123e4567-e89b-12d3-a456-426614174000",
-          "isin": "INE002A01018",
-          "prev_close_price": 2500,
-          "qty_available": 100,
-          "qty_long_term": 50,
-          "qty_pledged_margin": 0,
-          "sector": "Energy",
-          "symbol": "RELIANCE"
-        }
-      },
-      "HoldingsResponseSchema": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id",
-            "description": "Unique holding identifier"
-          },
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "User Id",
-            "description": "User identifier"
-          },
-          "broker_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Broker Id",
-            "description": "Broker identifier"
-          },
-          "symbol": {
-            "type": "string",
-            "title": "Symbol",
-            "description": "Trading symbol"
-          },
-          "isin": {
-            "type": "string",
-            "title": "Isin",
-            "description": "ISIN code"
-          },
-          "sector": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sector",
-            "description": "Sector of the equity"
-          },
-          "qty_available": {
-            "type": "integer",
-            "title": "Qty Available",
-            "description": "Available quantity"
-          },
-          "qty_long_term": {
-            "type": "integer",
-            "title": "Qty Long Term",
-            "description": "Long term quantity"
-          },
-          "qty_pledged_margin": {
-            "type": "integer",
-            "title": "Qty Pledged Margin",
-            "description": "Quantity pledged for margin"
-          },
-          "avg_price": {
-            "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Avg Price",
-            "description": "Average purchase price"
-          },
-          "prev_close_price": {
-            "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Prev Close Price",
-            "description": "Previous closing price"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "user_id",
-          "broker_id",
-          "symbol",
-          "isin",
-          "qty_available",
-          "qty_long_term",
-          "qty_pledged_margin",
-          "avg_price",
-          "prev_close_price"
-        ],
-        "title": "HoldingsResponseSchema",
-        "description": "Schema for equity holding response"
-      },
-      "HomeFeedSchema": {
+      "HoldingsMetadataSchema": {
         "properties": {
           "chat_integrations": {
             "items": {
@@ -1687,15 +1492,23 @@
             },
             "type": "array",
             "title": "Available Brokers"
+          },
+          "portfolio_updates": {
+            "items": {
+              "$ref": "#/components/schemas/PortfolioUpdates"
+            },
+            "type": "array",
+            "title": "Portfolio Updates"
           }
         },
         "type": "object",
         "required": [
           "chat_integrations",
-          "available_brokers"
+          "available_brokers",
+          "portfolio_updates"
         ],
-        "title": "HomeFeedSchema",
-        "description": "Home feed response schema"
+        "title": "HoldingsMetadataSchema",
+        "description": "Holdings metadata response schema"
       },
       "LLMModel": {
         "enum": [
@@ -1867,6 +1680,44 @@
           "message_type"
         ],
         "title": "MessageItem"
+      },
+      "PortfolioUpdates": {
+        "properties": {
+          "broker_id": {
+            "type": "string",
+            "title": "Broker Id"
+          },
+          "broker_name": {
+            "type": "string",
+            "title": "Broker Name"
+          },
+          "last_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Updated At"
+          },
+          "uploaded_via": {
+            "type": "string",
+            "title": "Uploaded Via"
+          },
+          "additional_metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Additional Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "broker_id",
+          "broker_name",
+          "last_updated_at",
+          "uploaded_via",
+          "additional_metadata"
+        ],
+        "title": "PortfolioUpdates",
+        "description": "Portfolio updates"
       },
       "SendTemplateRequest": {
         "properties": {
@@ -2119,6 +1970,25 @@
         ],
         "title": "TemplateParameter"
       },
+      "UserBrokerItem": {
+        "properties": {
+          "broker_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Broker Id"
+          },
+          "broker_name": {
+            "type": "string",
+            "title": "Broker Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "broker_id",
+          "broker_name"
+        ],
+        "title": "UserBrokerItem"
+      },
       "UserCreate": {
         "properties": {
           "username": {
@@ -2298,10 +2168,6 @@
     {
       "name": "holdings",
       "description": "Equity holdings management endpoints"
-    },
-    {
-      "name": "home",
-      "description": "Home feed endpoints for user integrations"
     }
   ]
 }

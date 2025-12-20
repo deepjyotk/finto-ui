@@ -1,10 +1,10 @@
 import { cookies } from "next/headers"
 import IntegrationsPageClient from "@/components/integrations/integrations-page-client"
-import { type HomeFeedSchema } from "@/lib/api/integrations_api"
+import { type HoldingsMetadataSchema } from "@/lib/api/integrations_api"
 
 const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000"
 
-async function getHomeFeed(): Promise<{ data: HomeFeedSchema | null; error: string | null }> {
+async function getHoldingsMetadata(): Promise<{ data: HoldingsMetadataSchema | null; error: string | null }> {
   const cookieStore = await cookies()
   const cookieHeader = cookieStore
     .getAll()
@@ -12,13 +12,13 @@ async function getHomeFeed(): Promise<{ data: HomeFeedSchema | null; error: stri
     .join("; ")
 
   try {
-    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/home`, {
+    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/holdings/metadata`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Cookie: cookieHeader,
       },
-      cache: "no-store", // Always fetch fresh data
+      cache: "no-store",
     })
 
     if (!response.ok) {
@@ -32,13 +32,13 @@ async function getHomeFeed(): Promise<{ data: HomeFeedSchema | null; error: stri
     const data = await response.json()
     return { data, error: null }
   } catch (error) {
-    console.error("Failed to fetch home feed:", error)
+    console.error("Failed to fetch holdings metadata:", error)
     return { data: null, error: error instanceof Error ? error.message : "Failed to load" }
   }
 }
 
 export default async function IntegrationsPage() {
-  const { data, error } = await getHomeFeed()
+  const { data, error } = await getHoldingsMetadata()
 
   return <IntegrationsPageClient initialData={data} initialError={error} />
 }
