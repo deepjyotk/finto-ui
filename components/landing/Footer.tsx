@@ -6,8 +6,8 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            {/* <img src="/logo-brokerbuddy.svg" alt="Finto" className="h-6 w-6" /> */}
-            <span className="font-semibold">Finto</span>
+            {/* <img src="/logo-brokerbuddy.svg" alt="ArthiQ" className="h-6 w-6" /> */}
+            <span className="font-semibold">ArthiQ</span>
           </div>
           <nav className="flex gap-4 text-sm text-[#9AA7B2]">
             <Link href="#features" className="hover:text-white">Features</Link>
@@ -17,9 +17,9 @@ export default function Footer() {
           </nav>
         </div>
         <p className="mt-6 text-xs text-[#9AA7B2]">
-          Finto is not a broker-dealer or investment adviser. We provide portfolio monitoring and insights only. Investing involves risk.
+          ArthiQ is not a broker-dealer or investment adviser. We provide portfolio monitoring and insights only. Investing involves risk.
         </p>
-        <p className="mt-2 text-xs text-[#9AA7B2]">© {new Date().getFullYear()} Finto. All rights reserved.</p>
+        <p className="mt-2 text-xs text-[#9AA7B2]">© {new Date().getFullYear()} ArthiQ. All rights reserved.</p>
       </div>
     </footer>
   )

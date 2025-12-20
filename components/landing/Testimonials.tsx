@@ -2,7 +2,7 @@ export default function Testimonials() {
   const quotes = [
     {
       quote:
-        "Finto caught a concentration risk I didn't even realize I had. The alert saved me from a 15% drop.",
+        "ArthiQ caught a concentration risk I didn't even realize I had. The alert saved me from a 15% drop.",
       author: "Priya S.",
       role: "Growth investor",
     },

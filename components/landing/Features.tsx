@@ -39,7 +39,7 @@ export default function Features() {
     <section id="features" className="py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">What Finto Does</h2>
+          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">What ArthiQ Does</h2>
           <p className="mt-3 text-[#9AA7B2]">Private. Proactive. Powerful portfolio intelligence.</p>
         </div>
 

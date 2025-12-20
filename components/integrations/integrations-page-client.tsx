@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Building2, AlertCircle } from "lucide-react"
-import Navbar from "@/components/landing/Navbar"
+import Header from "@/components/layout/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -147,7 +147,7 @@ export default function IntegrationsPageClient({
   if (error && error !== "unauthorized") {
     return (
       <>
-        <Navbar />
+        <Header />
         <div className="container mx-auto p-6 max-w-6xl">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -160,7 +160,7 @@ export default function IntegrationsPageClient({
 
   return (
     <>
-      <Navbar />
+      <Header />
       <div className="container mx-auto p-6 max-w-6xl">
         <div className="space-y-6">
           <div>

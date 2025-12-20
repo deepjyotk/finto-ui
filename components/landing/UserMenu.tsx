@@ -60,7 +60,7 @@ export default function UserMenu({
         <AlertDialogHeader>
           <AlertDialogTitle>Sign out?</AlertDialogTitle>
           <AlertDialogDescription>
-            You will be signed out of Finto.
+            You will be signed out of ArthiQ.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

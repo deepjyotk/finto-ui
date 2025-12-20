@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Finto API",
+    "title": "ArthiQ API",
     "description": "JWT-based authentication API with chat functionality",
     "version": "0.1.0"
   },

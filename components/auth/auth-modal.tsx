@@ -155,8 +155,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
           <DialogTitle>{mode === "login" ? "Welcome Back" : "Create Account"}</DialogTitle>
           <DialogDescription>
             {mode === "login"
-              ? "Sign in to your Finto account"
-              : "Sign up to get started with Finto"}
+              ? "Sign in to your ArthiQ account"
+              : "Sign up to get started with ArthiQ"}
           </DialogDescription>
         </DialogHeader>
 

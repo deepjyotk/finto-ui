@@ -132,7 +132,12 @@ export default function Header() {
                   variant="ghost"
                   size="sm"
                   onClick={() => router.push('/integrations')}
-                  className="hidden sm:flex items-center gap-2 text-white/80 hover:text-white hover:bg-white/10"
+                  className={cn(
+                    "hidden sm:flex items-center gap-2 transition-colors",
+                    pathname === '/integrations'
+                      ? "text-[#22d3ee] hover:text-[#67e8f9] bg-[#22d3ee]/10 hover:bg-[#22d3ee]/15 border border-[#22d3ee]/30 shadow-[0_0_8px_rgba(34,211,238,0.2)]"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  )}
                 >
                   <Puzzle className="h-4 w-4" />
                   Integrations

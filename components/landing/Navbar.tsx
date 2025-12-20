@@ -67,7 +67,7 @@ export default function Navbar() {
       <div className={cn("mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between transition-all", scrolled ? "h-14" : "h-16")}>
         <Link href="/" className="flex items-center gap-3 group">
           <span className="text-2xl">🪙</span>
-          <span className="font-semibold tracking-tight">Finto</span>
+          <span className="font-semibold tracking-tight">ArthiQ</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm text-[#9AA7B2]" aria-label="In-page">
