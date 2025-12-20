@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import {
   buildThesysChatOptionsResponse,
   handleThesysChatPost,
-} from "@/lib/api/features/chat/thesys-chat-proxy";
+} from "@/lib/api/thesys_api";
 
 export const POST = (request: NextRequest) => handleThesysChatPost(request);
 
