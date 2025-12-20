@@ -11,7 +11,6 @@ export default function Footer() {
           </div>
           <nav className="flex gap-4 text-sm text-[#9AA7B2]">
             <Link href="#features" className="hover:text-white">Features</Link>
-            <Link href="#pricing" className="hover:text-white">Pricing</Link>
             <Link href="#faq" className="hover:text-white">FAQ</Link>
             <Link href="/signup" className="hover:text-white">Get Started</Link>
           </nav>

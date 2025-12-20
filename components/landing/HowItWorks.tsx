@@ -1,19 +1,19 @@
-import { Link2, Bell, TrendingUp } from "lucide-react"
+import { Upload, MessageSquare, TrendingUp } from "lucide-react"
 
 const steps = [
   {
-    title: "Connect Your Portfolio",
-    desc: "Securely link your investment accounts and brokers.",
-    icon: Link2,
+    title: "Connect Broker",
+    desc: "Upload xlsx or csv",
+    icon: Upload,
   },
   {
-    title: "Get Smart Alerts",
-    desc: "Receive real-time notifications about risks and opportunities.",
-    icon: Bell,
+    title: "Ask queries to ArthiQ AI in human language",
+    desc: "For example: give me top 5 perfming stocks in my portfolio",
+    icon: MessageSquare,
   },
   {
     title: "Make Better Decisions",
-    desc: "Act on insights delivered directly to your Slack workspace.",
+    desc: "Act on insights delivered directly to you.",
     icon: TrendingUp,
   },
 ]

@@ -1,36 +1,36 @@
-import { Bell, TrendingUp, ShieldAlert, BarChart3, MessageSquare, Clock } from "lucide-react"
+import { Upload, Brain, Gauge, Zap, Newspaper, Calculator } from "lucide-react"
 
 
 const features = [
   {
-    title: "24/7 Portfolio Monitoring",
-    desc: "Continuous tracking of your investments for hidden risks and imbalances.",
-    icon: Clock,
+    title: "Multi-Broker Portfolio Upload",
+    desc: "Upload Excel and CSV files from brokers",
+    icon: Upload,
   },
   {
-    title: "Smart Risk Alerts",
-    desc: "Get notified when your portfolio needs attention or rebalancing.",
-    icon: ShieldAlert,
+    title: "AI-Powered Portfolio Analysis",
+    desc: "Get instant answers to portfolio questions naturally",
+    icon: Brain,
   },
   {
-    title: "Performance Analytics",
-    desc: "Track trends, analyze performance, and make data-driven decisions.",
-    icon: TrendingUp,
+    title: "Automated Risk & Performance Metrics",
+    desc: "Calculate volatility, drawdown, profit-loss, and analytics",
+    icon: Gauge,
   },
   {
-    title: "Real-time Insights",
-    desc: "Personalized portfolio insights delivered right when you need them.",
-    icon: BarChart3,
+    title: "Real-Time Financial Data Integration",
+    desc: "Access live prices, financial statements, and earnings",
+    icon: Zap,
   },
   {
-    title: "Slack Integration",
-    desc: "Receive alerts directly in Slack where you already work—no new app needed.",
-    icon: MessageSquare,
+    title: "Market News & Research",
+    desc: "Search NSE, BSE, SEBI circulars and news",
+    icon: Newspaper,
   },
   {
-    title: "Actionable Recommendations",
-    desc: "Get clear, actionable guidance on what to do next with your investments.",
-    icon: Bell,
+    title: "Custom Financial Calculations",
+    desc: "Generate custom calculations for any portfolio question",
+    icon: Calculator,
   },
 ]
 
