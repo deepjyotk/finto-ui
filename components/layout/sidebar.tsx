@@ -146,9 +146,9 @@ export default function Sidebar() {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed left-0 top-0 z-50 h-full bg-[#202123] text-white transform transition-all duration-200 ease-in-out",
+          "fixed left-0 top-0 z-50 h-full bg-[#202123] text-white transform transition-all duration-300 ease-in-out",
           sidebarCollapsed ? "w-64 lg:w-20" : "w-64 lg:w-64",
-          "lg:relative lg:z-auto lg:transform-none lg:transition-none lg:translate-x-0",
+          "lg:relative lg:z-auto lg:transform-none lg:transition-none",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >

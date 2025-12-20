@@ -3,13 +3,17 @@
 import dynamic from "next/dynamic"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { Loader2 } from "lucide-react"
+import { Loader2, Menu } from "lucide-react"
+import { useSelector, useDispatch } from "react-redux"
+import type { RootState } from "@/lib/store"
+import { toggleSidebar } from "@/lib/slices/ui"
 import type { MessageItem, SessionItem, UserBrokerItem } from "@/lib/api/chat_api"
 import { createChatSession, getSessionMessages } from "@/lib/api/chat_api"
 import type { ChatMessage, C1ActionEvent } from "@/components/chat/chat-display"
 import UserTextEnter from "@/components/chat/user-text-enter"
 import BrokerSelectionModal from "@/components/chat/broker-selection-modal"
 import { useToast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
 
 // Avoid SSR for ChatDisplay to prevent hydration mismatches from SDK-generated styles
 const ChatDisplay = dynamic(
@@ -40,6 +44,7 @@ export default function ChatPageClient({
   initialSessionId = null,
   brokers,
 }: ChatPageClientProps) {
+  const dispatch = useDispatch()
   const router = useRouter()
   const searchParams = useSearchParams()
   const searchParamsKey = searchParams?.toString()
@@ -354,7 +359,18 @@ export default function ChatPageClient({
 
   return (
     <>
-      <div className="flex h-full flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)]">
+      <div className="flex h-full flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)] relative">
+        {/* Mobile menu button - only visible on small screens */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => dispatch(toggleSidebar())}
+          className="fixed top-4 left-4 z-50 lg:hidden bg-[#202123]/90 backdrop-blur-sm text-white hover:bg-[#202123] border border-white/10 shadow-lg"
+          aria-label="Toggle sidebar"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        
         <ChatDisplay messages={messages} onAction={isThesysEnabled ? handleC1Action : undefined} />
         <UserTextEnter
           onSendMessage={sendMessage}
