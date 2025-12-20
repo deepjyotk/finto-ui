@@ -30,6 +30,7 @@ export interface BrokerPayload {
 export interface PortfolioUpdates {
   broker_id: string;
   broker_name: string;
+  broker_user_id: string;
   last_updated_at: string;
   uploaded_via: string;
   additional_metadata: Record<string, string>;
@@ -89,6 +90,13 @@ export const createHolding = (data: any) =>
 export const uploadHoldingsFile = (formData: FormData) =>
   apiClient.request<BulkHoldingsUploadResponse>("/api/v1/holdings/file-upload", {
     method: "POST",
+    body: formData,
+    headers: {}, // Let browser set Content-Type for FormData
+  });
+
+export const updateHoldingsFile = (userBrokerId: string, formData: FormData) =>
+  apiClient.request<BulkHoldingsUploadResponse>(`/api/v1/holdings/file-upload/${userBrokerId}`, {
+    method: "PUT",
     body: formData,
     headers: {}, // Let browser set Content-Type for FormData
   });

@@ -191,7 +191,7 @@ export default function IntegrationsPageClient({
               <CardContent>
                 <Button onClick={() => setShowBrokerModal(true)} className="w-full">
                   <Building2 className="mr-2 h-4 w-4" />
-                  Connect Broker or Upload Portfolio
+                  Connect New Broker
                 </Button>
               </CardContent>
             </Card>
@@ -213,7 +213,11 @@ export default function IntegrationsPageClient({
         <ConnectBrokerModal
           isOpen={showBrokerModal}
           onClose={() => setShowBrokerModal(false)}
-          brokers={holdingsMetadata?.available_brokers || []}
+          brokers={(holdingsMetadata?.available_brokers || []).filter(
+            (broker) => !holdingsMetadata?.portfolio_updates?.some(
+              (portfolio) => portfolio.broker_id === broker.broker_id
+            )
+          )}
           onSubmit={handleConnectBroker}
         />
       </div>

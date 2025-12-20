@@ -33,7 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-import { uploadHoldingsFile, type PortfolioUpdates, type BrokerPayload } from "@/lib/api/integrations_api"
+import { updateHoldingsFile, type PortfolioUpdates, type BrokerPayload } from "@/lib/api/integrations_api"
 import { cn } from "@/lib/utils"
 
 interface PortfolioUpdatesCardProps {
@@ -79,9 +79,9 @@ export function PortfolioUpdatesCard({
     try {
       const formData = new FormData()
       formData.append("file", selectedFile)
-      formData.append("broker_id", selectedPortfolio.broker_id)
 
-      const response = await uploadHoldingsFile(formData)
+      // Use PUT endpoint with broker_user_id for updating existing holdings
+      const response = await updateHoldingsFile(selectedPortfolio.broker_user_id, formData)
 
       toast({
         title: "Portfolio updated!",

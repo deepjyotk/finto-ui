@@ -102,13 +102,20 @@ export function ConnectBrokerModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Connect Broker</DialogTitle>
+          <DialogTitle>Connect New Broker</DialogTitle>
           <DialogDescription>
-            Select your broker to connect your account or upload holdings.
+            Select a new broker to connect your account or upload holdings.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-6 py-4">
+          {brokers.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <p className="font-medium">All brokers are already connected</p>
+              <p className="text-sm mt-1">You can update your existing portfolios from the main page.</p>
+            </div>
+          ) : (
+          <>
           {/* Broker Name Dropdown */}
           <div className="grid gap-2">
             <Label htmlFor="broker-name">Broker Name</Label>
@@ -198,6 +205,8 @@ export function ConnectBrokerModal({
                 )}
               </div>
             </div>
+          )}
+          </>
           )}
         </div>
 

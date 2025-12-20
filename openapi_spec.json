@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "ArthiQ API",
+    "title": "Finto API",
     "description": "JWT-based authentication API with chat functionality",
     "version": "0.1.0"
   },
@@ -285,6 +285,68 @@
           },
           "401": {
             "description": "Not authenticated or invalid token"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/holdings/file-upload/{user_broker_id}": {
+      "put": {
+        "tags": [
+          "holdings"
+        ],
+        "summary": "Update equity holdings from file",
+        "operationId": "update_holdings_file_api_v1_holdings_file_upload__user_broker_id__put",
+        "parameters": [
+          {
+            "name": "user_broker_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Broker Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_holdings_file_api_v1_holdings_file_upload__user_broker_id__put"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Holdings successfully updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkHoldingsUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid file format or parsing error"
+          },
+          "401": {
+            "description": "Not authenticated or invalid token"
+          },
+          "404": {
+            "description": "Holdings metadata not found"
           },
           "422": {
             "description": "Validation Error",
@@ -606,6 +668,48 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/kite/sync-holdings": {
+      "post": {
+        "tags": [
+          "kite"
+        ],
+        "summary": "Sync Holdings",
+        "description": "Sync Kite Connect holdings data to the database.\n\nTakes holdings data from Kite and stores them in the database for the logged-in user.\nThis endpoint clears old holdings and inserts fresh data for the user.\n\nArgs:\n    request: Request containing list of holdings from Kite\n    current_user: Authenticated user info\n    session: Database session\n\nReturns:\n    Success message with count of synced holdings",
+        "operationId": "sync_holdings_api_v1_kite_sync_holdings_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncHoldingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1177,6 +1281,21 @@
   },
   "components": {
     "schemas": {
+      "Body_update_holdings_file_api_v1_holdings_file_upload__user_broker_id__put": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "Excel or CSV file with holdings data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_update_holdings_file_api_v1_holdings_file_upload__user_broker_id__put"
+      },
       "Body_upload_holdings_file_api_v1_holdings_file_upload_post": {
         "properties": {
           "broker_id": {
@@ -1691,6 +1810,10 @@
             "type": "string",
             "title": "Broker Name"
           },
+          "broker_user_id": {
+            "type": "string",
+            "title": "Broker User Id"
+          },
           "last_updated_at": {
             "type": "string",
             "format": "date-time",
@@ -1712,6 +1835,7 @@
         "required": [
           "broker_id",
           "broker_name",
+          "broker_user_id",
           "last_updated_at",
           "uploaded_via",
           "additional_metadata"
@@ -1930,6 +2054,24 @@
           "has_next_page"
         ],
         "title": "SessionsListResponse"
+      },
+      "SyncHoldingsRequest": {
+        "properties": {
+          "holdings": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Holdings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "holdings"
+        ],
+        "title": "SyncHoldingsRequest",
+        "description": "Request schema for syncing holdings data from Kite"
       },
       "TemplateComponent": {
         "properties": {
