@@ -126,6 +126,14 @@ export default function Header() {
 
           {/* Right: Action Buttons */}
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.open("https://calendar.app.google/54M32xpq4xHS93Sm6", "_blank")}
+              className="text-white hover:bg-white/10 rounded-lg"
+            >
+              Schedule demo
+            </Button>
             {isAuthenticated ? (
               <>
                 <Button
@@ -208,24 +216,14 @@ export default function Header() {
                 )}
               </>
             ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAuthModal(true)}
-                  className="text-white hover:bg-white/10 rounded-lg"
-                >
-                  Schedule demo
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => setShowAuthModal(true)}
-                  className="bg-white text-[#0B0F14] hover:bg-white/90 rounded-lg font-medium"
-                >
-                  Log in
-                </Button>
-              </>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setShowAuthModal(true)}
+                className="bg-white text-[#0B0F14] hover:bg-white/90 rounded-lg font-medium"
+              >
+                Log in
+              </Button>
             )}
           </div>
         </div>
