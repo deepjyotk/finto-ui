@@ -22,6 +22,11 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Trash2,
+  Sparkles,
+  Settings,
+  HelpCircle,
+  UserCog,
+  ChevronRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -34,6 +39,7 @@ export default function Sidebar() {
   const { user } = useSelector((state: RootState) => state.auth)
   const [sessions, setSessions] = useState<SessionItem[]>([])
   const [loading, setLoading] = useState(false)
+  const [userMenuExpanded, setUserMenuExpanded] = useState(false)
 
   useEffect(() => {
     if (pathname?.startsWith("/chat")) {
@@ -299,50 +305,122 @@ export default function Sidebar() {
           </div>
 
           {/* Footer - User section */}
-          <div className="p-2 border-t border-white/10 space-y-1">
-            <Button
-              onClick={() => {
-                router.push("/integrations")
-                dispatch(setSidebarOpen(false))
-              }}
-              variant="ghost"
-              className={cn(
-                "w-full text-white hover:bg-white/10 rounded-md",
-                sidebarCollapsed ? "justify-center px-2" : "justify-start",
-              )}
-            >
-              <Cable className="h-4 w-4 mr-2" />
-              {!sidebarCollapsed && <span>Integrations</span>}
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div
-                  className={cn(
-                    "flex cursor-pointer items-center gap-2 rounded-md p-2 hover:bg-white/10",
-                    sidebarCollapsed && "justify-center",
-                  )}
+          <div className="border-t border-white/10">
+            {!sidebarCollapsed ? (
+              <>
+                {/* User Profile Section - Clickable to toggle menu */}
+                <div 
+                  className="p-3 cursor-pointer hover:bg-white/5 transition-colors"
+                  onClick={() => setUserMenuExpanded(!userMenuExpanded)}
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-[#c96a2f] text-xs font-semibold text-white">
-                    {getUserInitials()}
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#c96a2f] text-sm font-semibold text-white shrink-0">
+                      {getUserInitials()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-white truncate">
+                        {user?.full_name || "User"}
+                      </div>
+                      <div className="text-xs text-gray-400 truncate">
+                        @{user?.username || "user"}
+                      </div>
+                    </div>
+                    <ChevronRight 
+                      className={cn(
+                        "h-4 w-4 text-gray-400 transition-transform duration-200 shrink-0",
+                        userMenuExpanded && "rotate-90"
+                      )} 
+                    />
                   </div>
-                  {!sidebarCollapsed && (
-                    <>
-                      <div className="flex-1 truncate text-sm">{user?.full_name || "User"}</div>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </>
-                  )}
                 </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-[#202123] border-white/10">
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="text-white hover:bg-white/10 cursor-pointer"
+
+                {/* Menu Options - Animated expand/collapse */}
+                <div 
+                  className={cn(
+                    "overflow-hidden transition-all duration-300 ease-in-out",
+                    userMenuExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                  )}
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <div className="p-2 space-y-1 border-t border-white/10">
+                    <Button
+                      onClick={() => {
+                        // TODO: Navigate to upgrade page
+                        setUserMenuExpanded(false)
+                        dispatch(setSidebarOpen(false))
+                      }}
+                      variant="ghost"
+                      className="w-full justify-start text-white hover:bg-white/10 rounded-md px-3 py-2 h-auto"
+                    >
+                      <Sparkles className="h-4 w-4 mr-3 shrink-0" />
+                      <span className="text-sm">Upgrade plan</span>
+                    </Button>
+
+                    <Button
+                      onClick={() => {
+                        // TODO: Navigate to personalization page
+                        setUserMenuExpanded(false)
+                        dispatch(setSidebarOpen(false))
+                      }}
+                      variant="ghost"
+                      className="w-full justify-start text-white hover:bg-white/10 rounded-md px-3 py-2 h-auto"
+                    >
+                      <UserCog className="h-4 w-4 mr-3 shrink-0" />
+                      <span className="text-sm">Personalization</span>
+                    </Button>
+
+                    <Button
+                      onClick={() => {
+                        // TODO: Navigate to settings page
+                        setUserMenuExpanded(false)
+                        dispatch(setSidebarOpen(false))
+                      }}
+                      variant="ghost"
+                      className="w-full justify-start text-white hover:bg-white/10 rounded-md px-3 py-2 h-auto"
+                    >
+                      <Settings className="h-4 w-4 mr-3 shrink-0" />
+                      <span className="text-sm">Settings</span>
+                    </Button>
+
+                    <div className="border-t border-white/10 my-1" />
+
+                    <Button
+                      onClick={() => {
+                        // TODO: Navigate to help page or show help menu
+                        setUserMenuExpanded(false)
+                        dispatch(setSidebarOpen(false))
+                      }}
+                      variant="ghost"
+                      className="w-full justify-between text-white hover:bg-white/10 rounded-md px-3 py-2 h-auto"
+                    >
+                      <div className="flex items-center">
+                        <HelpCircle className="h-4 w-4 mr-3 shrink-0" />
+                        <span className="text-sm">Help</span>
+                      </div>
+                      <ChevronRight className="h-4 w-4 shrink-0" />
+                    </Button>
+
+                    <Button
+                      onClick={() => {
+                        setUserMenuExpanded(false)
+                        handleLogout()
+                      }}
+                      variant="ghost"
+                      className="w-full justify-start text-white hover:bg-white/10 rounded-md px-3 py-2 h-auto"
+                    >
+                      <LogOut className="h-4 w-4 mr-3 shrink-0" />
+                      <span className="text-sm">Log out</span>
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Collapsed view - show only user avatar */
+              <div className="p-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#c96a2f] text-sm font-semibold text-white mx-auto">
+                  {getUserInitials()}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
