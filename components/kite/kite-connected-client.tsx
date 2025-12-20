@@ -53,7 +53,7 @@ export default function KiteConnectedClient({ status }: { status: StatusType }) 
 function StatusBlock({ status, connected, loading }: { status: StatusType; connected: boolean; loading: boolean }) {
   if (loading) return <p className="text-sm text-gray-600">Checking connection...</p>
 
-  if (connected) return <p className="text-sm text-green-700">Kite account connected ✅</p>
+  if (connected) return <p className="text-sm text-cyan-700">Kite account connected ✅</p>
 
   switch (status) {
     case "missing_api_secret":

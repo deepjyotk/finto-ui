@@ -1,5 +1,5 @@
 import React from "react"
-import Navbar from "@/components/landing/Navbar"
+import Header from "@/components/layout/header"
 import Hero from "@/components/landing/Hero"
 import LogoCloud from "@/components/landing/LogoCloud"
 import Features from "@/components/landing/Features"
@@ -13,7 +13,7 @@ import Footer from "@/components/landing/Footer"
 export default function HomePage() {
   return (
     <div className="relative">
-      <Navbar />
+      <Header />
       <Hero />
       <LogoCloud />
       <Features />

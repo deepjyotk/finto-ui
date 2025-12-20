@@ -106,7 +106,7 @@ export default function ChatDisplay({ messages, onAction }: ChatDisplayProps) {
                 <div className="-mx-4 -my-3 w-full rounded-xl bg-[var(--chat-surface)]/90 p-4 shadow-lg backdrop-blur">
                   {isThesysEnabled ? (
                     <>
-                      <div className="prose prose-invert prose-sm max-w-none prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-p:text-gray-200 prose-a:text-blue-400 prose-strong:text-white prose-table:text-sm">
+                      <div className="prose prose-invert prose-sm max-w-none prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-p:text-gray-200 prose-a:text-cyan-400 prose-strong:text-white prose-table:text-sm">
                         <C1Component
                           c1Response={messageContent}
                           isStreaming={message.isStreaming || false}
@@ -122,7 +122,7 @@ export default function ChatDisplay({ messages, onAction }: ChatDisplayProps) {
                     </>
                   ) : (
                     <>
-                      <div className="prose prose-invert prose-sm max-w-none prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-p:text-gray-200 prose-a:text-blue-400 prose-strong:text-white prose-table:text-sm">
+                      <div className="prose prose-invert prose-sm max-w-none prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-p:text-gray-200 prose-a:text-cyan-400 prose-strong:text-white prose-table:text-sm">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {messageContent}
                         </ReactMarkdown>

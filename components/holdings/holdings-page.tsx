@@ -189,7 +189,7 @@ function HoldingsTable({ holdings }: { holdings: Holding[] | null }) {
                 <td className="p-3 text-right">{qty}</td>
                 <td className="p-3 text-right">₹{avg.toFixed(2)}</td>
                 <td className="p-3 text-right">₹{ltp.toFixed(2)}</td>
-                <td className={`p-3 text-right font-medium ${pl >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <td className={`p-3 text-right font-medium ${pl >= 0 ? "text-cyan-600" : "text-red-600"}`}>
                   {pl >= 0 ? "+" : ""}₹{pl.toFixed(2)}
                 </td>
               </tr>
@@ -241,7 +241,7 @@ function PositionsView({ positions }: { positions: any }) {
                 <td className="p-3 text-right">₹{avg.toFixed(2)}</td>
                 <td className="p-3 text-right">₹{ltp.toFixed(2)}</td>
                 <td className="p-3 text-right">₹{Number(p.value ?? 0).toFixed(2)}</td>
-                <td className={`p-3 text-right font-medium ${pnl >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <td className={`p-3 text-right font-medium ${pnl >= 0 ? "text-cyan-600" : "text-red-600"}`}>
                   {pnl >= 0 ? "+" : ""}₹{pnl.toFixed(2)}
                 </td>
               </tr>
@@ -278,7 +278,7 @@ function TradesTable({ trades }: { trades: Trade[] }) {
               <td className="p-3">{t.exchange}</td>
               <td className="p-3 text-right">{Number(t.filled_quantity ?? 0)}</td>
               <td className="p-3 text-right">₹{Number(t.average_price ?? 0).toFixed(2)}</td>
-              <td className={`p-3 text-sm ${t.status === "COMPLETE" ? "text-green-600" : t.status === "CANCELLED" ? "text-red-600" : "text-yellow-600"}`}>
+              <td className={`p-3 text-sm ${t.status === "COMPLETE" ? "text-cyan-600" : t.status === "CANCELLED" ? "text-red-600" : "text-yellow-600"}`}>
                 {t.status}
               </td>
               <td className="p-3 text-xs">{t.timestamp}</td>

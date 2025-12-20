@@ -37,7 +37,7 @@ export default function Hero() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[#9AA7B2]"
         >
-          🪙 Finto — Finance Done Right
+          ArthiQ - Finance Done Right
         </motion.span>
 
         <motion.h1
@@ -82,7 +82,7 @@ export default function Hero() {
                 size="lg"
                 variant="secondary"
                 onClick={() => (window.location.href = getLoginUrl())}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-cyan-600 hover:bg-cyan-700 text-white"
               >
                 Connect Kite
               </Button>
@@ -91,7 +91,7 @@ export default function Hero() {
                 size="lg"
                 variant="secondary"
                 onClick={() => router.push('/holdings')}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-cyan-600 hover:bg-cyan-700 text-white"
               >
                 View Holdings
               </Button>

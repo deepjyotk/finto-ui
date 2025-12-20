@@ -96,7 +96,7 @@ export default function Navbar() {
               {!isOnIntegrationsPage && (
                 <Button 
                   onClick={() => router.push("/integrations")}
-                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white shadow-sm"
                   size="sm"
                 >
                   <Cable className="h-4 w-4 mr-2" />
@@ -105,7 +105,7 @@ export default function Navbar() {
               )}
               {/* <Button 
                 onClick={() => router.push("/chat")}
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                className="bg-cyan-600 hover:bg-cyan-700 text-white shadow-sm"
                 size="sm"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
@@ -116,7 +116,7 @@ export default function Navbar() {
                   onClick={() => router.push('/holdings')}
                   size="sm"
                   variant="outline"
-                  className="border-green-500 text-green-600 hover:bg-green-50"
+                  className="border-cyan-500 text-cyan-600 hover:bg-cyan-50"
                 >
                   Holdings
                 </Button>

@@ -162,10 +162,7 @@ export default function Sidebar() {
           {/* Brand + collapse toggle */}
           <div className="flex items-center justify-between border-b border-white/10 p-3">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white/10 text-sm font-semibold">
-                F
-              </div>
-              {!sidebarCollapsed && <span className="text-sm font-semibold">Finto</span>}
+              {!sidebarCollapsed && <span className="text-sm font-semibold">ArthiQ</span>}
             </div>
             <div className="flex items-center gap-1">
               <Button

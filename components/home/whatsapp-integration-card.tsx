@@ -38,11 +38,11 @@ export function WhatsAppIntegrationCard({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-green-600" />
+              <MessageSquare className="h-5 w-5 text-cyan-600" />
               <CardTitle>WhatsApp Integration</CardTitle>
             </div>
             {whatsappData && (
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <Badge variant="outline" className="bg-cyan-50 text-cyan-700 border-cyan-200">
                 Connected
               </Badge>
             )}
@@ -57,8 +57,8 @@ export function WhatsAppIntegrationCard({
           {whatsappData ? (
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-                  <MessageSquare className="h-5 w-5 text-green-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100">
+                  <MessageSquare className="h-5 w-5 text-cyan-600" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">Connected Number</p>

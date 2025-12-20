@@ -24,7 +24,7 @@ export default function Showcase() {
               <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
                 <span className="h-3 w-3 rounded-full bg-red-400/80" />
                 <span className="h-3 w-3 rounded-full bg-yellow-400/80" />
-                <span className="h-3 w-3 rounded-full bg-green-400/80" />
+                <span className="h-3 w-3 rounded-full bg-cyan-400/80" />
                 <div className="mx-3 flex-1 rounded bg-white/5 px-3 py-1 text-xs text-[#9AA7B2]">
                   app.finto.io/dashboard
                 </div>
