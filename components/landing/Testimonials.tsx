@@ -2,19 +2,19 @@ export default function Testimonials() {
   const quotes = [
     {
       quote:
-        "ArthiQ caught a concentration risk I didn't even realize I had. The alert saved me from a 15% drop.",
-      author: "Priya S.",
-      role: "Growth investor",
+        "I can upload my holdings from Zerodha and AngelOne in seconds. No more manual entry across multiple brokers.",
+      author: "Preeti S.",
+      role: "Multi-broker investor",
     },
     {
-      quote: "Finally, portfolio monitoring that doesn't require logging into multiple dashboards. The insights are actionable and timely.",
-      author: "Michael H.",
-      role: "Diversified portfolio manager",
+      quote: "The AI chat understands my portfolio questions naturally. I just ask what I want to know and get instant answers.",
+      author: "Rajiv K.",
+      role: "Fund manager",
     },
     {
       quote:
-        "I get Slack notifications when my portfolio drifts from my target allocation. Makes rebalancing so much easier.",
-      author: "Anand R.",
+        "Risk metrics and custom calculations help me understand my portfolio better. I can ask any question and get insights instantly.",
+      author: "Sunmeen B.",
       role: "Long-term investor",
     },
   ]

@@ -1,13 +1,28 @@
 const faqs = [
   {
     q: "Is ArthiQ a broker or financial advisor?",
-    a: "No. ArthiQ is a portfolio monitoring and insights platform. We don't execute trades or provide investment advice—we help you stay informed about your portfolio.",
+    a: "No. ArthiQ is a portfolio intelligence platform. We don't execute trades or provide investment advice—we help you analyze and understand your portfolio through AI-powered insights.",
   },
-  { q: "How does ArthiQ monitor my portfolio?", a: "Once you securely connect your investment accounts, ArthiQ continuously analyzes your holdings for risks, imbalances, and opportunities." },
-  { q: "Where do I receive alerts?", a: "ArthiQ delivers insights directly to Slack. WhatsApp and email notifications are coming soon." },
-  { q: "Is my financial data secure?", a: "Absolutely. We use bank-level encryption and secure OAuth connections. Your data stays private and is never shared with third parties." },
-  { q: "Which brokers and platforms are supported?", a: "ArthiQ works with major brokers including Alpaca, IBKR, Zerodha, AngelOne, Tradier, and Robinhood. More integrations coming soon." },
-  { q: "Can I customize what alerts I receive?", a: "Yes! You can set preferences for risk thresholds, rebalancing alerts, and performance notifications based on your investment strategy." },
+  {
+    q: "How do I add my portfolio to ArthiQ?",
+    a: "You can upload your holdings by uploading Excel or CSV files from your broker. ArthiQ supports multiple brokers including Zerodha, AngelOne, and Grow.",
+  },
+  {
+    q: "How does the AI portfolio analysis work?",
+    a: "Simply ask questions about your portfolio in natural language. Our AI assistant analyzes your holdings, calculates metrics, and provides instant answers. You can ask about profit/loss, risk metrics, allocations, or any custom analysis.",
+  },
+  {
+    q: "What kind of portfolio questions can I ask?",
+    a: "You can ask questions about profit and loss, risk metrics (volatility, drawdown), performance comparisons, sector allocations, individual stock analysis, or request custom calculations. The AI generates calculations on-demand to answer your specific questions.",
+  },
+  {
+    q: "Is my financial data secure?",
+    a: "Absolutely. We use bank-level encryption and secure connections. Your data stays private and is never shared with third parties.",
+  },
+  {
+    q: "Can I access real-time market data?",
+    a: "Yes. ArthiQ integrates with financial data sources to provide live prices, financial statements, earnings data, and market news from NSE, BSE, and SEBI sources.",
+  },
 ]
 
 export default function FAQ() {

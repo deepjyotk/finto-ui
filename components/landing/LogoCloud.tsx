@@ -31,7 +31,7 @@ export default function LogoCloud() {
         </div>
         */}
         
-        <p className="text-center text-xs text-[#9AA7B2] mt-8">Portfolio monitoring for Alpaca, IBKR, Zerodha, AngelOne, Tradier, Robinhood & more</p>
+        <p className="text-center text-xs text-[#9AA7B2] mt-8">Portfolio monitoring for Zerodha, AngelOne, and Grow. Other brokers coming soon!</p>
       </div>
     </section>
   )
