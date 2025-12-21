@@ -26,13 +26,13 @@ export default function Showcase() {
                 <span className="h-3 w-3 rounded-full bg-yellow-400/80" />
                 <span className="h-3 w-3 rounded-full bg-cyan-400/80" />
                 <div className="mx-3 flex-1 rounded bg-white/5 px-3 py-1 text-xs text-[#9AA7B2]">
-                  app.arthiq.io/dashboard
+                  app.Arthik.io/dashboard
                 </div>
               </div>
               {/* TODO: Replace with real screenshot */}
               <img
                 src="/screenshots/mock-dashboard.png"
-                alt="ArthiQ dashboard mock"
+                alt="Arthik dashboard mock"
                 className="w-full rounded-b-lg"
                 loading="lazy"
               />

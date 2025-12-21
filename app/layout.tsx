@@ -12,27 +12,27 @@ const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" }
 
 export const metadata: Metadata = {
   title: {
-    default: "ArthiQ — Your friendly AI broker companion.",
-    template: "%s — ArthiQ",
+    default: "Arthik — Your friendly AI broker companion.",
+    template: "%s — Arthik",
   },
   description:
     "Trade smarter from WhatsApp. Get real-time alerts, confirm or auto-execute trades, and unify your portfolios across brokers—without app hopping.",
-  applicationName: "ArthiQ",
+  applicationName: "Arthik",
   metadataBase: new URL("https://brokerbuddy.app"),
   openGraph: {
     type: "website",
     url: "https://brokerbuddy.app",
-    title: "ArthiQ — Trade smarter from WhatsApp",
+    title: "Arthik — Trade smarter from WhatsApp",
     description:
       "Get real-time alerts, confirm or auto-execute trades, and unify your portfolios across brokers—without app hopping.",
-    siteName: "ArthiQ",
+    siteName: "Arthik",
     images: [
-      { url: "/og-brokerbuddy.svg", width: 1200, height: 630, alt: "ArthiQ" },
+      { url: "/og-brokerbuddy.svg", width: 1200, height: 630, alt: "Arthik" },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ArthiQ — Trade smarter from WhatsApp",
+    title: "Arthik — Trade smarter from WhatsApp",
     description:
       "Get real-time alerts, confirm or auto-execute trades, and unify your portfolios across brokers—without app hopping.",
     images: ["/og-brokerbuddy.svg"],

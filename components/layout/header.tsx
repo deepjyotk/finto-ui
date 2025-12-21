@@ -89,7 +89,7 @@ export default function Header() {
             
             <Link href="/" className="flex items-center gap-2 group">
               <span className="text-xl font-semibold text-white tracking-tight">
-                ArthiQ
+                Arthik
               </span>
             </Link>
 

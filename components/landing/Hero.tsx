@@ -37,7 +37,7 @@ export default function Hero() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[#9AA7B2]"
         >
-          ArthiQ - Finance Done Right
+          Arthik - Finance Done Right
         </motion.span>
 
         <motion.h1

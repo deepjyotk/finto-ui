@@ -1,4 +1,4 @@
-# ArthiQ Color Palette
+# Arthik Color Palette
 
 ## Primary Brand Color (Cyan)
 

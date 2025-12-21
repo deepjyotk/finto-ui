@@ -1,11 +1,11 @@
 const faqs = [
   {
-    q: "Is ArthiQ a broker or financial advisor?",
-    a: "No. ArthiQ is a portfolio intelligence platform. We don't execute trades or provide investment advice—we help you analyze and understand your portfolio through AI-powered insights.",
+    q: "Is Arthik a broker or financial advisor?",
+    a: "No. Arthik is a portfolio intelligence platform. We don't execute trades or provide investment advice—we help you analyze and understand your portfolio through AI-powered insights.",
   },
   {
-    q: "How do I add my portfolio to ArthiQ?",
-    a: "You can upload your holdings by uploading Excel or CSV files from your broker. ArthiQ supports multiple brokers including Zerodha, AngelOne, and Grow.",
+    q: "How do I add my portfolio to Arthik?",
+    a: "You can upload your holdings by uploading Excel or CSV files from your broker. Arthik supports multiple brokers including Zerodha, AngelOne, and Grow.",
   },
   {
     q: "How does the AI portfolio analysis work?",
@@ -21,7 +21,7 @@ const faqs = [
   },
   {
     q: "Can I access real-time market data?",
-    a: "Yes. ArthiQ integrates with financial data sources to provide live prices, financial statements, earnings data, and market news from NSE, BSE, and SEBI sources.",
+    a: "Yes. Arthik integrates with financial data sources to provide live prices, financial statements, earnings data, and market news from NSE, BSE, and SEBI sources.",
   },
 ]
 

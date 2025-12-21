@@ -60,7 +60,7 @@ export default function UserMenu({
         <AlertDialogHeader>
           <AlertDialogTitle>Sign out?</AlertDialogTitle>
           <AlertDialogDescription>
-            You will be signed out of ArthiQ.
+            You will be signed out of Arthik.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

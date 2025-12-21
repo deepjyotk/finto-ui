@@ -7,7 +7,7 @@ const steps = [
     icon: Upload,
   },
   {
-    title: "Ask queries to ArthiQ AI in human language",
+    title: "Ask queries to Arthik AI in human language",
     desc: "For example: give me top 5 perfming stocks in my portfolio",
     icon: MessageSquare,
   },
