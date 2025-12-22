@@ -136,19 +136,22 @@ export default function Header() {
             </Button>
             {isAuthenticated ? (
               <>
+                {/* Integrations button - icon-only on mobile, full button on desktop */}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => router.push('/integrations')}
                   className={cn(
-                    "hidden sm:flex items-center gap-2 transition-colors",
+                    "flex items-center gap-2 transition-colors",
+                    "sm:gap-2",
                     pathname === '/integrations'
                       ? "text-[#22d3ee] hover:text-[#67e8f9] bg-[#22d3ee]/10 hover:bg-[#22d3ee]/15 border border-[#22d3ee]/30 shadow-[0_0_8px_rgba(34,211,238,0.2)]"
                       : "text-white/80 hover:text-white hover:bg-white/10"
                   )}
+                  aria-label="Integrations"
                 >
                   <Puzzle className="h-4 w-4" />
-                  Integrations
+                  <span className="hidden sm:inline">Integrations</span>
                 </Button>
                 {pathname?.startsWith('/chat') && (
                   <Button
@@ -203,6 +206,16 @@ export default function Header() {
                         align="end"
                         className="w-48 bg-[#1a1b23] border-white/10 text-white"
                       >
+                        <DropdownMenuItem
+                          onClick={() => router.push('/integrations')}
+                          className={cn(
+                            "text-white/90 hover:bg-white/10 cursor-pointer focus:bg-white/10 focus:text-white",
+                            pathname === '/integrations' && "bg-[#22d3ee]/10 text-[#22d3ee]"
+                          )}
+                        >
+                          <Puzzle className="h-4 w-4 mr-2" />
+                          Integrations
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={handleLogout}
                           className="text-white/90 hover:bg-white/10 cursor-pointer focus:bg-white/10 focus:text-white"
