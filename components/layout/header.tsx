@@ -21,6 +21,7 @@ import useKiteConnection from "@/lib/hooks/use-kite-connection"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { ChatHeaderCreditWidget } from "@/components/billing/chat-header-credit-widget"
 
 export default function Header() {
   const dispatch = useDispatch()
@@ -126,6 +127,11 @@ export default function Header() {
 
           {/* Right: Action Buttons */}
           <div className="flex items-center gap-3">
+            {/* Credit Widget - Show on chat pages when authenticated */}
+            {isAuthenticated && pathname?.startsWith('/chat') && (
+              <ChatHeaderCreditWidget />
+            )}
+            
             <Button
               variant="ghost"
               size="sm"

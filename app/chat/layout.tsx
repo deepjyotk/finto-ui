@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import Sidebar from "@/components/layout/sidebar"
 import Header from "@/components/layout/header"
+import { CreditModalProvider } from "@/components/billing/credit-modal-provider"
 
 export default function ChatLayout({ children }: { children: ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
           {children}
         </div>
       </div>
+      <CreditModalProvider />
     </div>
   )
 }

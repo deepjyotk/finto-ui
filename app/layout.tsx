@@ -4,6 +4,7 @@ import { Inter, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { Toaster } from "@/components/ui/toaster"
+import { CreditModalProvider } from "@/components/billing/credit-modal-provider"
 import "@crayonai/react-ui/styles/index.css"
 
 
@@ -57,6 +58,7 @@ export default function RootLayout({
         <Providers>
           <main className="min-h-dvh flex flex-col">{children}</main>
           <Toaster />
+          <CreditModalProvider />
         </Providers>
       </body>
     </html>
