@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react"
 import { formatDistanceToNow, format } from "date-fns"
+import * as XLSX from "xlsx"
 import {
   Briefcase,
   Calendar,
@@ -14,10 +15,13 @@ import {
   ChevronRight,
   Info,
   X,
+  Lock,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
@@ -53,7 +57,33 @@ export function PortfolioUpdatesCard({
   const [reuploadModalOpen, setReuploadModalOpen] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [panPassword, setPanPassword] = useState("")
+  const [showPanModal, setShowPanModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const isAngelOne = (portfolio: PortfolioUpdates | null) =>
+    portfolio?.broker_name.toLowerCase().includes("angel")
+
+  const isXlsxFile = (file: File) =>
+    file.name.toLowerCase().endsWith(".xlsx") || file.name.toLowerCase().endsWith(".xls")
+
+  const isFilePasswordProtected = async (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result as ArrayBuffer
+          XLSX.read(data, { type: "buffer" })
+          resolve(false)
+        } catch (err: unknown) {
+          const errorMsg = err instanceof Error ? err.message : String(err)
+          resolve(errorMsg.includes("password") || errorMsg.includes("encrypt") || errorMsg.includes("EPASS"))
+        }
+      }
+      reader.onerror = () => resolve(false)
+      reader.readAsArrayBuffer(file)
+    })
+  }
 
   const handleViewPortfolio = (portfolio: PortfolioUpdates) => {
     setSelectedPortfolio(portfolio)
@@ -65,11 +95,24 @@ export function PortfolioUpdatesCard({
     setReuploadModalOpen(true)
   }
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      setSelectedFile(file)
+    if (!file) return
+
+    if (isAngelOne(selectedPortfolio) && isXlsxFile(file)) {
+      const isProtected = await isFilePasswordProtected(file)
+      if (isProtected) {
+        setSelectedFile(file)
+        setShowPanModal(true)
+        return
+      }
     }
+    setSelectedFile(file)
+  }
+
+  const handlePanSubmit = () => {
+    if (!panPassword) return
+    setShowPanModal(false)
   }
 
   const handleReupload = async () => {
@@ -79,8 +122,10 @@ export function PortfolioUpdatesCard({
     try {
       const formData = new FormData()
       formData.append("file", selectedFile)
+      if (panPassword) {
+        formData.append("password", panPassword.toUpperCase())
+      }
 
-      // Use PUT endpoint with broker_user_id for updating existing holdings
       const response = await updateHoldingsFile(selectedPortfolio.broker_user_id, formData)
 
       toast({
@@ -105,6 +150,8 @@ export function PortfolioUpdatesCard({
     setReuploadModalOpen(false)
     setSelectedPortfolio(null)
     setSelectedFile(null)
+    setPanPassword("")
+    setShowPanModal(false)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -424,6 +471,53 @@ export function PortfolioUpdatesCard({
                   Upload & Update
                 </>
               )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+      {/* PAN Card Password Modal for AngelOne */}
+      <Dialog open={showPanModal} onOpenChange={(open) => {
+        if (!open) {
+          setShowPanModal(false)
+          setPanPassword("")
+        }
+      }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-amber-500" />
+              File is Password Protected
+            </DialogTitle>
+            <DialogDescription>
+              AngelOne exports are protected with your PAN card number. Enter it below to unlock.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="pan-reupload-input">PAN Card Number</Label>
+            <Input
+              id="pan-reupload-input"
+              placeholder="e.g. ABCDE1234F"
+              value={panPassword}
+              onChange={(e) => setPanPassword(e.target.value.toUpperCase())}
+              className="mt-2 uppercase"
+              maxLength={10}
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              Your PAN is used as the password to unlock the file.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowPanModal(false)
+              setPanPassword("")
+              setSelectedFile(null)
+              if (fileInputRef.current) fileInputRef.current.value = ""
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handlePanSubmit} disabled={panPassword.length !== 10}>
+              Continue
             </Button>
           </DialogFooter>
         </DialogContent>
