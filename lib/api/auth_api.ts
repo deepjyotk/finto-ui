@@ -20,8 +20,26 @@ export interface UserResponse {
   user_id: string;
 }
 
+// OTP Types (from OpenAPI spec)
+export interface OTPResponse {
+  message: string;
+}
+
+export interface OTPVerifyRequest {
+  email: string;
+  otp: string; // 6-digit OTP
+}
+
+// Register initiates OTP verification - returns message confirming OTP sent
 export const register = (data: UserCreate) =>
-  apiClient.request<UserResponse>("/api/v1/auth/register", {
+  apiClient.request<OTPResponse>("/api/v1/auth/register", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+// Verify OTP and complete registration - returns created user
+export const verifyOtp = (data: OTPVerifyRequest) =>
+  apiClient.request<UserResponse>("/api/v1/auth/verify-otp", {
     method: "POST",
     body: JSON.stringify(data),
   });

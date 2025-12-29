@@ -33,14 +33,59 @@
         "tags": [
           "authentication"
         ],
-        "summary": "Register a new user",
-        "description": "Create a new user account and return the created user information.",
+        "summary": "Register a new user (initiates OTP verification)",
+        "description": "Initiate registration by sending an OTP to the user's email. Use /verify-otp to complete registration.",
         "operationId": "register_api_v1_auth_register_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OTP sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OTPResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Username or email already exists, or rate limited"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/verify-otp": {
+      "post": {
+        "tags": [
+          "authentication"
+        ],
+        "summary": "Verify OTP and complete registration",
+        "description": "Verify the OTP sent to the user's email and create the user account.",
+        "operationId": "verify_otp_api_v1_auth_verify_otp_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OTPVerifyRequest"
               }
             }
           },
@@ -58,7 +103,7 @@
             }
           },
           "400": {
-            "description": "Username or email already exists"
+            "description": "Invalid or expired OTP"
           },
           "422": {
             "description": "Validation Error",
@@ -165,21 +210,209 @@
         }
       }
     },
-    "/api/v1/auth/verify": {
-      "get": {
+    "/api/v1/billing/credits/add": {
+      "post": {
         "tags": [
-          "authentication"
+          "billing"
         ],
-        "summary": "Verify authentication status",
-        "description": "Check if the current JWT token is valid and return authentication status.",
-        "operationId": "verify_token_api_v1_auth_verify_get",
+        "summary": "Add Credits",
+        "description": "Add credits to the current user's account.",
+        "operationId": "add_credits_api_v1_billing_credits_add_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCreditsRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
-            "description": "Authentication status returned",
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditBalanceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/billing/credits/balance": {
+      "get": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Get Balance",
+        "description": "Get current user's credit balance.",
+        "operationId": "get_balance_api_v1_billing_credits_balance_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditBalanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/billing/usage/summary": {
+      "get": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Get Usage Summary",
+        "description": "Get user's credit usage summary.",
+        "operationId": "get_usage_summary_api_v1_billing_usage_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/billing/transactions": {
+      "get": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Get Transaction History",
+        "description": "Get user's credit transaction history with pagination.\n\nQuery Parameters:\n- limit: Maximum number of transactions to return (default 50, max 200)\n- offset: Number of transactions to skip (for pagination)\n- transaction_type: Filter by type ('addition', 'deduction', 'initial', 'refund')",
+        "operationId": "get_transaction_history_api_v1_billing_transactions_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "transaction_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Transaction Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
 
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/billing/admin/credits/add/{user_id}": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Admin Add Credits",
+        "description": "Admin endpoint to add credits to any user's account.",
+        "operationId": "admin_add_credits_api_v1_billing_admin_credits_add__user_id__post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCreditsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditBalanceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1281,6 +1514,21 @@
   },
   "components": {
     "schemas": {
+      "AddCreditsRequest": {
+        "properties": {
+          "amount": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Amount",
+            "description": "Amount of credits to add (must be positive)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "title": "AddCreditsRequest"
+      },
       "Body_update_holdings_file_api_v1_holdings_file_upload__user_broker_id__put": {
         "properties": {
           "file": {
@@ -1288,6 +1536,18 @@
             "format": "binary",
             "title": "File",
             "description": "Excel or CSV file with holdings data"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password",
+            "description": "Optional password for password-protected Excel files"
           }
         },
         "type": "object",
@@ -1309,6 +1569,18 @@
             "format": "binary",
             "title": "File",
             "description": "Excel or CSV file with holdings data"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password",
+            "description": "Optional password for password-protected Excel files"
           }
         },
         "type": "object",
@@ -1583,6 +1855,29 @@
         ],
         "title": "ConnectIntentResponse"
       },
+      "CreditBalanceResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "balance": {
+            "type": "integer",
+            "title": "Balance"
+          },
+          "balance_usd": {
+            "type": "number",
+            "title": "Balance Usd"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "balance",
+          "balance_usd"
+        ],
+        "title": "CreditBalanceResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1799,6 +2094,51 @@
           "message_type"
         ],
         "title": "MessageItem"
+      },
+      "OTPResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "OTPResponse",
+        "example": {
+          "message": "OTP sent successfully"
+        }
+      },
+      "OTPVerifyRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "Email used during registration"
+          },
+          "otp": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 6,
+            "title": "Otp",
+            "description": "6-digit OTP received via email",
+            "example": "123456"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "otp"
+        ],
+        "title": "OTPVerifyRequest",
+        "example": {
+          "email": "john@example.com",
+          "otp": "123456"
+        }
       },
       "PortfolioUpdates": {
         "properties": {
@@ -2111,6 +2451,90 @@
           "text"
         ],
         "title": "TemplateParameter"
+      },
+      "UsageRecord": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "type": "integer",
+            "title": "Output Tokens"
+          },
+          "usd_cost": {
+            "type": "number",
+            "title": "Usd Cost"
+          },
+          "credits_deducted": {
+            "type": "integer",
+            "title": "Credits Deducted"
+          },
+          "balance_after": {
+            "type": "integer",
+            "title": "Balance After"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp",
+          "model",
+          "input_tokens",
+          "output_tokens",
+          "usd_cost",
+          "credits_deducted",
+          "balance_after"
+        ],
+        "title": "UsageRecord"
+      },
+      "UsageSummaryResponse": {
+        "properties": {
+          "current_balance": {
+            "type": "integer",
+            "title": "Current Balance"
+          },
+          "current_balance_usd": {
+            "type": "number",
+            "title": "Current Balance Usd"
+          },
+          "total_credits_spent": {
+            "type": "integer",
+            "title": "Total Credits Spent"
+          },
+          "total_usd_spent": {
+            "type": "number",
+            "title": "Total Usd Spent"
+          },
+          "request_count": {
+            "type": "integer",
+            "title": "Request Count"
+          },
+          "recent_requests": {
+            "items": {
+              "$ref": "#/components/schemas/UsageRecord"
+            },
+            "type": "array",
+            "title": "Recent Requests"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_balance",
+          "current_balance_usd",
+          "total_credits_spent",
+          "total_usd_spent",
+          "request_count",
+          "recent_requests"
+        ],
+        "title": "UsageSummaryResponse"
       },
       "UserBrokerItem": {
         "properties": {
