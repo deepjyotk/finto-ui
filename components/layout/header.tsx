@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Menu, Plus, ExternalLink, LogOut, Puzzle } from "lucide-react"
+import { Menu, Plus, ExternalLink, LogOut, Puzzle, Coins } from "lucide-react"
 import AuthModal from "@/components/auth/auth-modal"
 import { useState } from "react"
 import useKiteConnection from "@/lib/hooks/use-kite-connection"
@@ -215,6 +215,16 @@ export default function Header() {
                         align="end"
                         className="w-48 bg-[#1a1b23] border-white/10 text-white"
                       >
+                        <DropdownMenuItem
+                          onClick={() => router.push('/dashboard/credits')}
+                          className={cn(
+                            "text-white/90 hover:bg-white/10 cursor-pointer focus:bg-white/10 focus:text-white",
+                            pathname === '/dashboard/credits' && "bg-[#22d3ee]/10 text-[#22d3ee]"
+                          )}
+                        >
+                          <Coins className="h-4 w-4 mr-2" />
+                          Credits
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => router.push('/integrations')}
                           className={cn(

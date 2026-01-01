@@ -130,7 +130,7 @@ export function CreditDashboard() {
   };
 
   const filteredTransactions = transactions.filter((t) =>
-    t.description.toLowerCase().includes(searchQuery.toLowerCase())
+    (t.description || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const totalPages = Math.ceil(totalTransactions / itemsPerPage);
