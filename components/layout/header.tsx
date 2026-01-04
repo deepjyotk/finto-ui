@@ -173,7 +173,7 @@ export default function Header() {
                     New chat
                   </Button>
                 )}
-                {/* {!connected && (
+                {!connected && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -182,7 +182,7 @@ export default function Header() {
                   >
                     Connect Kite
                   </Button>
-                )} */}
+                )}
                 {connected && (
                   <Button
                     variant="outline"

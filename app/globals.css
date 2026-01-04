@@ -131,4 +131,20 @@
   .chat-shell .crayon-shell-container {
     padding: 0;
   }
+
+  /* AG Grid Dark Theme Customization */
+  .ag-theme-quartz-dark {
+    --ag-background-color: oklch(0.145 0 0);
+    --ag-foreground-color: oklch(0.985 0 0);
+    --ag-border-color: oklch(0.269 0 0);
+    --ag-header-background-color: oklch(0.205 0 0);
+    --ag-header-foreground-color: oklch(0.985 0 0);
+    --ag-odd-row-background-color: oklch(0.145 0 0);
+    --ag-row-hover-color: oklch(0.269 0 0);
+    --ag-selected-row-background-color: oklch(0.269 0 0);
+    --ag-range-selection-border-color: #22d3ee;
+    --ag-input-focus-border-color: #22d3ee;
+    --ag-checkbox-checked-color: #22d3ee;
+  }
 }
+
