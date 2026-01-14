@@ -48,6 +48,13 @@ export interface BulkHoldingsUploadResponse {
   message: string;
 }
 
+export interface DeleteBrokerHoldingsResponse {
+  success: boolean;
+  deleted_holdings_count: number;
+  metadata_deleted: boolean;
+  message: string;
+}
+
 export const createWhatsAppConnectIntent = (data: ConnectIntentRequest) =>
   apiClient.request<ConnectIntentResponse>("/api/v1/whatsapp/connect-intent", {
     method: "POST",
@@ -104,4 +111,9 @@ export const updateHoldingsFile = (userBrokerId: string, formData: FormData) =>
 export const healthCheck = () =>
   apiClient.request<any>("/healthz", {
     method: "GET",
+  });
+
+export const deleteBrokerHoldings = (brokerId: string) =>
+  apiClient.request<DeleteBrokerHoldingsResponse>(`/api/v1/holdings/broker/${brokerId}`, {
+    method: "DELETE",
   });

@@ -81,7 +81,7 @@ type SyncStatus = {
   last_sync?: string
 }
 
-export default function HoldingsPage() {
+export default function HoldingsPageClient() {
   const router = useRouter()
   const { connected, loading, getLoginUrl, refresh } = useKiteConnection()
   

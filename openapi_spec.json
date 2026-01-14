@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Finto API",
+    "title": "Arthik API",
     "description": "JWT-based authentication API with chat functionality",
     "version": "0.1.0"
   },
@@ -594,6 +594,129 @@
         }
       }
     },
+    "/api/v1/holdings/sync": {
+      "post": {
+        "tags": [
+          "holdings"
+        ],
+        "summary": "Sync holdings from Kite to database",
+        "description": "Sync holdings from Kite Connect API. For each holding, checks if it exists by symbol and updates if changed, or creates new.",
+        "operationId": "sync_holdings_api_v1_holdings_sync_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/src__api__schemas__holdings__SyncHoldingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Holdings successfully synced",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncHoldingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "401": {
+            "description": "Not authenticated or invalid token"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/holdings/sync-status": {
+      "get": {
+        "tags": [
+          "holdings"
+        ],
+        "summary": "Get most recent sync status",
+        "description": "Get the most recent holdings sync record for the authenticated user",
+        "operationId": "get_sync_status_api_v1_holdings_sync_status_get",
+        "responses": {
+          "200": {
+            "description": "Sync status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated or invalid token"
+          }
+        }
+      }
+    },
+    "/api/v1/holdings/broker/{broker_id}": {
+      "delete": {
+        "tags": [
+          "holdings"
+        ],
+        "summary": "Delete broker holdings for user",
+        "description": "Delete all holdings and metadata for a specific broker for the authenticated user",
+        "operationId": "delete_broker_holdings_api_v1_holdings_broker__broker_id__delete",
+        "parameters": [
+          {
+            "name": "broker_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Broker Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Holdings and metadata successfully deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteBrokerHoldingsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No holdings found for this broker"
+          },
+          "401": {
+            "description": "Not authenticated or invalid token"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/kite/login": {
       "get": {
         "tags": [
@@ -937,7 +1060,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SyncHoldingsRequest"
+                "$ref": "#/components/schemas/src__api__kiteconnect_integration__SyncHoldingsRequest"
               }
             }
           },
@@ -1878,6 +2001,45 @@
         ],
         "title": "CreditBalanceResponse"
       },
+      "DeleteBrokerHoldingsResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "Whether the deletion was successful"
+          },
+          "deleted_holdings_count": {
+            "type": "integer",
+            "title": "Deleted Holdings Count",
+            "description": "Number of holdings deleted"
+          },
+          "metadata_deleted": {
+            "type": "boolean",
+            "title": "Metadata Deleted",
+            "description": "Whether metadata was deleted"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "deleted_holdings_count",
+          "metadata_deleted",
+          "message"
+        ],
+        "title": "DeleteBrokerHoldingsResponse",
+        "description": "Schema for delete broker holdings response",
+        "example": {
+          "deleted_holdings_count": 15,
+          "message": "Successfully deleted 15 holdings and metadata for broker",
+          "metadata_deleted": true,
+          "success": true
+        }
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1890,6 +2052,52 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HoldingData": {
+        "properties": {
+          "tradingsymbol": {
+            "type": "string",
+            "title": "Tradingsymbol",
+            "description": "Trading symbol"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity",
+            "description": "Quantity of shares"
+          },
+          "average_price": {
+            "type": "number",
+            "title": "Average Price",
+            "description": "Average purchase price"
+          },
+          "last_price": {
+            "type": "number",
+            "title": "Last Price",
+            "description": "Last traded price"
+          },
+          "exchange": {
+            "type": "string",
+            "title": "Exchange",
+            "description": "Exchange (e.g., NSE, BSE)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tradingsymbol",
+          "quantity",
+          "average_price",
+          "last_price",
+          "exchange"
+        ],
+        "title": "HoldingData",
+        "description": "Schema for a single holding from Kite API",
+        "example": {
+          "average_price": 2450.75,
+          "exchange": "NSE",
+          "last_price": 2500,
+          "quantity": 100,
+          "tradingsymbol": "RELIANCE"
+        }
       },
       "HoldingsMetadataSchema": {
         "properties": {
@@ -2395,23 +2603,85 @@
         ],
         "title": "SessionsListResponse"
       },
-      "SyncHoldingsRequest": {
+      "SyncHoldingsResponse": {
         "properties": {
-          "holdings": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Holdings"
+          "synced_count": {
+            "type": "integer",
+            "title": "Synced Count",
+            "description": "Number of holdings synced"
+          },
+          "updated_count": {
+            "type": "integer",
+            "title": "Updated Count",
+            "description": "Number of holdings updated"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
           }
         },
         "type": "object",
         "required": [
-          "holdings"
+          "synced_count",
+          "updated_count",
+          "message"
         ],
-        "title": "SyncHoldingsRequest",
-        "description": "Request schema for syncing holdings data from Kite"
+        "title": "SyncHoldingsResponse",
+        "description": "Schema for sync holdings response",
+        "example": {
+          "message": "Successfully synced 10 holdings, updated 3",
+          "synced_count": 10,
+          "updated_count": 3
+        }
+      },
+      "SyncStatusResponse": {
+        "properties": {
+          "last_sync": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync",
+            "description": "ISO timestamp of last sync"
+          },
+          "synced_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Synced Count",
+            "description": "Number of holdings synced in last sync"
+          },
+          "updated_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated Count",
+            "description": "Number of holdings updated in last sync"
+          }
+        },
+        "type": "object",
+        "title": "SyncStatusResponse",
+        "description": "Schema for sync status response",
+        "example": {
+          "last_sync": "2026-01-02T10:30:00+00:00",
+          "synced_count": 10,
+          "updated_count": 3
+        }
       },
       "TemplateComponent": {
         "properties": {
@@ -2719,6 +2989,60 @@
         ],
         "title": "WhatsAppPayload",
         "description": "WhatsApp integration payload"
+      },
+      "src__api__kiteconnect_integration__SyncHoldingsRequest": {
+        "properties": {
+          "holdings": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Holdings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "holdings"
+        ],
+        "title": "SyncHoldingsRequest",
+        "description": "Request schema for syncing holdings data from Kite"
+      },
+      "src__api__schemas__holdings__SyncHoldingsRequest": {
+        "properties": {
+          "broker_name": {
+            "type": "string",
+            "title": "Broker Name",
+            "description": "Name of the broker. One of: 'Zerodha', 'AngelOne', 'Groww'"
+          },
+          "holdings": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingData"
+            },
+            "type": "array",
+            "title": "Holdings",
+            "description": "List of holdings to sync"
+          }
+        },
+        "type": "object",
+        "required": [
+          "broker_name",
+          "holdings"
+        ],
+        "title": "SyncHoldingsRequest",
+        "description": "Schema for syncing holdings from Kite",
+        "example": {
+          "broker_name": "Zerodha",
+          "holdings": [
+            {
+              "average_price": 2450.75,
+              "exchange": "NSE",
+              "last_price": 2500,
+              "quantity": 100,
+              "tradingsymbol": "RELIANCE"
+            }
+          ]
+        }
       }
     }
   },

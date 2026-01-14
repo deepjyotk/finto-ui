@@ -16,6 +16,7 @@ import {
   Info,
   X,
   Lock,
+  Trash2,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -37,7 +38,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-import { updateHoldingsFile, type PortfolioUpdates, type BrokerPayload } from "@/lib/api/integrations_api"
+import { updateHoldingsFile, deleteBrokerHoldings, type PortfolioUpdates, type BrokerPayload } from "@/lib/api/integrations_api"
 import { cn } from "@/lib/utils"
 
 interface PortfolioUpdatesCardProps {
@@ -59,6 +60,9 @@ export function PortfolioUpdatesCard({
   const [isUploading, setIsUploading] = useState(false)
   const [panPassword, setPanPassword] = useState("")
   const [showPanModal, setShowPanModal] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [portfolioToDelete, setPortfolioToDelete] = useState<PortfolioUpdates | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isAngelOne = (portfolio: PortfolioUpdates | null) =>
@@ -155,6 +159,42 @@ export function PortfolioUpdatesCard({
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
+  }
+
+  const handleDeleteClick = (portfolio: PortfolioUpdates) => {
+    setPortfolioToDelete(portfolio)
+    setDeleteModalOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!portfolioToDelete) return
+
+    setIsDeleting(true)
+    try {
+      const response = await deleteBrokerHoldings(portfolioToDelete.broker_user_id)
+
+      toast({
+        title: "Portfolio deleted",
+        description: response.message || `Deleted ${response.deleted_holdings_count} holdings.`,
+      })
+
+      setDeleteModalOpen(false)
+      setPortfolioToDelete(null)
+      onRefresh?.()
+    } catch (err) {
+      toast({
+        title: "Delete failed",
+        description: err instanceof Error ? err.message : "Failed to delete portfolio",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleCloseDeleteModal = () => {
+    setDeleteModalOpen(false)
+    setPortfolioToDelete(null)
   }
 
   const getUploadMethodIcon = (method: string) => {
@@ -290,6 +330,22 @@ export function PortfolioUpdatesCard({
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>Re-upload portfolio</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-red-500/10 hover:text-red-500"
+                            onClick={() => handleDeleteClick(portfolio)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Delete portfolio</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
@@ -518,6 +574,51 @@ export function PortfolioUpdatesCard({
             </Button>
             <Button onClick={handlePanSubmit} disabled={panPassword.length !== 10}>
               Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={(open) => !open && handleCloseDeleteModal()}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-500">
+              <Trash2 className="h-5 w-5" />
+              Delete Portfolio
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the <span className="font-semibold">{portfolioToDelete?.broker_name}</span> portfolio? This will remove all holdings data associated with this broker.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3">
+              <p className="text-sm text-red-400">
+                This action cannot be undone. All holdings and metadata for this broker will be permanently deleted.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseDeleteModal} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="gap-2"
+            >
+              {isDeleting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete Portfolio
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
