@@ -22,8 +22,10 @@ import {
   selectIsChatLoadingMessages,
   selectChatSessionId,
   selectChatPanelOpen,
+  selectChatSessions,
   setSelectedBrokerId,
   setChatPanelOpen,
+  setSessions,
 } from "@/features/chat/redux"
 
 const ChatPanel = dynamic(
@@ -60,7 +62,7 @@ interface ChatPageClientProps {
 }
 
 export default function ChatPageClient({
-  initialSessions: _initialSessions,
+  initialSessions,
   initialMessages,
   initialSessionId = null,
   brokers,
@@ -78,6 +80,7 @@ export default function ChatPageClient({
   const isLoadingMessages = useSelector(selectIsChatLoadingMessages)
   const sessionId = useSelector(selectChatSessionId)
   const chatPanelOpen = useSelector(selectChatPanelOpen)
+  const sessions = useSelector(selectChatSessions)
 
   const chatPanelRef = useRef<ImperativePanelHandle>(null)
   const brokerInitializedRef = useRef(false)
@@ -91,6 +94,12 @@ export default function ChatPageClient({
       chatPanelRef.current.collapse()
     }
   }, [chatPanelOpen])
+
+  useEffect(() => {
+    if (initialSessions.length > 0) {
+      dispatch(setSessions(initialSessions))
+    }
+  }, [initialSessions, dispatch])
 
   useEffect(() => {
     if (brokerInitializedRef.current) return
@@ -169,6 +178,7 @@ export default function ChatPageClient({
               onSendMessage={handleSendMessage}
               disabled={isLoading}
               sessionId={sessionId}
+              sessions={sessions}
               chatModes={chatModes}
               llmModels={llmModels}
             />
