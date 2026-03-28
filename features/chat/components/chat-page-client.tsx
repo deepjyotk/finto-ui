@@ -6,7 +6,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useDispatch, useSelector } from "react-redux"
 import type { ImperativePanelHandle } from "react-resizable-panels"
-import type { SessionItem, UserBrokerItem } from "@/features/chat/apis/chat-api"
+import type { SessionItem, UserBrokerItem, ChatModeItem, LLMModelItem } from "@/features/chat/apis/chat-api"
 import type { ChatMessage } from "@/features/chat/components/chat-display"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -55,6 +55,8 @@ interface ChatPageClientProps {
   initialMessages?: ChatMessage[]
   initialSessionId?: string | null
   brokers: UserBrokerItem[]
+  chatModes: ChatModeItem[]
+  llmModels: LLMModelItem[]
 }
 
 export default function ChatPageClient({
@@ -62,6 +64,8 @@ export default function ChatPageClient({
   initialMessages,
   initialSessionId = null,
   brokers,
+  chatModes,
+  llmModels,
 }: ChatPageClientProps) {
   const dispatch = useDispatch<AppDispatch>()
   const router = useRouter()
@@ -165,6 +169,8 @@ export default function ChatPageClient({
               onSendMessage={handleSendMessage}
               disabled={isLoading}
               sessionId={sessionId}
+              chatModes={chatModes}
+              llmModels={llmModels}
             />
           </ResizablePanel>
         </ResizablePanelGroup>

@@ -95,13 +95,13 @@ export async function fetchChatMetadataServer(): Promise<ChatMetadataResponse> {
         `Failed to fetch chat metadata: ${response.status} ${response.statusText}`,
         errorText ? `Response: ${errorText}` : ""
       )
-      return { brokers: [] }
+      return { brokers: [], chat_modes: [], llm_models: [] }
     }
 
     const data: ChatMetadataResponse = await response.json()
     return data
   } catch (error) {
     console.error("Failed to load chat metadata:", error)
-    return { brokers: [] }
+    return { brokers: [], chat_modes: [], llm_models: [] }
   }
 }

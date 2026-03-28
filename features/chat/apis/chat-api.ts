@@ -17,8 +17,21 @@ export interface UserBrokerItem {
   broker_name: string;
 }
 
+export interface ChatModeItem {
+  id: string;
+  label: string;
+  description: string;
+}
+
+export interface LLMModelItem {
+  id: string;
+  label: string;
+}
+
 export interface ChatMetadataResponse {
   brokers: UserBrokerItem[];
+  chat_modes: ChatModeItem[];
+  llm_models: LLMModelItem[];
 }
 
 // Session Types (from OpenAPI spec)

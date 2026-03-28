@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux"
 import { MessageSquare, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { AppDispatch } from "@/lib/store"
+import type { ChatModeItem, LLMModelItem } from "@/features/chat/apis/chat-api"
 import { setChatPanelOpen } from "@/features/chat/redux"
 import ChatDisplay from "./chat-display"
 import UserTextEnter from "./user-text-enter"
@@ -12,12 +13,16 @@ interface ChatPanelProps {
   onSendMessage: (message: string) => Promise<void>
   disabled: boolean
   sessionId: string | null
+  chatModes: ChatModeItem[]
+  llmModels: LLMModelItem[]
 }
 
 export default function ChatPanel({
   onSendMessage,
   disabled,
   sessionId,
+  chatModes,
+  llmModels,
 }: ChatPanelProps) {
   const dispatch = useDispatch<AppDispatch>()
 
@@ -45,6 +50,8 @@ export default function ChatPanel({
         onSendMessage={onSendMessage}
         disabled={disabled}
         sessionId={sessionId}
+        chatModes={chatModes}
+        llmModels={llmModels}
       />
     </div>
   )

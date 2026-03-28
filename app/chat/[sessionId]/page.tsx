@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { fetchSessionMessages, fetchSessionsServer, fetchChatMetadataServer } from "@/lib/server/chat-sessions"
 import ChatPageClient from "@/features/chat/components/chat-page-client"
-import type { SessionItem, UserBrokerItem } from "@/features/chat/apis/chat-api"
+import type { SessionItem, UserBrokerItem, ChatModeItem, LLMModelItem } from "@/features/chat/apis/chat-api"
 import type { ChatMessage } from "@/features/chat/components/chat-display"
 
 interface ChatSessionPageProps {
@@ -21,6 +21,8 @@ export default async function ChatSessionPage({ params }: ChatSessionPageProps) 
 
   let sessions: SessionItem[] = []
   let brokers: UserBrokerItem[] = []
+  let chatModes: ChatModeItem[] = []
+  let llmModels: LLMModelItem[] = []
   let initialMessages: ChatMessage[] | undefined
   const isNewSession = normalizedSessionId === "new"
 
@@ -31,6 +33,8 @@ export default async function ChatSessionPage({ params }: ChatSessionPageProps) 
     ])
     sessions = sessionsResult
     brokers = chatMetadataResult.brokers ?? []
+    chatModes = chatMetadataResult.chat_modes ?? []
+    llmModels = chatMetadataResult.llm_models ?? []
   } catch (error) {
     console.error("Error in ChatSessionPage:", error)
   }
@@ -56,6 +60,8 @@ export default async function ChatSessionPage({ params }: ChatSessionPageProps) 
       initialMessages={initialMessages}
       initialSessionId={isNewSession ? null : rawSessionId}
       brokers={brokers}
+      chatModes={chatModes}
+      llmModels={llmModels}
     />
   )
 }
