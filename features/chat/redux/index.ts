@@ -17,6 +17,8 @@ export {
   setIsLoadingSessions,
   setChatSidebarOpen,
   setSelectedBrokerId,
+  setChatPanelOpen,
+  toggleChatPanelOpen,
 } from "./chat.slice"
 
 // Thunks
@@ -42,6 +44,7 @@ export {
   selectChatSessions,
   selectIsChatSessionsLoading,
   selectSelectedBrokerId,
+  selectChatPanelOpen,
 } from "./chat.selectors"
 
 // Types

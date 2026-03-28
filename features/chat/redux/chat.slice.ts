@@ -20,6 +20,7 @@ const initialState: ChatState = {
   sidebarOpen: false,
   sidebarCollapsed: false,
   selectedBrokerId: null,
+  chatPanelOpen: true,
 }
 
 /* ---------- Slice ---------- */
@@ -71,6 +72,12 @@ const chatSlice = createSlice({
     },
     setSelectedBrokerId: (state, action: PayloadAction<string | null>) => {
       state.selectedBrokerId = action.payload
+    },
+    setChatPanelOpen: (state, action: PayloadAction<boolean>) => {
+      state.chatPanelOpen = action.payload
+    },
+    toggleChatPanelOpen: (state) => {
+      state.chatPanelOpen = !state.chatPanelOpen
     },
   },
   extraReducers: (builder) => {
@@ -125,6 +132,8 @@ export const {
   setChatSidebarOpen,
   toggleChatSidebarCollapsed,
   setSelectedBrokerId,
+  setChatPanelOpen,
+  toggleChatPanelOpen,
 } = chatSlice.actions
 
 export default chatSlice.reducer

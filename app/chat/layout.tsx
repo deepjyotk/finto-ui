@@ -5,14 +5,12 @@ import { CreditModalProvider } from "@/features/credits/components/credit-modal-
 
 export default function ChatLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-screen bg-[#0B0F14] overflow-hidden">
-      <ChatSidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <div className="flex-1 overflow-hidden">
-          {children}
-        </div>
+    <div className="flex h-screen flex-col bg-[#0B0F14] overflow-hidden">
+      <Header />
+      <div className="flex-1 overflow-hidden">
+        {children}
       </div>
+      <ChatSidebar />
       <CreditModalProvider />
     </div>
   )

@@ -1,8 +1,20 @@
-import type { ChatMessage, C1ActionEvent } from "@/features/chat/components/chat-display"
 import type { SessionItem } from "@/features/chat/apis/chat-api"
 
-export type { ChatMessage, C1ActionEvent } from "@/features/chat/components/chat-display"
-export type { SessionItem } from "@/features/chat/apis/chat-api"
+export interface ChatMessage {
+  id: string
+  role: "user" | "assistant"
+  content: string
+  isStreaming?: boolean
+}
+
+export type C1ActionEvent = {
+  type?: string
+  params?: Record<string, any>
+  humanFriendlyMessage?: string
+  llmFriendlyMessage?: string
+}
+
+export type { SessionItem }
 
 /* ---------- State ---------- */
 export interface ChatState {
@@ -17,6 +29,7 @@ export interface ChatState {
   sidebarOpen: boolean
   sidebarCollapsed: boolean
   selectedBrokerId: string | null
+  chatPanelOpen: boolean
 }
 
 /* ---------- Thunk Types ---------- */

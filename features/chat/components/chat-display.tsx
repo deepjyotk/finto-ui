@@ -8,20 +8,9 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import type { AppDispatch } from "@/lib/store"
 import { parseC1Action, selectChatMessages, sendMessage } from "@/features/chat/redux"
+import type { ChatMessage, C1ActionEvent } from "@/features/chat/redux/chat.types"
 
-export interface ChatMessage {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  isStreaming?: boolean
-}
-
-export type C1ActionEvent = {
-  type?: string
-  params?: Record<string, any>
-  humanFriendlyMessage?: string
-  llmFriendlyMessage?: string
-}
+export type { ChatMessage, C1ActionEvent }
 
 const isThesysEnabled =
   (process.env.NEXT_PUBLIC_THESYS_ENABLED ?? "true").toLowerCase() === "true"
@@ -103,7 +92,7 @@ export default function ChatDisplay() {
   )
 
   const chatContent = (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="px-4 py-6">
       {messages.map((message) => {
         const messageContent = message.content || ""
         const isAssistant = message.role === "assistant"
@@ -174,12 +163,12 @@ export default function ChatDisplay() {
   return (
     <div className="flex-1 overflow-y-auto">
       {messages.length === 0 ? (
-        <div className="flex h-full items-center justify-center">
+        <div className="flex h-full items-center justify-center px-6">
           <div className="text-center">
-            <h1 className="mb-2 text-4xl font-semibold text-[var(--color-foreground)]">
+            <h1 className="mb-2 text-2xl font-semibold text-[var(--color-foreground)]">
               How can I help you today?
             </h1>
-            <p className="text-gray-400">Start a conversation by typing a message below.</p>
+            <p className="text-sm text-gray-400">Start a conversation by typing a message below.</p>
           </div>
         </div>
       ) : (

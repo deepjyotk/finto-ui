@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Menu, Plus, ExternalLink, LogOut, Puzzle, Coins } from "lucide-react"
+import { PanelLeft, Plus, ExternalLink, LogOut, Puzzle, Coins } from "lucide-react"
 import AuthModal from "@/features/auth/components/auth-modal"
 import { useState } from "react"
 import useKiteConnection from "@/features/integrations/hooks/use-kite-connection"
@@ -80,13 +80,13 @@ export default function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={() => dispatch(setChatSidebarOpen(true))}
-                className="lg:hidden text-white hover:bg-white/10 h-9 w-9"
-                aria-label="Open sidebar"
+                className="text-white/70 hover:text-white hover:bg-white/10 h-9 w-9"
+                aria-label="Open agent sidebar"
               >
-                <Menu className="h-5 w-5" />
+                <PanelLeft className="h-5 w-5" />
               </Button>
             )}
-            
+
             <Link href="/" className="flex items-center gap-2 group">
               <span className="text-xl font-semibold text-white tracking-tight">
                 Arthik
@@ -161,27 +161,6 @@ export default function Header() {
                   <Puzzle className="h-4 w-4" />
                   <span className="hidden sm:inline">Integrations</span>
                 </Button>
-                {pathname?.startsWith('/chat') && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleNewChat}
-                    className="text-white/80 hover:text-white hover:bg-white/10"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    New chat
-                  </Button>
-                )}
-                {!connected && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => (window.location.href = getLoginUrl())}
-                    className="hidden sm:flex border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500"
-                  >
-                    Connect Kite
-                  </Button>
-                )}
                 {connected && (
                   <Button
                     variant="outline"
