@@ -1,4 +1,4 @@
-# Explainly (frontend)
+# Arthik AI (frontend)
 
 Next.js app for AI chat, portfolio holdings, broker integrations, and credits—talks to a **FastAPI** backend via cookie-based sessions and a same-origin `/api/proxy` for browser requests.
 
