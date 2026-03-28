@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000";
+import { FASTAPI_BASE_URL } from '@/lib/fastapi-base-url'
 
 /**
  * Middleware for handling authentication with FastAPI backend

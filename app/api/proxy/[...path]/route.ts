@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-
-const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000";
+import { FASTAPI_BASE_URL } from "@/lib/utils";
 
 async function buildCookieHeader(): Promise<string> {
   const cookieStore = await cookies();

@@ -1,4 +1,4 @@
-import KiteConnectedClient from "@/components/kite/kite-connected-client"
+import KiteConnectedClient from "@/features/integrations/components/kite-connected-client"
 
 export const dynamic = "force-dynamic"
 

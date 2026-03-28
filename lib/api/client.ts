@@ -4,7 +4,8 @@
  * - Server: calls backend directly
  */
 
-const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000";
+import { FASTAPI_BASE_URL } from "@/lib/utils";
+
 const isBrowser = typeof window !== "undefined";
 
 export class ApiClient {
@@ -104,22 +105,6 @@ export class ApiClient {
   }
 
   /**
-   * Get orders for today
-   * GET /api/v1/kite/orders
-   */
-  async kiteOrders(): Promise<any> {
-    return this.request<any>(`/api/v1/kite/orders`, { method: "GET" });
-  }
-
-  /**
-   * Get trades for today
-   * GET /api/v1/kite/trades
-   */
-  async kiteTrades(): Promise<any> {
-    return this.request<any>(`/api/v1/kite/trades`, { method: "GET" });
-  }
-
-  /**
    * Get quote (OHLC, depth, etc.) for one or more symbols
    * GET /api/v1/kite/quote?symbols=NSE:INFY,NSE:TCS
    */
@@ -141,25 +126,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * Get historical data (candles) for an instrument
-   * GET /api/v1/kite/historical?instrument_token=...&interval=...&from=...&to=...
-   */
-  async kiteHistorical(
-    instrumentToken: string | number,
-    interval: string,
-    from?: string,
-    to?: string
-  ): Promise<any> {
-    const params = new URLSearchParams({
-      instrument_token: String(instrumentToken),
-      interval,
-      ...(from && { from }),
-      ...(to && { to }),
-    });
-    return this.request<any>(`/api/v1/kite/historical?${params.toString()}`, {
-      method: "GET",
-    });
-  }}
+}
 
 export const apiClient = new ApiClient();

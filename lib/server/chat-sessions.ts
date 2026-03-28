@@ -2,14 +2,12 @@ import "server-only"
 
 import { cookies } from "next/headers"
 import type {
-  MessageItem,
   SessionItem,
   SessionMessagesResponse,
   SessionsListResponse,
   ChatMetadataResponse,
-} from "@/lib/api/chat_api"
-
-const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000"
+} from "@/features/chat/apis/chat-api"
+import { FASTAPI_BASE_URL } from "@/lib/utils"
 
 const buildCookieHeader = async (): Promise<Record<string, string>> => {
   const cookieStore = await cookies()

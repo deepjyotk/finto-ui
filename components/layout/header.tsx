@@ -2,9 +2,9 @@
 
 import { useSelector, useDispatch } from "react-redux"
 import type { RootState } from "@/lib/store"
-import { logout } from "@/lib/slices/auth"
-import { setSidebarOpen } from "@/lib/slices/ui"
-import { signOut } from "@/lib/auth/session"
+import { logout } from "@/features/auth/redux"
+import { setChatSidebarOpen } from "@/features/chat/redux"
+import { signOut } from "@/features/auth/redux"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -15,13 +15,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Menu, Plus, ExternalLink, LogOut, Puzzle, Coins } from "lucide-react"
-import AuthModal from "@/components/auth/auth-modal"
+import AuthModal from "@/features/auth/components/auth-modal"
 import { useState } from "react"
-import useKiteConnection from "@/lib/hooks/use-kite-connection"
+import useKiteConnection from "@/features/integrations/hooks/use-kite-connection"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { ChatHeaderCreditWidget } from "@/components/billing/chat-header-credit-widget"
+import { ChatHeaderCreditWidget } from "@/features/credits/components/chat-header-credit-widget"
 
 export default function Header() {
   const dispatch = useDispatch()
@@ -65,7 +65,6 @@ export default function Header() {
 
   // Navigation items
   const navItems: Array<{ href: string; label: string; badge?: string; external?: boolean }> = [
-    { href: "/pricing", label: "Pricing" },
     { href: "/examples", label: "Examples" },
     { href: "/docs", label: "Docs", external: true },
   ]
@@ -80,7 +79,7 @@ export default function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => dispatch(setSidebarOpen(true))}
+                onClick={() => dispatch(setChatSidebarOpen(true))}
                 className="lg:hidden text-white hover:bg-white/10 h-9 w-9"
                 aria-label="Open sidebar"
               >

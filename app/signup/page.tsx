@@ -1,4 +1,4 @@
-import SignupPageClient from "@/components/signup/signup-page"
+import SignupPageClient from "@/features/auth/components/signup-page"
 
 export default function SignupPage() {
   return <SignupPageClient />

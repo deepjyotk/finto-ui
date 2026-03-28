@@ -4,15 +4,13 @@ import GetStartedButton from "@/components/landing/GetStartedButton"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import UserInitialsAvatar from "@/components/landing/UserInitialsAvatar"
-import useKiteConnection from "@/lib/hooks/use-kite-connection"
-import { Button } from "@/components/ui/button"
+import useKiteConnection from "@/features/integrations/hooks/use-kite-connection"
 import { useRouter } from "next/navigation"
 import { ArrowRight } from "lucide-react"
-import { createWhatsAppConnectIntent } from "@/lib/api/integrations_api"
 import { useState } from "react"
-import AuthModal from "@/components/auth/auth-modal"
+import AuthModal from "@/features/auth/components/auth-modal"
 import { apiClient } from "@/lib/api/client"
-import type { SessionsListResponse } from "@/lib/api/chat_api"
+import type { SessionsListResponse } from "@/features/chat/apis/chat-api"
 
 export default function Hero() {
   const { user, isAuthenticated } = useSelector((s: RootState) => s.auth)

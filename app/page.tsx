@@ -4,7 +4,6 @@ import Hero from "@/components/landing/Hero"
 import LogoCloud from "@/components/landing/LogoCloud"
 import Features from "@/components/landing/Features"
 import HowItWorks from "@/components/landing/HowItWorks"
-// import Showcase from "@/components/landing/Showcase"
 import Testimonials from "@/components/landing/Testimonials"
 import FAQ from "@/components/landing/FAQ"
 import Footer from "@/components/landing/Footer"
@@ -17,7 +16,6 @@ export default function HomePage() {
       <LogoCloud />
       <Features />
       <HowItWorks />
-      {/* <Showcase /> */}
       <Testimonials />
       <FAQ />
       <Footer />

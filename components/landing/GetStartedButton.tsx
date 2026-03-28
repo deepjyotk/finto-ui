@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import AuthModal from "@/components/auth/auth-modal"
+import AuthModal from "@/features/auth/components/auth-modal"
 import { cn } from "@/lib/utils"
 
 interface GetStartedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

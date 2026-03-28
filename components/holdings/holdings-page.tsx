@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import useKiteConnection from "@/lib/hooks/use-kite-connection"
+import useKiteConnection from "@/features/integrations/hooks/use-kite-connection"
 import { apiClient } from "@/lib/api/client"
 import { Search, RefreshCw, Check, X, AlertCircle } from "lucide-react"
 import { AgGridReact } from 'ag-grid-react'

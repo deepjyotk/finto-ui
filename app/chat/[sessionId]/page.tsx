@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation"
 import { fetchSessionMessages, fetchSessionsServer, fetchChatMetadataServer } from "@/lib/server/chat-sessions"
-import ChatPageClient from "@/components/chat/chat-page-client"
-import type { SessionItem, UserBrokerItem } from "@/lib/api/chat_api"
-import type { ChatMessage } from "@/components/chat/chat-display"
+import ChatPageClient from "@/features/chat/components/chat-page-client"
+import type { SessionItem, UserBrokerItem } from "@/features/chat/apis/chat-api"
+import type { ChatMessage } from "@/features/chat/components/chat-display"
 
 interface ChatSessionPageProps {
   params: Promise<{
@@ -15,7 +15,6 @@ export default async function ChatSessionPage({ params }: ChatSessionPageProps) 
   const rawSessionId = resolvedParams?.sessionId?.trim() ?? ""
   const normalizedSessionId = rawSessionId.toLowerCase()
 
-  // Normalize missing/empty sessionId to "new"
   if (!rawSessionId) {
     redirect("/chat/new")
   }
@@ -25,7 +24,6 @@ export default async function ChatSessionPage({ params }: ChatSessionPageProps) 
   let initialMessages: ChatMessage[] | undefined
   const isNewSession = normalizedSessionId === "new"
 
-  // Fetch sessions and chat metadata in parallel
   try {
     const [sessionsResult, chatMetadataResult] = await Promise.all([
       fetchSessionsServer(),

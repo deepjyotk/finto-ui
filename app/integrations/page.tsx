@@ -1,8 +1,7 @@
 import { cookies } from "next/headers"
-import IntegrationsPageClient from "@/components/integrations/integrations-page-client"
-import { type HoldingsMetadataSchema } from "@/lib/api/integrations_api"
-
-const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000"
+import IntegrationsPageClient from "@/features/integrations/components/integrations-page-client"
+import { type HoldingsMetadataSchema } from "@/features/integrations/apis/integrations-api"
+import { FASTAPI_BASE_URL } from "@/lib/utils"
 
 async function getHoldingsMetadata(): Promise<{ data: HoldingsMetadataSchema | null; error: string | null }> {
   const cookieStore = await cookies()
