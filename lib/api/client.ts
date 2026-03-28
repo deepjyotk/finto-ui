@@ -84,6 +84,58 @@ export class ApiClient {
 
     return responseText as unknown as T;
   }
+
+  /**
+   * Like request(), but returns null instead of throwing for expected
+   * HTTP status codes (e.g. 401 on auth-check endpoints).
+   */
+  async safeRequest<T>(
+    endpoint: string,
+    options: RequestInit = {},
+    toleratedStatuses: number[] = [],
+  ): Promise<T | null> {
+    const url = this.getRequestUrl(endpoint);
+
+    const headers = new Headers(options.headers as HeadersInit | undefined);
+    if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+
+    const response = await fetch(url, { ...options, credentials: "include", headers });
+
+    if (toleratedStatuses.includes(response.status)) {
+      return null;
+    }
+
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      let errorMessage: string | undefined;
+      if (responseText) {
+        try {
+          const parsed = JSON.parse(responseText);
+          errorMessage = parsed.detail || parsed.error || parsed.message;
+        } catch {
+          errorMessage = responseText;
+        }
+      }
+      throw new Error(errorMessage || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    if (!responseText.trim()) return undefined as T;
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      try {
+        return JSON.parse(responseText) as T;
+      } catch {
+        throw new Error("Failed to parse JSON response");
+      }
+    }
+
+    return responseText as unknown as T;
+  }
+
   // ============================================================================
   // Kite Connect Endpoints
   // ============================================================================

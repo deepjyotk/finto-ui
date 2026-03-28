@@ -1,4 +1,5 @@
 import { getCurrentUser, logoutApi, verifyAuth as verifyAuthApi } from "@/features/auth/apis/auth-api"
+import { apiClient } from "@/lib/api/client"
 
 export interface SessionUser {
   user_id: string
@@ -24,9 +25,12 @@ const toSessionUser = (
 
 export async function getSession(): Promise<{ user: SessionUser | null }> {
   try {
-    const data = await getCurrentUser()
-    const user = toSessionUser(data)
-
+    const data = await apiClient.safeRequest<{ user_id: string; username: string; email: string; full_name: string } | null>(
+      "/api/v1/auth/me",
+      { method: "GET" },
+      [401, 403],
+    )
+    const user = toSessionUser(data ?? undefined)
     return { user }
   } catch (error) {
     console.error('Error fetching session:', error)
