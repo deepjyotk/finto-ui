@@ -9,6 +9,7 @@ export interface C1ChatRequest {
   message_payload: C1Message;
   session_id: string;
   broker_id: string;
+  model_payload: string;
 }
 
 // Chat Metadata Types (from OpenAPI spec)
@@ -85,8 +86,13 @@ export interface SendChatMessageOptions {
   content: string;
   sessionId: string;
   brokerId?: string;
+  modelId: string;
+  /** When aborted, streaming stops; partial text is passed to `onAbort`. */
+  signal?: AbortSignal;
   onChunk?: (chunk: string) => void;
   onComplete?: (fullContent: string) => void;
+  /** Called when `signal` aborts; receives text received so far. */
+  onAbort?: (partialContent: string) => void;
   onError?: (error: Error) => void;
 }
 
@@ -98,10 +104,15 @@ export const sendChatMessage = async ({
   content,
   sessionId,
   brokerId = "",
+  modelId,
+  signal,
   onChunk,
   onComplete,
+  onAbort,
   onError,
 }: SendChatMessageOptions): Promise<string> => {
+  let accumulatedContent = "";
+
   try {
     const response = await fetch("/api/thesys/chat", {
       method: "POST",
@@ -112,7 +123,9 @@ export const sendChatMessage = async ({
         message_payload: { content },
         session_id: sessionId,
         broker_id: brokerId,
+        model_payload: modelId,
       }),
+      signal,
     });
 
     if (!response.ok) {
@@ -128,8 +141,6 @@ export const sendChatMessage = async ({
       if (!reader) {
         throw new Error("Response body is not readable");
       }
-
-      let accumulatedContent = "";
 
       while (true) {
         const { done, value } = await reader.read();
@@ -151,10 +162,15 @@ export const sendChatMessage = async ({
     } else {
       const data = await response.json();
       const responseContent = data.content || data.message || "No response";
+      accumulatedContent = responseContent;
       onComplete?.(responseContent);
       return responseContent;
     }
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      onAbort?.(accumulatedContent);
+      return accumulatedContent;
+    }
     const err = error instanceof Error ? error : new Error("Unknown error occurred");
     onError?.(err);
     throw err;

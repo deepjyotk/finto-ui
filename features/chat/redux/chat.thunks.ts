@@ -21,6 +21,13 @@ import {
   toggleChatSidebarCollapsed as toggleChatSidebarCollapsedAction,
 } from "./chat.slice"
 
+/** AbortController for the in-flight `sendMessage` request (client-side stop). */
+let sendMessageAbortController: AbortController | null = null
+
+export function abortChatSend(): void {
+  sendMessageAbortController?.abort()
+}
+
 /* ---------- Async Thunks ---------- */
 export const initializeChatSession = createAsyncThunk<
   InitializeChatPayload,
@@ -91,9 +98,9 @@ export const initializeChatSession = createAsyncThunk<
 
 export const sendMessage = createAsyncThunk<
   void,
-  { content: string },
+  { content: string; modelId: string },
   { state: RootState; dispatch: AppDispatch }
->("chat/sendMessage", async ({ content }, { getState, dispatch }) => {
+>("chat/sendMessage", async ({ content, modelId }, { getState, dispatch }) => {
   const trimmed = content.trim()
   const { sessionId, isLoading, selectedBrokerId } = getState().chat
   if (!trimmed || isLoading || !sessionId) return
@@ -106,6 +113,9 @@ export const sendMessage = createAsyncThunk<
 
   dispatch(addMessage(userMessage))
   dispatch(setIsLoading(true))
+
+  sendMessageAbortController = new AbortController()
+  const { signal } = sendMessageAbortController
 
   const assistantMessageId = `assistant-${Date.now()}`
   dispatch(
@@ -124,6 +134,8 @@ export const sendMessage = createAsyncThunk<
       content: userMessage.content,
       sessionId,
       brokerId: selectedBrokerId || "",
+      modelId,
+      signal,
       onChunk: (chunk) => {
         accumulatedContent += chunk
         dispatch(
@@ -141,6 +153,17 @@ export const sendMessage = createAsyncThunk<
           })
         )
       },
+      onAbort: (partial) => {
+        dispatch(
+          updateMessage({
+            id: assistantMessageId,
+            changes: {
+              content: partial,
+              isStreaming: false,
+            },
+          })
+        )
+      },
       onError: () => {
         dispatch(
           updateMessage({
@@ -154,16 +177,21 @@ export const sendMessage = createAsyncThunk<
       },
     })
   } catch (error) {
-    dispatch(
-      updateMessage({
-        id: assistantMessageId,
-        changes: {
-          content: "Sorry, an error occurred. Please try again.",
-          isStreaming: false,
-        },
-      })
-    )
+    if (error instanceof Error && error.name === "AbortError") {
+      // `onAbort` already finalized the assistant message
+    } else {
+      dispatch(
+        updateMessage({
+          id: assistantMessageId,
+          changes: {
+            content: "Sorry, an error occurred. Please try again.",
+            isStreaming: false,
+          },
+        })
+      )
+    }
   } finally {
+    sendMessageAbortController = null
     dispatch(setIsLoading(false))
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("credits-updated"))

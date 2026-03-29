@@ -12,6 +12,8 @@ type ThesysChatBody = {
   sessionId?: string;
   broker_id?: string;
   brokerId?: string;
+  /** Model id string (e.g. gpt-4o-mini) or "auto" — must match backend C1ChatRequest.model_payload */
+  model_payload?: string;
 };
 
 const extractSessionId = (body: ThesysChatBody, searchParams: URLSearchParams) =>
@@ -28,6 +30,9 @@ const extractBrokerId = (body: ThesysChatBody, searchParams: URLSearchParams) =>
   body.brokerId ||
   null;
 
+/** Fallback when older clients omit model_payload — matches backend LLMModel.Auto. */
+const DEFAULT_MODEL_PAYLOAD = "auto";
+
 const normalizeChatPayload = (body: ThesysChatBody, sessionId: string, brokerId: string) => {
   let content = "";
 
@@ -41,12 +46,18 @@ const normalizeChatPayload = (body: ThesysChatBody, sessionId: string, brokerId:
     content = body.message;
   }
 
+  const modelPayload =
+    typeof body.model_payload === "string" && body.model_payload.trim().length > 0
+      ? body.model_payload.trim()
+      : DEFAULT_MODEL_PAYLOAD;
+
   return {
     message_payload: {
       content,
     },
     session_id: sessionId,
     broker_id: brokerId,
+    model_payload: modelPayload,
   };
 };
 
@@ -94,7 +105,12 @@ const forwardThesysChat = async ({
   payload,
   cookieHeader,
 }: {
-  payload: { message_payload: { content: string }; session_id: string; broker_id: string };
+  payload: {
+    message_payload: { content: string };
+    session_id: string;
+    broker_id: string;
+    model_payload: string;
+  };
   cookieHeader: string;
 }) => {
   return fetch(CHAT_ENDPOINT, {

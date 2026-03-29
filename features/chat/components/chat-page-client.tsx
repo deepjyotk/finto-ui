@@ -18,6 +18,7 @@ import type { AppDispatch } from "@/lib/store"
 import {
   initializeChatSession,
   sendMessage,
+  abortChatSend,
   selectIsChatLoading,
   selectIsChatLoadingMessages,
   selectChatSessionId,
@@ -137,13 +138,17 @@ export default function ChatPageClient({
   ])
 
   const handleSendMessage = useCallback(
-    async (messageContent: string) => {
+    async (messageContent: string, modelId: string) => {
       if (!messageContent.trim() || isLoading || !sessionId) return
 
-      await dispatch(sendMessage({ content: messageContent }))
+      await dispatch(sendMessage({ content: messageContent, modelId }))
     },
     [dispatch, isLoading, sessionId]
   )
+
+  const handleStopSend = useCallback(() => {
+    abortChatSend()
+  }, [])
 
   if (isLoadingMessages) {
     return (
@@ -177,6 +182,7 @@ export default function ChatPageClient({
             <ChatPanel
               onSendMessage={handleSendMessage}
               disabled={isLoading}
+              onStopSend={handleStopSend}
               sessionId={sessionId}
               sessions={sessions}
               chatModes={chatModes}

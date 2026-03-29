@@ -16,8 +16,9 @@ function truncateSessionLabel(id: string) {
 }
 
 interface ChatPanelProps {
-  onSendMessage: (message: string) => Promise<void>
+  onSendMessage: (message: string, modelId: string) => Promise<void>
   disabled: boolean
+  onStopSend?: () => void
   sessionId: string | null
   sessions: SessionItem[]
   chatModes: ChatModeItem[]
@@ -27,6 +28,7 @@ interface ChatPanelProps {
 export default function ChatPanel({
   onSendMessage,
   disabled,
+  onStopSend,
   sessionId,
   sessions,
   chatModes,
@@ -132,6 +134,7 @@ export default function ChatPanel({
       <UserTextEnter
         onSendMessage={onSendMessage}
         disabled={disabled}
+        onStopSend={onStopSend}
         sessionId={sessionId}
         chatModes={chatModes}
         llmModels={llmModels}

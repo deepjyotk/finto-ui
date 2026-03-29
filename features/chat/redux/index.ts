@@ -25,6 +25,7 @@ export {
 export {
   initializeChatSession,
   sendMessage,
+  abortChatSend,
   loadChatSessions,
   deleteChatSession,
   performLogout,
