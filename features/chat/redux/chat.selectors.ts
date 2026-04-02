@@ -15,4 +15,5 @@ export const selectIsChatSessionsLoading = (state: RootState) => state.chat.isLo
 export const selectChatSidebarOpen = (state: RootState) => state.chat.sidebarOpen
 export const selectChatSidebarCollapsed = (state: RootState) => state.chat.sidebarCollapsed
 export const selectSelectedBrokerId = (state: RootState) => state.chat.selectedBrokerId
+export const selectSelectedModelId = (state: RootState) => state.chat.selectedModelId
 export const selectChatPanelOpen = (state: RootState) => state.chat.chatPanelOpen

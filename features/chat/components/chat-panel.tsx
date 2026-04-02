@@ -10,6 +10,7 @@ import type { ChatModeItem, LLMModelItem, SessionItem } from "@/features/chat/ap
 import { setChatPanelOpen, startNewChat, deleteChatSession } from "@/features/chat/redux"
 import ChatDisplay from "./chat-display"
 import UserTextEnter from "./user-text-enter"
+import { FEATURE_FLAGS } from "@/lib/feature-flags"
 
 function truncateSessionLabel(id: string) {
   return `Chat ${id.slice(0, 6)}`
@@ -66,6 +67,30 @@ export default function ChatPanel({
     [dispatch, sessionId, router],
   )
 
+  // ── Old / classic UI: no tab bar, full-width chat ──────────────────────────
+  if (!FEATURE_FLAGS.CURSOR_STYLE_UI_ENABLED) {
+    return (
+      <div className="flex h-full flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)]">
+        {/* ChatDisplay owns the overflow-y-auto container — keeping it full-width
+            puts the scrollbar at the very right edge of the screen. Content
+            centering (max-w-3xl) is applied inside ChatDisplay itself. */}
+        <ChatDisplay centerContent />
+        {/* Centre the input row the same way so it aligns with the messages. */}
+        <div className="w-full max-w-3xl mx-auto shrink-0">
+          <UserTextEnter
+            onSendMessage={onSendMessage}
+            disabled={disabled}
+            onStopSend={onStopSend}
+            sessionId={sessionId}
+            chatModes={chatModes}
+            llmModels={llmModels}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // ── Cursor-style UI: tab bar + chat ─────────────────────────────────────────
   return (
     <div className="flex h-full flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)]">
       {/* Tab bar */}

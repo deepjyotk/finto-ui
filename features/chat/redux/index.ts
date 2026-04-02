@@ -17,6 +17,7 @@ export {
   setIsLoadingSessions,
   setChatSidebarOpen,
   setSelectedBrokerId,
+  setSelectedModelId,
   setChatPanelOpen,
   toggleChatPanelOpen,
 } from "./chat.slice"
@@ -44,7 +45,10 @@ export {
   selectIsSubmittingApproval,
   selectChatSessions,
   selectIsChatSessionsLoading,
+  selectChatSidebarOpen,
+  selectChatSidebarCollapsed,
   selectSelectedBrokerId,
+  selectSelectedModelId,
   selectChatPanelOpen,
 } from "./chat.selectors"
 

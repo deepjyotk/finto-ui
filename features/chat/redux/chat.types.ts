@@ -29,6 +29,7 @@ export interface ChatState {
   sidebarOpen: boolean
   sidebarCollapsed: boolean
   selectedBrokerId: string | null
+  selectedModelId: string
   chatPanelOpen: boolean
 }
 

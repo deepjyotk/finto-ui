@@ -1,6 +1,9 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import type { AppDispatch } from "@/lib/store"
+import { selectSelectedModelId, setSelectedModelId } from "@/features/chat/redux"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Popover,
@@ -60,9 +63,11 @@ export default function UserTextEnter({
   chatModes,
   llmModels,
 }: UserTextEnterProps) {
+  const dispatch = useDispatch<AppDispatch>()
+  const selectedModel = useSelector(selectSelectedModelId)
+
   const [input, setInput] = useState("")
   const [modeSelection, setModeSelection] = useState<string>(chatModes[0]?.id ?? "")
-  const [selectedModel, setSelectedModel] = useState<string>(MODEL_AUTO_ID)
   const [modeOpen, setModeOpen] = useState(false)
   const [modelOpen, setModelOpen] = useState(false)
   const [modelSearch, setModelSearch] = useState("")
@@ -74,14 +79,15 @@ export default function UserTextEnter({
     [llmModels, modelSearch],
   )
 
+  // If the stored model is no longer in the available list, fall back to Auto.
   useEffect(() => {
     if (llmModels.length === 0) return
     if (!llmModels.some((m) => m.id === selectedModel)) {
-      setSelectedModel(
+      dispatch(setSelectedModelId(
         llmModels.find((m) => m.id === MODEL_AUTO_ID)?.id ?? llmModels[0]!.id,
-      )
+      ))
     }
-  }, [llmModels, selectedModel])
+  }, [llmModels, selectedModel, dispatch])
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -228,7 +234,7 @@ export default function UserTextEnter({
                           key={model.id}
                           type="button"
                           onClick={() => {
-                            setSelectedModel(model.id)
+                            dispatch(setSelectedModelId(model.id))
                             setModelOpen(false)
                           }}
                           className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.06]"

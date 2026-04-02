@@ -1,9 +1,9 @@
 "use client"
 
 import { useSelector, useDispatch } from "react-redux"
-import type { RootState } from "@/lib/store"
+import type { RootState, AppDispatch } from "@/lib/store"
 import { logout } from "@/features/auth/redux"
-import { setChatSidebarOpen } from "@/features/chat/redux"
+import { setChatSidebarOpen, toggleChatSidebarCollapsed, selectChatSidebarCollapsed } from "@/features/chat/redux"
 import { signOut } from "@/features/auth/redux"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { PanelLeft, Plus, ExternalLink, LogOut, Puzzle, Coins } from "lucide-react"
+import { PanelLeft, PanelLeftOpen, Plus, ExternalLink, LogOut, Puzzle, Coins, Link2 } from "lucide-react"
 import AuthModal from "@/features/auth/components/auth-modal"
 import { useState } from "react"
 import useKiteConnection from "@/features/integrations/hooks/use-kite-connection"
@@ -22,10 +22,12 @@ import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ChatHeaderCreditWidget } from "@/features/credits/components/chat-header-credit-widget"
+import { FEATURE_FLAGS } from "@/lib/feature-flags"
 
 export default function Header() {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth)
+  const sidebarCollapsed = useSelector(selectChatSidebarCollapsed)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
@@ -75,7 +77,8 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Left: Logo + Mobile Menu */}
           <div className="flex items-center gap-4">
-            {pathname?.startsWith('/chat') && (
+            {/* Cursor-style UI: show drawer toggle on chat pages */}
+            {FEATURE_FLAGS.CURSOR_STYLE_UI_ENABLED && pathname?.startsWith('/chat') && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -129,6 +132,32 @@ export default function Header() {
             {/* Credit Widget - Show on chat pages when authenticated */}
             {isAuthenticated && pathname?.startsWith('/chat') && (
               <ChatHeaderCreditWidget />
+            )}
+
+            {/* Old UI: "+ New chat" and "Connect Kite" buttons on chat pages */}
+            {!FEATURE_FLAGS.CURSOR_STYLE_UI_ENABLED && isAuthenticated && pathname?.startsWith('/chat') && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNewChat}
+                  className="flex items-center gap-1.5 text-white/80 hover:text-white hover:bg-white/10"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">New chat</span>
+                </Button>
+                {!connected && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(getLoginUrl(), "_blank")}
+                    className="flex items-center gap-1.5 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500"
+                  >
+                    <Link2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Connect Kite</span>
+                  </Button>
+                )}
+              </>
             )}
             
             {/* Schedule demo button - Hidden on chat pages */}

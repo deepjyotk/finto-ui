@@ -20,6 +20,7 @@ const initialState: ChatState = {
   sidebarOpen: false,
   sidebarCollapsed: false,
   selectedBrokerId: null,
+  selectedModelId: "auto",
   chatPanelOpen: true,
 }
 
@@ -72,6 +73,9 @@ const chatSlice = createSlice({
     },
     setSelectedBrokerId: (state, action: PayloadAction<string | null>) => {
       state.selectedBrokerId = action.payload
+    },
+    setSelectedModelId: (state, action: PayloadAction<string>) => {
+      state.selectedModelId = action.payload
     },
     setChatPanelOpen: (state, action: PayloadAction<boolean>) => {
       state.chatPanelOpen = action.payload
@@ -132,6 +136,7 @@ export const {
   setChatSidebarOpen,
   toggleChatSidebarCollapsed,
   setSelectedBrokerId,
+  setSelectedModelId,
   setChatPanelOpen,
   toggleChatPanelOpen,
 } = chatSlice.actions

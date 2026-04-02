@@ -7,7 +7,7 @@ import { C1Component, ThemeProvider } from "@thesysai/genui-sdk"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import type { AppDispatch } from "@/lib/store"
-import { parseC1Action, selectChatMessages, sendMessage } from "@/features/chat/redux"
+import { parseC1Action, selectChatMessages, selectSelectedModelId, sendMessage } from "@/features/chat/redux"
 import type { ChatMessage, C1ActionEvent } from "@/features/chat/redux/chat.types"
 
 export type { ChatMessage, C1ActionEvent }
@@ -62,9 +62,16 @@ function AssistantShimmerBubble() {
   )
 }
 
-export default function ChatDisplay() {
+interface ChatDisplayProps {
+  /** When true, constrains content to max-w-3xl centred inside the full-width
+   *  scroll container so the scrollbar stays at the screen's right edge. */
+  centerContent?: boolean
+}
+
+export default function ChatDisplay({ centerContent = false }: ChatDisplayProps) {
   const dispatch = useDispatch<AppDispatch>()
   const messages = useSelector(selectChatMessages)
+  const selectedModelId = useSelector(selectSelectedModelId)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -85,14 +92,14 @@ export default function ChatDisplay() {
       }
 
       if (followUpMessage) {
-        dispatch(sendMessage({ content: followUpMessage }))
+        dispatch(sendMessage({ content: followUpMessage, modelId: selectedModelId }))
       }
     },
     [dispatch]
   )
 
   const chatContent = (
-    <div className="px-4 py-6">
+    <div className={cn("px-4 py-6", centerContent && "max-w-3xl mx-auto")}>
       {messages.map((message) => {
         const messageContent = message.content || ""
         const isAssistant = message.role === "assistant"
@@ -163,7 +170,7 @@ export default function ChatDisplay() {
   return (
     <div className="flex-1 overflow-y-auto">
       {messages.length === 0 ? (
-        <div className="flex h-full items-center justify-center px-6">
+        <div className={cn("flex h-full items-center justify-center px-6", centerContent && "max-w-3xl mx-auto")}>
           <div className="text-center">
             <h1 className="mb-2 text-2xl font-semibold text-[var(--color-foreground)]">
               How can I help you today?

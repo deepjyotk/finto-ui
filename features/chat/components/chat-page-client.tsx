@@ -28,6 +28,7 @@ import {
   setChatPanelOpen,
   setSessions,
 } from "@/features/chat/redux"
+import { FEATURE_FLAGS } from "@/lib/feature-flags"
 
 const ChatPanel = dynamic(
   () => import("@/features/chat/components/chat-panel"),
@@ -158,6 +159,24 @@ export default function ChatPageClient({
     )
   }
 
+  // ── Old / classic UI ────────────────────────────────────────────────────────
+  if (!FEATURE_FLAGS.CURSOR_STYLE_UI_ENABLED) {
+    return (
+      <div className="flex h-full flex-col bg-[#0B0F14]">
+        <ChatPanel
+          onSendMessage={handleSendMessage}
+          disabled={isLoading}
+          onStopSend={handleStopSend}
+          sessionId={sessionId}
+          sessions={sessions}
+          chatModes={chatModes}
+          llmModels={llmModels}
+        />
+      </div>
+    )
+  }
+
+  // ── Cursor-style UI (default) ────────────────────────────────────────────────
   return (
     <>
       <div className="flex h-full flex-col bg-[#0B0F14] relative">
