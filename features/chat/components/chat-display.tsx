@@ -4,16 +4,15 @@ import { useCallback, useEffect, useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { cn } from "@/lib/utils"
 import { C1Component, ThemeProvider } from "@thesysai/genui-sdk"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
 import type { AppDispatch } from "@/lib/store"
 import { parseC1Action, selectChatMessages, selectSelectedModelId, sendMessage } from "@/features/chat/redux"
 import type { ChatMessage, C1ActionEvent } from "@/features/chat/redux/chat.types"
+import { FEATURE_FLAGS } from "@/lib/feature-flags"
+import A2UIRenderer from "@/features/chat/components/a2ui-renderer"
 
 export type { ChatMessage, C1ActionEvent }
 
-const isThesysEnabled =
-  (process.env.NEXT_PUBLIC_THESYS_ENABLED ?? "true").toLowerCase() === "true"
+const isThesysEnabled = FEATURE_FLAGS.THESYS_ENABLED
 
 const thesysDarkTheme = {
   chatContainerBg: "transparent",
@@ -103,8 +102,12 @@ export default function ChatDisplay({ centerContent = false }: ChatDisplayProps)
       {messages.map((message) => {
         const messageContent = message.content || ""
         const isAssistant = message.role === "assistant"
+        const hasA2UIContent = (message.a2uiEvents?.length ?? 0) > 0
         const showAssistantShimmer =
-          isAssistant && message.isStreaming && messageContent.trim().length === 0
+          isAssistant &&
+          message.isStreaming &&
+          messageContent.trim().length === 0 &&
+          !hasA2UIContent
 
         return (
           <div
@@ -136,19 +139,11 @@ export default function ChatDisplay({ centerContent = false }: ChatDisplayProps)
                       )}
                     </>
                   ) : (
-                    <>
-                      <div className="prose prose-invert prose-sm max-w-none prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-p:text-gray-200 prose-a:text-cyan-400 prose-strong:text-white prose-table:text-sm">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {messageContent}
-                        </ReactMarkdown>
-                      </div>
-                      {message.isStreaming && (
-                        <div className="flex items-center gap-2 px-1 pt-3 text-xs text-gray-400">
-                          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--color-secondary)]" />
-                          <span className="tracking-wide">Streaming response</span>
-                        </div>
-                      )}
-                    </>
+                    <A2UIRenderer
+                      events={message.a2uiEvents}
+                      content={message.content}
+                      isStreaming={message.isStreaming || false}
+                    />
                   )}
                 </div>
               )

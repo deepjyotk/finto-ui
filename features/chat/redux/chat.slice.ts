@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
-import type { ChatState, ChatMessage } from "./chat.types"
+import type { ChatState, ChatMessage, A2UIClientEvent } from "./chat.types"
 import type { SessionItem } from "./chat.types"
 import {
   initializeChatSession,
@@ -83,6 +83,16 @@ const chatSlice = createSlice({
     toggleChatPanelOpen: (state) => {
       state.chatPanelOpen = !state.chatPanelOpen
     },
+    appendA2UIEvent: (
+      state,
+      action: PayloadAction<{ id: string; event: A2UIClientEvent }>
+    ) => {
+      const msg = state.messages.find((m) => m.id === action.payload.id)
+      if (msg) {
+        if (!msg.a2uiEvents) msg.a2uiEvents = []
+        msg.a2uiEvents.push(action.payload.event)
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -139,6 +149,7 @@ export const {
   setSelectedModelId,
   setChatPanelOpen,
   toggleChatPanelOpen,
+  appendA2UIEvent,
 } = chatSlice.actions
 
 export default chatSlice.reducer

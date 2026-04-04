@@ -20,6 +20,7 @@ export {
   setSelectedModelId,
   setChatPanelOpen,
   toggleChatPanelOpen,
+  appendA2UIEvent,
 } from "./chat.slice"
 
 // Thunks
@@ -60,6 +61,8 @@ export type {
   SessionItem,
   InitializeChatArgs,
   InitializeChatPayload,
+  A2UIClientEvent,
+  A2UIEventType,
 } from "./chat.types"
 
 // Helpers

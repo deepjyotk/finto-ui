@@ -11,7 +11,9 @@ import {
   getSessions,
   deleteSession,
 } from "@/features/chat/apis/chat-api"
+import { sendA2UIChatMessage } from "@/features/chat/apis/a2ui-chat-api"
 import { signOut, logout } from "@/features/auth/redux"
+import { FEATURE_FLAGS } from "@/lib/feature-flags"
 import {
   addMessage,
   updateMessage,
@@ -19,6 +21,7 @@ import {
   setIsSubmittingApproval,
   setChatSidebarOpen,
   toggleChatSidebarCollapsed as toggleChatSidebarCollapsedAction,
+  appendA2UIEvent,
 } from "./chat.slice"
 
 /** AbortController for the in-flight `sendMessage` request (client-side stop). */
@@ -124,61 +127,114 @@ export const sendMessage = createAsyncThunk<
       role: "assistant",
       content: "",
       isStreaming: true,
+      a2uiEvents: [],
     })
   )
 
   try {
-    let accumulatedContent = ""
+    if (FEATURE_FLAGS.THESYS_ENABLED) {
+      // -----------------------------------------------------------------------
+      // TheSys path: stream text chunks and accumulate as raw content string
+      // -----------------------------------------------------------------------
+      let accumulatedContent = ""
 
-    await sendChatMessage({
-      content: userMessage.content,
-      sessionId,
-      brokerId: selectedBrokerId || "",
-      modelId,
-      signal,
-      onChunk: (chunk) => {
-        accumulatedContent += chunk
-        dispatch(
-          updateMessage({
-            id: assistantMessageId,
-            changes: { content: accumulatedContent, isStreaming: true },
-          })
-        )
-      },
-      onComplete: (fullContent) => {
-        dispatch(
-          updateMessage({
-            id: assistantMessageId,
-            changes: { content: fullContent, isStreaming: false },
-          })
-        )
-      },
-      onAbort: (partial) => {
-        dispatch(
-          updateMessage({
-            id: assistantMessageId,
-            changes: {
-              content: partial,
-              isStreaming: false,
-            },
-          })
-        )
-      },
-      onError: () => {
-        dispatch(
-          updateMessage({
-            id: assistantMessageId,
-            changes: {
-              content: "Sorry, an error occurred. Please try again.",
-              isStreaming: false,
-            },
-          })
-        )
-      },
-    })
+      await sendChatMessage({
+        content: userMessage.content,
+        sessionId,
+        brokerId: selectedBrokerId || "",
+        modelId,
+        signal,
+        onChunk: (chunk) => {
+          accumulatedContent += chunk
+          dispatch(
+            updateMessage({
+              id: assistantMessageId,
+              changes: { content: accumulatedContent, isStreaming: true },
+            })
+          )
+        },
+        onComplete: (fullContent) => {
+          dispatch(
+            updateMessage({
+              id: assistantMessageId,
+              changes: { content: fullContent, isStreaming: false },
+            })
+          )
+        },
+        onAbort: (partial) => {
+          dispatch(
+            updateMessage({
+              id: assistantMessageId,
+              changes: { content: partial, isStreaming: false },
+            })
+          )
+        },
+        onError: () => {
+          dispatch(
+            updateMessage({
+              id: assistantMessageId,
+              changes: {
+                content: "Sorry, an error occurred. Please try again.",
+                isStreaming: false,
+              },
+            })
+          )
+        },
+      })
+    } else {
+      // -----------------------------------------------------------------------
+      // A2UI path: stream structured events; renderer builds the UI from them
+      // -----------------------------------------------------------------------
+      await sendA2UIChatMessage({
+        content: userMessage.content,
+        sessionId,
+        brokerId: selectedBrokerId || "",
+        modelId,
+        signal,
+        onEvent: (event) => {
+          // Append the A2UI event to the message so the renderer can react
+          dispatch(appendA2UIEvent({ id: assistantMessageId, event }))
+
+          // Also update isStreaming so the shimmer logic stays accurate
+          dispatch(
+            updateMessage({
+              id: assistantMessageId,
+              changes: { isStreaming: true },
+            })
+          )
+        },
+        onComplete: () => {
+          dispatch(
+            updateMessage({
+              id: assistantMessageId,
+              changes: { isStreaming: false },
+            })
+          )
+        },
+        onAbort: () => {
+          dispatch(
+            updateMessage({
+              id: assistantMessageId,
+              changes: { isStreaming: false },
+            })
+          )
+        },
+        onError: () => {
+          dispatch(
+            updateMessage({
+              id: assistantMessageId,
+              changes: {
+                content: "Sorry, an error occurred. Please try again.",
+                isStreaming: false,
+              },
+            })
+          )
+        },
+      })
+    }
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      // `onAbort` already finalized the assistant message
+      // onAbort already finalized the assistant message
     } else {
       dispatch(
         updateMessage({
