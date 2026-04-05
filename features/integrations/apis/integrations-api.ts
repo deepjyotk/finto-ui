@@ -117,3 +117,35 @@ export const deleteBrokerHoldings = (brokerId: string) =>
   apiClient.request<DeleteBrokerHoldingsResponse>(`/api/v1/holdings/broker/${brokerId}`, {
     method: "DELETE",
   });
+
+/** smallcase Gateway — holdings import (no DB); server logs portfolio analytics. */
+export interface GatewayHoldingsImportStartResponse {
+  gateway_name: string;
+  guest_auth_token: string;
+  transaction_id: string;
+  transaction_expire_at: string | null;
+}
+
+export const startGatewayHoldingsImport = () =>
+  apiClient.request<GatewayHoldingsImportStartResponse>("/api/v1/gateway/holdings-import/start", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+
+export interface GatewayFetchHoldingsResponse {
+  success: boolean;
+  analytics: Record<string, unknown>;
+  message: string;
+}
+
+export const fetchGatewayHoldingsAndLog = (
+  smallcaseAuthToken: string,
+  mfHoldings = false
+) =>
+  apiClient.request<GatewayFetchHoldingsResponse>("/api/v1/gateway/holdings/fetch", {
+    method: "POST",
+    body: JSON.stringify({
+      smallcase_auth_token: smallcaseAuthToken,
+      mf_holdings: mfHoldings,
+    }),
+  });

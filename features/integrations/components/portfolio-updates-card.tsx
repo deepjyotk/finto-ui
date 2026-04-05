@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Tooltip,
   TooltipContent,
@@ -38,7 +39,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-import { updateHoldingsFile, deleteBrokerHoldings, type PortfolioUpdates, type BrokerPayload } from "@/features/integrations/apis/integrations-api"
+import {
+  deleteBrokerHoldings,
+  fetchGatewayHoldingsAndLog,
+  getKiteLoginUrl,
+  startGatewayHoldingsImport,
+  updateHoldingsFile,
+  type BrokerPayload,
+  type PortfolioUpdates,
+} from "@/features/integrations/apis/integrations-api"
 import { cn } from "@/lib/utils"
 
 interface PortfolioUpdatesCardProps {
@@ -63,10 +72,83 @@ export function PortfolioUpdatesCard({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [portfolioToDelete, setPortfolioToDelete] = useState<PortfolioUpdates | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [reuploadTab, setReuploadTab] = useState<"upload" | "api">("upload")
+  const [isGatewayConnecting, setIsGatewayConnecting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const loadSmallcaseGatewayScript = (): Promise<void> => {
+    if (typeof window === "undefined") return Promise.resolve()
+    if (window.scDK) return Promise.resolve()
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector<HTMLScriptElement>(
+        'script[data-smallcase-scdk="true"]'
+      )
+      if (existing) {
+        if (window.scDK) {
+          resolve()
+          return
+        }
+        existing.addEventListener("load", () => resolve(), { once: true })
+        existing.addEventListener("error", () => reject(new Error("Failed to load Gateway SDK")), {
+          once: true,
+        })
+        return
+      }
+      const script = document.createElement("script")
+      script.src = "https://gateway.smallcase.com/scdk/2.0.0/scdk.js"
+      script.async = true
+      script.dataset.smallcaseScdk = "true"
+      script.onload = () => resolve()
+      script.onerror = () => reject(new Error("Failed to load smallcase Gateway SDK"))
+      document.body.appendChild(script)
+    })
+  }
+
+  const handleAngelGatewayConnect = async () => {
+    setIsGatewayConnecting(true)
+    try {
+      await loadSmallcaseGatewayScript()
+      const start = await startGatewayHoldingsImport()
+      const ScDK = window.scDK
+      if (!ScDK) {
+        throw new Error("Gateway SDK did not initialize (window.scDK missing)")
+      }
+      const gateway = new ScDK({
+        gateway: start.gateway_name,
+        smallcaseAuthToken: start.guest_auth_token,
+        config: { amo: true },
+      })
+      const txnResponse = await gateway.triggerTransaction({
+        transactionId: start.transaction_id,
+        brokers: ["angelbroking"],
+      })
+      const authToken = txnResponse?.smallcaseAuthToken
+      if (!authToken) {
+        throw new Error("No smallcaseAuthToken returned from Gateway — complete broker login and consent.")
+      }
+      await fetchGatewayHoldingsAndLog(authToken, false)
+      toast({
+        title: "Portfolio snapshot received",
+        description:
+          "Holdings were fetched via smallcase Gateway and logged on the server. No data was saved to the database yet.",
+      })
+      onRefresh?.()
+    } catch (err) {
+      toast({
+        title: "Gateway connection failed",
+        description: err instanceof Error ? err.message : "Could not complete Gateway flow",
+        variant: "destructive",
+      })
+    } finally {
+      setIsGatewayConnecting(false)
+    }
+  }
 
   const isAngelOne = (portfolio: PortfolioUpdates | null) =>
     portfolio?.broker_name.toLowerCase().includes("angel")
+
+  const isZerodha = (portfolio: PortfolioUpdates | null) =>
+    portfolio?.broker_name.toLowerCase().includes("zerodha")
 
   const isXlsxFile = (file: File) =>
     file.name.toLowerCase().endsWith(".xlsx") || file.name.toLowerCase().endsWith(".xls")
@@ -156,9 +238,14 @@ export function PortfolioUpdatesCard({
     setSelectedFile(null)
     setPanPassword("")
     setShowPanModal(false)
+    setReuploadTab("upload")
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
+  }
+
+  const handleConnectKiteFromResync = () => {
+    window.location.href = getKiteLoginUrl()
   }
 
   const handleDeleteClick = (portfolio: PortfolioUpdates) => {
@@ -439,90 +526,188 @@ export function PortfolioUpdatesCard({
               Update {selectedPortfolio?.broker_name} Portfolio
             </DialogTitle>
             <DialogDescription>
-              Upload a new file to replace your existing holdings data
+              Upload a new export, or connect via your broker&apos;s API to refresh holdings.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-4">
-            <div
-              className={cn(
-                "border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer",
-                selectedFile
-                  ? "border-primary/50 bg-primary/5"
-                  : "border-border hover:border-primary/30 hover:bg-muted/30"
-              )}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                className="hidden"
-                onChange={handleFileSelect}
-              />
-              {selectedFile ? (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                    <FileSpreadsheet className="h-7 w-7 text-primary" />
+          <Tabs
+            value={reuploadTab}
+            onValueChange={(v) => setReuploadTab(v as "upload" | "api")}
+            className="py-2"
+          >
+            <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-lg p-1">
+              <TabsTrigger value="upload" className="gap-1.5">
+                <CloudUpload className="h-4 w-4 shrink-0" />
+                Upload file
+              </TabsTrigger>
+              <TabsTrigger value="api" className="gap-1.5">
+                <Link2 className="h-4 w-4 shrink-0" />
+                Connect via API
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="upload" className="mt-4 space-y-0">
+              <div
+                className={cn(
+                  "border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer",
+                  selectedFile
+                    ? "border-primary/50 bg-primary/5"
+                    : "border-border hover:border-primary/30 hover:bg-muted/30"
+                )}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+                {selectedFile ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                      <FileSpreadsheet className="h-7 w-7 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{selectedFile.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {(selectedFile.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-muted-foreground hover:text-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedFile(null)
+                        if (fileInputRef.current) fileInputRef.current.value = ""
+                      }}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Remove
+                    </Button>
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">{selectedFile.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {(selectedFile.size / 1024).toFixed(1)} KB
-                    </p>
+                ) : (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                      <Upload className="h-7 w-7 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Drop your file here</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        or click to browse (Excel, CSV)
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="api" className="mt-4">
+              {isZerodha(selectedPortfolio) && (
+                <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-5">
+                  <div className="flex gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background">
+                      <Link2 className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="space-y-1 text-left">
+                      <p className="text-sm font-medium leading-snug">Zerodha Kite</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Re-authorize with Kite Connect to pull the latest holdings from your Zerodha
+                        account. You&apos;ll be redirected to Zerodha to approve access.
+                      </p>
+                    </div>
                   </div>
                   <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1.5 text-muted-foreground hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSelectedFile(null)
-                      if (fileInputRef.current) fileInputRef.current.value = ""
-                    }}
+                    type="button"
+                    className="w-full gap-2"
+                    onClick={handleConnectKiteFromResync}
                   >
-                    <X className="h-3.5 w-3.5" />
-                    Remove
+                    <Link2 className="h-4 w-4" />
+                    Connect with Kite
                   </Button>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                    <Upload className="h-7 w-7 text-muted-foreground" />
+              )}
+
+              {isAngelOne(selectedPortfolio) && (
+                <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-5">
+                  <div className="flex gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background">
+                      <Link2 className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="space-y-1 text-left">
+                      <p className="text-sm font-medium leading-snug">Connect via API</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Connect through{" "}
+                        <span className="font-medium text-foreground">smallcase Gateway</span> — you
+                        sign in with Angel One in their secure flow; we never see your broker
+                        password. After you consent to holdings import, we fetch a snapshot via
+                        Gateway and log analytics on the server (no DB write yet).
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">Drop your file here</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      or click to browse (Excel, CSV)
-                    </p>
-                  </div>
+                  <Button
+                    type="button"
+                    className="w-full gap-2"
+                    disabled={isGatewayConnecting}
+                    onClick={handleAngelGatewayConnect}
+                  >
+                    {isGatewayConnecting ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Opening Gateway…
+                      </>
+                    ) : (
+                      <>
+                        <Link2 className="h-4 w-4" />
+                        Connect via API
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+                    Requires <span className="font-medium text-foreground">SMALLCASE_GATEWAY_*</span> env
+                    keys on the API. Prefer a file? Use the{" "}
+                    <span className="font-medium text-foreground">Upload file</span> tab.
+                  </p>
                 </div>
               )}
-            </div>
-          </div>
+
+              {!isZerodha(selectedPortfolio) && !isAngelOne(selectedPortfolio) && (
+                <div className="rounded-xl border border-dashed border-border/80 bg-muted/10 px-4 py-8 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    API-based refresh for this broker isn&apos;t available yet. Please use the{" "}
+                    <span className="font-medium text-foreground">Upload file</span> tab.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
 
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseReuploadModal}>
               Cancel
             </Button>
-            <Button
-              onClick={handleReupload}
-              disabled={!selectedFile || isUploading}
-              className="gap-2"
-            >
-              {isUploading ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4" />
-                  Upload & Update
-                </>
-              )}
-          </Button>
-        </DialogFooter>
+            {reuploadTab === "upload" && (
+              <Button
+                onClick={handleReupload}
+                disabled={!selectedFile || isUploading}
+                className="gap-2"
+              >
+                {isUploading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    Upload & Update
+                  </>
+                )}
+              </Button>
+            )}
+          </DialogFooter>
       </DialogContent>
     </Dialog>
 
