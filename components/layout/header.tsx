@@ -66,9 +66,10 @@ export default function Header() {
   }
 
   // Navigation items
-  const navItems: Array<{ href: string; label: string; badge?: string; external?: boolean }> = [
+  const navItems: Array<{ href: string; label: string; badge?: string; external?: boolean; authOnly?: boolean }> = [
     { href: "/examples", label: "Examples" },
     { href: "/docs", label: "Docs", external: true },
+    { href: "/portfolio", label: "Portfolio", authOnly: true },
   ]
 
   return (
@@ -99,30 +100,32 @@ export default function Header() {
             {/* Desktop Navigation - Hidden on /chat pages */}
             {!pathname?.startsWith('/chat') && (
               <nav className="hidden md:flex items-center gap-6 ml-8">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    target={item.external ? "_blank" : undefined}
-                    rel={item.external ? "noopener noreferrer" : undefined}
-                    className={cn(
-                      "flex items-center gap-1.5 text-sm text-white/80 hover:text-white transition-colors relative group",
-                      pathname === item.href && "text-white"
-                    )}
-                  >
-                    {item.label}
-                    {item.badge && (
-                      <Badge 
-                        className="ml-1 bg-purple-500/20 text-purple-300 border-purple-500/30 px-1.5 py-0 text-[10px] font-medium h-4"
-                      >
-                        {item.badge}
-                      </Badge>
-                    )}
-                    {item.external && (
-                      <ExternalLink className="h-3 w-3 opacity-60 group-hover:opacity-100 transition-opacity" />
-                    )}
-                  </Link>
-                ))}
+                {navItems
+                  .filter((item) => !item.authOnly || isAuthenticated)
+                  .map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      target={item.external ? "_blank" : undefined}
+                      rel={item.external ? "noopener noreferrer" : undefined}
+                      className={cn(
+                        "flex items-center gap-1.5 text-sm text-white/80 hover:text-white transition-colors relative group",
+                        pathname === item.href && "text-white"
+                      )}
+                    >
+                      {item.label}
+                      {item.badge && (
+                        <Badge 
+                          className="ml-1 bg-purple-500/20 text-purple-300 border-purple-500/30 px-1.5 py-0 text-[10px] font-medium h-4"
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                      {item.external && (
+                        <ExternalLink className="h-3 w-3 opacity-60 group-hover:opacity-100 transition-opacity" />
+                      )}
+                    </Link>
+                  ))}
               </nav>
             )}
           </div>
