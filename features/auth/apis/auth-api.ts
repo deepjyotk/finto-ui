@@ -46,6 +46,12 @@ export const login = (data: UserLogin) =>
     body: JSON.stringify(data),
   });
 
+export const googleLogin = (credential: string) =>
+  apiClient.request<UserResponse>("/api/v1/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ credential }),
+  });
+
 export const logoutApi = () =>
   apiClient.request<void>("/api/v1/auth/logout", {
     method: "POST",

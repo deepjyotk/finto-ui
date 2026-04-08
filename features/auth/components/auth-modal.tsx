@@ -1,5 +1,6 @@
 "use client"
 
+import { GoogleLogin } from "@react-oauth/google"
 import { useState, useEffect, useCallback } from "react"
 import { useDispatch } from "react-redux"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -8,13 +9,18 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
-import { login, register, verifyOtp } from "@/features/auth/apis/auth-api"
+import { googleLogin, login, register, verifyOtp } from "@/features/auth/apis/auth-api"
 import { setUser, setLoading } from "@/features/auth/redux"
 import { useToast } from "@/hooks/use-toast"
 import type { LoginFormData, RegisterFormData } from "@/features/auth/redux"
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 const RESEND_COOLDOWN_SECONDS = 63
+
+const HAS_GOOGLE_AUTH =
+  typeof process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID === "string" &&
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID.length > 0
 
 interface AuthModalProps {
   isOpen: boolean
@@ -104,6 +110,34 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
     resetForms()
     setMode(defaultMode)
     onClose()
+  }
+
+  const handleGoogleSuccess = async (credential?: string) => {
+    if (!credential) {
+      setError("Google did not return a credential. Try again.")
+      return
+    }
+    setError("")
+    setIsSubmitting(true)
+    dispatch(setLoading(true))
+    try {
+      const userData = await googleLogin(credential)
+      dispatch(
+        setUser({
+          user_id: userData.user_id,
+          username: userData.username,
+          email: userData.email,
+          full_name: userData.full_name,
+        })
+      )
+      handleClose()
+    } catch (err) {
+      console.error("Google login error:", err)
+      setError(err instanceof Error ? err.message : "Google sign-in failed")
+    } finally {
+      setIsSubmitting(false)
+      dispatch(setLoading(false))
+    }
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -346,7 +380,37 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
             </div>
           </div>
         ) : mode === "login" ? (
-          <form onSubmit={handleLogin} className="space-y-4">
+          <div className="space-y-4">
+            {HAS_GOOGLE_AUTH ? (
+              <>
+                <div
+                  className={cn(
+                    "flex w-full justify-center [&>div]:!w-full",
+                    isSubmitting && "pointer-events-none opacity-60"
+                  )}
+                >
+                  <GoogleLogin
+                    onSuccess={(res) => void handleGoogleSuccess(res.credential ?? undefined)}
+                    onError={() => setError("Google sign-in was cancelled or failed")}
+                    useOneTap={false}
+                    theme="filled_black"
+                    size="large"
+                    text="continue_with"
+                    shape="rectangular"
+                    width={384}
+                  />
+                </div>
+                <div className="relative py-1">
+                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <span className="w-full border-t border-white/10" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase tracking-wide">
+                    <span className="bg-background px-3 text-muted-foreground">or</span>
+                  </div>
+                </div>
+              </>
+            ) : null}
+            <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="login-username">Username</Label>
               <Input
@@ -388,9 +452,40 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
                 Sign up
               </button>
             </p>
-          </form>
+            </form>
+          </div>
         ) : (
-          <form onSubmit={handleRegister} className="space-y-4">
+          <div className="space-y-4">
+            {HAS_GOOGLE_AUTH ? (
+              <>
+                <div
+                  className={cn(
+                    "flex w-full justify-center [&>div]:!w-full",
+                    isSubmitting && "pointer-events-none opacity-60"
+                  )}
+                >
+                  <GoogleLogin
+                    onSuccess={(res) => void handleGoogleSuccess(res.credential ?? undefined)}
+                    onError={() => setError("Google sign-in was cancelled or failed")}
+                    useOneTap={false}
+                    theme="filled_black"
+                    size="large"
+                    text="continue_with"
+                    shape="rectangular"
+                    width={384}
+                  />
+                </div>
+                <div className="relative py-1">
+                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <span className="w-full border-t border-white/10" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase tracking-wide">
+                    <span className="bg-background px-3 text-muted-foreground">or</span>
+                  </div>
+                </div>
+              </>
+            ) : null}
+            <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="register-username">Username</Label>
               <Input
@@ -475,7 +570,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
                 Sign in
               </button>
             </p>
-          </form>
+            </form>
+          </div>
         )}
       </DialogContent>
     </Dialog>
