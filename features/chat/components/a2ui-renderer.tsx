@@ -110,15 +110,24 @@ function buildSteps(events: A2UIClientEvent[]): StepState[] {
 }
 
 function extractFinalContent(events: A2UIClientEvent[]): string {
+  // Prefer the terminal message_complete payload when present — it is the
+  // server's full assembled answer. Joining message_chunk deltas is used only
+  // while streaming or if no complete event arrived.
+  for (let i = events.length - 1; i >= 0; i--) {
+    const evt = events[i]
+    if (evt.event === "message_complete") {
+      const content = (evt.payload as { content: string }).content
+      if (content.length > 0) return content
+      break
+    }
+  }
   const chunks: string[] = []
   for (const evt of events) {
     if (evt.event === "message_chunk") {
       chunks.push((evt.payload as { chunk: string }).chunk)
     }
   }
-  if (chunks.length) return chunks.join("")
-  const complete = events.find((e) => e.event === "message_complete")
-  return complete ? (complete.payload as { content: string }).content : ""
+  return chunks.length ? chunks.join("") : ""
 }
 
 function extractError(events: A2UIClientEvent[]): string | null {
