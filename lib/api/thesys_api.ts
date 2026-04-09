@@ -33,7 +33,11 @@ const extractBrokerId = (body: ThesysChatBody, searchParams: URLSearchParams) =>
 /** Fallback when older clients omit model_payload — matches backend LLMModel.Auto. */
 const DEFAULT_MODEL_PAYLOAD = "auto";
 
-const normalizeChatPayload = (body: ThesysChatBody, sessionId: string, brokerId: string) => {
+const normalizeChatPayload = (
+  body: ThesysChatBody,
+  sessionId: string,
+  brokerId: string | null
+) => {
   let content = "";
 
   if (body.message_payload?.content) {
@@ -51,14 +55,22 @@ const normalizeChatPayload = (body: ThesysChatBody, sessionId: string, brokerId:
       ? body.model_payload.trim()
       : DEFAULT_MODEL_PAYLOAD;
 
-  return {
+  const out: {
+    message_payload: { content: string };
+    session_id: string;
+    broker_id?: string | null;
+    model_payload: string;
+  } = {
     message_payload: {
       content,
     },
     session_id: sessionId,
-    broker_id: brokerId,
     model_payload: modelPayload,
   };
+  if (brokerId != null && brokerId.trim() !== "") {
+    out.broker_id = brokerId.trim();
+  }
+  return out;
 };
 
 const isEventStream = (response: Response) => {
@@ -108,7 +120,7 @@ const forwardThesysChat = async ({
   payload: {
     message_payload: { content: string };
     session_id: string;
-    broker_id: string;
+    broker_id?: string | null;
     model_payload: string;
   };
   cookieHeader: string;
@@ -136,13 +148,6 @@ export const handleThesysChatPost = async (request: NextRequest) => {
     if (!sessionId) {
       sessionId = await createThesysSession(cookieHeader);
       console.log("[Thesys Chat] Created new session:", sessionId);
-    }
-
-    if (!brokerId) {
-      return NextResponse.json(
-        { error: "broker_id is required" },
-        { status: 400 }
-      );
     }
 
     const payload = normalizeChatPayload(body, sessionId, brokerId);

@@ -1,3 +1,5 @@
+import { apiClient } from "@/lib/api/client"
+
 export interface CreditBalance {
   user_id: string;
   balance: number;
@@ -60,20 +62,12 @@ export interface CreditPackage {
   popular?: boolean;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || process.env.NEXT_PUBLIC_API_BASE_URL || '';
-
-export async function fetchCreditBalance(): Promise<CreditBalance> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/billing/credits/balance`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch credit balance');
-  }
-
-  return response.json();
+export async function fetchCreditBalance(): Promise<CreditBalance | null> {
+  return apiClient.safeRequest<CreditBalance>(
+    "/api/v1/billing/credits/balance",
+    { method: "GET" },
+    [401, 403],
+  )
 }
 
 export async function fetchTransactions(params?: {
@@ -93,51 +87,22 @@ export async function fetchTransactions(params?: {
   if (params?.end_date) queryParams.append('end_date', params.end_date);
   if (params?.model) queryParams.append('model', params.model);
 
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/billing/transactions?${queryParams.toString()}`,
-    {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch transactions');
-  }
-
-  return response.json();
+  return apiClient.request<TransactionResponse>(
+    `/api/v1/billing/transactions?${queryParams.toString()}`,
+    { method: "GET" },
+  )
 }
 
 export async function fetchUsageSummary(): Promise<UsageSummary> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/billing/usage/summary`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch usage summary');
-  }
-
-  return response.json();
+  return apiClient.request<UsageSummary>("/api/v1/billing/usage/summary", { method: "GET" })
 }
 
 export async function addCredits(amount: number): Promise<AddCreditsResponse> {
   const requestBody: AddCreditsRequest = { amount };
-
-  const response = await fetch(`${API_BASE_URL}/api/v1/billing/credits/add`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
+  return apiClient.request<AddCreditsResponse>("/api/v1/billing/credits/add", {
+    method: "POST",
     body: JSON.stringify(requestBody),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to add credits');
-  }
-
-  return response.json();
+  })
 }
 
 export function getCreditBalanceColor(balance: number): 'green' | 'yellow' | 'red' {

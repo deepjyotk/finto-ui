@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PanelLeft, PanelLeftOpen, Plus, ExternalLink, LogOut, Puzzle, Coins, Link2 } from "lucide-react"
 import AuthModal from "@/features/auth/components/auth-modal"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import useKiteConnection from "@/features/integrations/hooks/use-kite-connection"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
@@ -33,6 +33,15 @@ export default function Header() {
   const pathname = usePathname()
 
   const { connected, getLoginUrl } = useKiteConnection()
+
+  useEffect(() => {
+    const onAuthExpired = () => {
+      dispatch(logout())
+      setShowAuthModal(true)
+    }
+    window.addEventListener("auth-expired", onAuthExpired as EventListener)
+    return () => window.removeEventListener("auth-expired", onAuthExpired as EventListener)
+  }, [dispatch])
 
   const handleLogout = async () => {
     try {

@@ -8,6 +8,12 @@ import { FASTAPI_BASE_URL } from "@/lib/utils";
 
 const isBrowser = typeof window !== "undefined";
 
+const notifyAuthExpired = (status: number) => {
+  if (!isBrowser) return;
+  if (status !== 401 && status !== 403) return;
+  window.dispatchEvent(new CustomEvent("auth-expired", { detail: { status } }));
+};
+
 export class ApiClient {
   private baseUrl: string;
 
@@ -54,6 +60,7 @@ export class ApiClient {
     const responseText = await response.text();
 
     if (!response.ok) {
+      notifyAuthExpired(response.status);
       let errorMessage: string | undefined;
 
       if (responseText) {
@@ -104,6 +111,7 @@ export class ApiClient {
     const response = await fetch(url, { ...options, credentials: "include", headers });
 
     if (toleratedStatuses.includes(response.status)) {
+      notifyAuthExpired(response.status);
       return null;
     }
 

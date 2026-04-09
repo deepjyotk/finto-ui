@@ -8,7 +8,8 @@ export interface C1Message {
 export interface C1ChatRequest {
   message_payload: C1Message;
   session_id: string;
-  broker_id: string;
+  /** Omitted or empty: aggregate portfolio across all linked brokers. */
+  broker_id?: string | null;
   model_payload: string;
 }
 

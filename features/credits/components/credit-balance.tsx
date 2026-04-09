@@ -13,12 +13,10 @@ import {
   formatUSD,
   type CreditBalance as CreditBalanceType,
 } from '@/features/credits/apis/credits-api';
-import { useRouter } from 'next/navigation';
 
 export function CreditBalance() {
   const [balance, setBalance] = useState<CreditBalanceType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     loadBalance();
@@ -68,7 +66,7 @@ export function CreditBalance() {
       <Card>
         <CardContent className="pt-6">
           <p className="text-sm text-muted-foreground text-center">
-            Unable to load credit balance
+            Please log in to view your credit balance
           </p>
         </CardContent>
       </Card>

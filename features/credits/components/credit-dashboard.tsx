@@ -81,6 +81,14 @@ export function CreditDashboard() {
         }),
       ]);
 
+      if (!balanceData) {
+        setBalance(null);
+        setSummary(null);
+        setTransactions([]);
+        setTotalTransactions(0);
+        return;
+      }
+
       setBalance(balanceData);
       setSummary(summaryData);
       setTransactions(transactionsData.transactions);

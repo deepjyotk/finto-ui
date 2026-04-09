@@ -54,6 +54,11 @@ export function ChatHeaderCreditWidget() {
       }
 
       const data = await fetchCreditBalance();
+      if (!data) {
+        setBalance(null);
+        setError('Please log in to view credits');
+        return;
+      }
       setBalance(data);
       setError(null);
     } catch (error) {
