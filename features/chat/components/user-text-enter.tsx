@@ -15,8 +15,9 @@ import {
   Loader2,
   Paperclip,
   ChevronDown,
-  Bot,
-  MessageSquare,
+  LayoutDashboard,
+  Briefcase,
+  ScanSearch,
   Check,
   BrainCircuit,
   Sparkles,
@@ -32,8 +33,9 @@ import type { ChatModeItem, LLMModelItem } from "@/features/chat/apis/chat-api"
 export const MODEL_AUTO_ID = "auto"
 
 const MODE_ICON_MAP: Record<string, LucideIcon> = {
-  agent: Bot,
-  ask: MessageSquare,
+  overall: LayoutDashboard,
+  portfolio: Briefcase,
+  screener: ScanSearch,
 }
 
 const MODEL_ICON_MAP: Record<string, LucideIcon> = {
@@ -135,7 +137,7 @@ export default function UserTextEnter({
         {/* Bottom toolbar */}
         <div className="flex items-center justify-between px-2.5 pb-2 pt-1">
           <div className="flex min-w-0 items-center gap-1">
-            {/* Mode: Agent / Ask only (ss3 pill) */}
+            {/* Mode: Overall / Portfolio / Screener */}
             <Popover open={modeOpen} onOpenChange={setModeOpen}>
               <PopoverTrigger asChild>
                 <button
