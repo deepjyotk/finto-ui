@@ -3,7 +3,7 @@
 import { useSelector, useDispatch } from "react-redux"
 import type { RootState, AppDispatch } from "@/lib/store"
 import { logout } from "@/features/auth/redux"
-import { setChatSidebarOpen, toggleChatSidebarCollapsed, selectChatSidebarCollapsed } from "@/features/chat/redux"
+import { setChatSidebarOpen } from "@/features/chat/redux"
 import { signOut } from "@/features/auth/redux"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { PanelLeft, PanelLeftOpen, Plus, ExternalLink, LogOut, Puzzle, Coins, Link2 } from "lucide-react"
+import { PanelLeft, Plus, ExternalLink, LogOut, Puzzle, Coins, Link2 } from "lucide-react"
 import AuthModal from "@/features/auth/components/auth-modal"
 import { useEffect, useState } from "react"
 import useKiteConnection from "@/features/integrations/hooks/use-kite-connection"
@@ -27,7 +27,6 @@ import { FEATURE_FLAGS } from "@/lib/feature-flags"
 export default function Header() {
   const dispatch = useDispatch<AppDispatch>()
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth)
-  const sidebarCollapsed = useSelector(selectChatSidebarCollapsed)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
@@ -76,9 +75,7 @@ export default function Header() {
 
   // Navigation items
   const navItems: Array<{ href: string; label: string; badge?: string; external?: boolean; authOnly?: boolean }> = [
-    { href: "/examples", label: "Examples" },
-    { href: "/docs", label: "Docs", external: true },
-    { href: "/portfolio", label: "Portfolio", authOnly: true },
+
   ]
 
   return (
@@ -87,13 +84,13 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Left: Logo + Mobile Menu */}
           <div className="flex items-center gap-4">
-            {/* Cursor-style UI: show drawer toggle on chat pages */}
+            {/* Cursor-style UI: session drawer on small screens where the rail + sidebar are hidden */}
             {FEATURE_FLAGS.CURSOR_STYLE_UI_ENABLED && pathname?.startsWith('/chat') && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => dispatch(setChatSidebarOpen(true))}
-                className="text-white/70 hover:text-white hover:bg-white/10 h-9 w-9"
+                className="text-white/70 hover:text-white hover:bg-white/10 h-9 w-9 md:hidden"
                 aria-label="Open agent sidebar"
               >
                 <PanelLeft className="h-5 w-5" />
@@ -145,35 +142,9 @@ export default function Header() {
             {isAuthenticated && pathname?.startsWith('/chat') && (
               <ChatHeaderCreditWidget />
             )}
-
-            {/* Old UI: "+ New chat" and "Connect Kite" buttons on chat pages */}
-            {!FEATURE_FLAGS.CURSOR_STYLE_UI_ENABLED && isAuthenticated && pathname?.startsWith('/chat') && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleNewChat}
-                  className="flex items-center gap-1.5 text-white/80 hover:text-white hover:bg-white/10"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">New chat</span>
-                </Button>
-                {!connected && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(getLoginUrl(), "_blank")}
-                    className="flex items-center gap-1.5 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500"
-                  >
-                    <Link2 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Connect Kite</span>
-                  </Button>
-                )}
-              </>
-            )}
             
-            {/* Schedule demo button - Hidden on chat pages */}
-            {!pathname?.startsWith('/chat') && (
+            {/* Schedule demo — home (/) only */}
+            {pathname === "/" && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -186,22 +157,6 @@ export default function Header() {
             {isAuthenticated ? (
               <>
                 {/* Integrations button - icon-only on mobile, full button on desktop */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push('/integrations')}
-                  className={cn(
-                    "flex items-center gap-2 transition-colors",
-                    "sm:gap-2",
-                    pathname === '/integrations'
-                      ? "text-[#22d3ee] hover:text-[#67e8f9] bg-[#22d3ee]/10 hover:bg-[#22d3ee]/15 border border-[#22d3ee]/30 shadow-[0_0_8px_rgba(34,211,238,0.2)]"
-                      : "text-white/80 hover:text-white hover:bg-white/10"
-                  )}
-                  aria-label="Integrations"
-                >
-                  <Puzzle className="h-4 w-4" />
-                  <span className="hidden sm:inline">Integrations</span>
-                </Button>
                 {connected && (
                   <Button
                     variant="outline"
@@ -212,59 +167,57 @@ export default function Header() {
                     Holdings
                   </Button>
                 )}
-                {!pathname?.startsWith('/chat') && (
-                  <div className="flex items-center pl-2 border-l border-white/10">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="flex items-center gap-2 text-white/80 hover:text-white hover:bg-white/10 h-auto py-1.5 px-2"
-                        >
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-[#c96a2f] text-white text-sm font-semibold">
-                              {getUserInitials()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="hidden sm:inline text-sm font-medium">
-                            {user?.full_name || "User"}
-                          </span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="w-48 bg-[#1a1b23] border-white/10 text-white"
+                <div className="flex items-center pl-2 border-l border-white/10">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="flex items-center gap-2 text-white/80 hover:text-white hover:bg-white/10 h-auto py-1.5 px-2"
                       >
-                        <DropdownMenuItem
-                          onClick={() => router.push('/dashboard/credits')}
-                          className={cn(
-                            "text-white/90 hover:bg-white/10 cursor-pointer focus:bg-white/10 focus:text-white",
-                            pathname === '/dashboard/credits' && "bg-[#22d3ee]/10 text-[#22d3ee]"
-                          )}
-                        >
-                          <Coins className="h-4 w-4 mr-2" />
-                          Credits
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => router.push('/integrations')}
-                          className={cn(
-                            "text-white/90 hover:bg-white/10 cursor-pointer focus:bg-white/10 focus:text-white",
-                            pathname === '/integrations' && "bg-[#22d3ee]/10 text-[#22d3ee]"
-                          )}
-                        >
-                          <Puzzle className="h-4 w-4 mr-2" />
-                          Integrations
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={handleLogout}
-                          className="text-white/90 hover:bg-white/10 cursor-pointer focus:bg-white/10 focus:text-white"
-                        >
-                          <LogOut className="h-4 w-4 mr-2" />
-                          Log out
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                )}
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-[#c96a2f] text-white text-sm font-semibold">
+                            {getUserInitials()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="hidden sm:inline text-sm font-medium">
+                          {user?.full_name || "User"}
+                        </span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-48 bg-[#1a1b23] border-white/10 text-white"
+                    >
+                      <DropdownMenuItem
+                        onClick={() => router.push('/dashboard/credits')}
+                        className={cn(
+                          "text-white/90 hover:bg-white/10 cursor-pointer focus:bg-white/10 focus:text-white",
+                          pathname === '/dashboard/credits' && "bg-[#22d3ee]/10 text-[#22d3ee]"
+                        )}
+                      >
+                        <Coins className="h-4 w-4 mr-2" />
+                        Credits
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => router.push('/integrations')}
+                        className={cn(
+                          "text-white/90 hover:bg-white/10 cursor-pointer focus:bg-white/10 focus:text-white",
+                          pathname === '/integrations' && "bg-[#22d3ee]/10 text-[#22d3ee]"
+                        )}
+                      >
+                        <Puzzle className="h-4 w-4 mr-2" />
+                        Integrations
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={handleLogout}
+                        className="text-white/90 hover:bg-white/10 cursor-pointer focus:bg-white/10 focus:text-white"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Log out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </>
             ) : (
               <Button

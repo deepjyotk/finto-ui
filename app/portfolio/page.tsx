@@ -1,5 +1,4 @@
 import PortfolioPageClient from "@/features/portfolio/components/portfolio-page-client"
-import Header from "@/components/layout/header"
 
 export const metadata = {
   title: "Portfolio",
@@ -7,10 +6,5 @@ export const metadata = {
 }
 
 export default function PortfolioPage() {
-  return (
-    <>
-      <Header />
-      <PortfolioPageClient />
-    </>
-  )
+  return <PortfolioPageClient />
 }

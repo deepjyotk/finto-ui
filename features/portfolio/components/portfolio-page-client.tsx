@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { AgGridReact } from "ag-grid-react"
 import { AllCommunityModule, ModuleRegistry, themeQuartz } from "ag-grid-community"
 import type { ColDef } from "ag-grid-community"
-import { RefreshCw, TrendingDown, TrendingUp, Wallet } from "lucide-react"
+import { Eye, EyeOff, RefreshCw, TrendingDown, TrendingUp, Wallet } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -155,21 +155,42 @@ function buildColumnDefs(): ColDef<PortfolioHoldingItem>[] {
 
 // ── Summary card ───────────────────────────────────────────────────────────
 
+const MASKED_CURRENCY = "₹ ••••••••••"
+
 interface SummaryCardProps {
   title: string
   value: string
   sub?: string
   positive?: boolean | null
   icon: React.ReactNode
+  /** When true, value is hidden until user clicks the eye toggle (default hidden). */
+  maskable?: boolean
+  valueVisible?: boolean
+  onToggleValueVisible?: () => void
 }
 
-function SummaryCard({ title, value, sub, positive, icon }: SummaryCardProps) {
+function SummaryCard({
+  title,
+  value,
+  sub,
+  positive,
+  icon,
+  maskable = false,
+  valueVisible = true,
+  onToggleValueVisible,
+}: SummaryCardProps) {
   const subColor =
     positive == null
       ? "text-[oklch(0.708_0_0)]"
       : positive
       ? "text-[#22d3ee]"
       : "text-[#f87171]"
+
+  const showMasked = maskable && !valueVisible && value !== "—"
+  const displayValue = showMasked ? MASKED_CURRENCY : value
+
+  const showEye =
+    maskable && value !== "—" && onToggleValueVisible
 
   return (
     <Card className="bg-[oklch(0.205_0_0)] border-[oklch(0.269_0_0)]">
@@ -180,8 +201,33 @@ function SummaryCard({ title, value, sub, positive, icon }: SummaryCardProps) {
         <span className="text-[oklch(0.556_0_0)]">{icon}</span>
       </CardHeader>
       <CardContent className="px-5 pb-4">
-        <p className="text-xl font-semibold text-[oklch(0.985_0_0)]">{value}</p>
-        {sub && <p className={`text-sm mt-0.5 font-medium ${subColor}`}>{sub}</p>}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <p
+            className={`text-xl font-semibold text-[oklch(0.985_0_0)] ${showMasked ? "tracking-wide select-none" : ""}`}
+          >
+            {displayValue}
+          </p>
+          {showEye && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 -translate-y-px text-[oklch(0.556_0_0)] hover:bg-[oklch(0.269_0_0)] hover:text-[oklch(0.985_0_0)]"
+              onClick={onToggleValueVisible}
+              aria-label={valueVisible ? "Hide amount" : "Show amount"}
+              aria-pressed={valueVisible}
+            >
+              {valueVisible ? (
+                <EyeOff className="h-4 w-4" aria-hidden />
+              ) : (
+                <Eye className="h-4 w-4" aria-hidden />
+              )}
+            </Button>
+          )}
+        </div>
+        {sub && !showMasked && (
+          <p className={`text-sm mt-0.5 font-medium ${subColor}`}>{sub}</p>
+        )}
       </CardContent>
     </Card>
   )
@@ -225,6 +271,9 @@ export default function PortfolioPageClient() {
   const [metaLoading, setMetaLoading] = useState(true)
   const [dataLoading, setDataLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [portfolioValueVisible, setPortfolioValueVisible] = useState(false)
+  const [investedVisible, setInvestedVisible] = useState(false)
+  const [pnlVisible, setPnlVisible] = useState(false)
 
   const columnDefs = useMemo(() => buildColumnDefs(), [])
 
@@ -391,11 +440,17 @@ export default function PortfolioPageClient() {
               title="Portfolio Value"
               value={summary ? fmtCurrency(summary.total_current_value) : "—"}
               icon={<Wallet className="h-4 w-4" />}
+              maskable
+              valueVisible={portfolioValueVisible}
+              onToggleValueVisible={() => setPortfolioValueVisible((v) => !v)}
             />
             <SummaryCard
               title="Invested"
               value={summary ? fmtCurrency(summary.total_investment_value) : "—"}
               icon={<Wallet className="h-4 w-4" />}
+              maskable
+              valueVisible={investedVisible}
+              onToggleValueVisible={() => setInvestedVisible((v) => !v)}
             />
             <SummaryCard
               title="Overall P&L"
@@ -407,6 +462,9 @@ export default function PortfolioPageClient() {
                   ? <TrendingUp className="h-4 w-4 text-[#22d3ee]" />
                   : <TrendingDown className="h-4 w-4 text-[#f87171]" />
               }
+              maskable
+              valueVisible={pnlVisible}
+              onToggleValueVisible={() => setPnlVisible((v) => !v)}
             />
             <SummaryCard
               title="Holdings"

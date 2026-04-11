@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from "react-redux"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { useEffect, useState, useRef, useCallback } from "react"
-import type { AppDispatch, RootState } from "@/lib/store"
+import type { AppDispatch } from "@/lib/store"
 import {
   loadChatSessions,
   deleteChatSession,
@@ -17,6 +17,7 @@ import {
   startNewChat,
 } from "@/features/chat/redux"
 import { selectChatSidebarOpen } from "@/features/chat/redux/chat.selectors"
+import { useChatShell } from "@/features/chat/components/chat-shell-context"
 import { Button } from "@/components/ui/button"
 import {
   Plus,
@@ -34,13 +35,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export default function ChatSidebar() {
+export default function ChatSessionSidebar() {
   const dispatch = useDispatch<AppDispatch>()
   const router = useRouter()
   const pathname = usePathname()
   const sidebarOpen = useSelector(selectChatSidebarOpen)
   const sessions = useSelector(selectChatSessions)
   const loading = useSelector(selectIsChatSessionsLoading)
+  const { registerSessionSearchFocus } = useChatShell()
 
   const [search, setSearch] = useState("")
   const searchRef = useRef<HTMLInputElement>(null)
@@ -52,8 +54,19 @@ export default function ChatSidebar() {
   }, [pathname, dispatch])
 
   useEffect(() => {
+    registerSessionSearchFocus(() => {
+      searchRef.current?.focus()
+    })
+    return () => {
+      registerSessionSearchFocus(() => {})
+    }
+  }, [registerSessionSearchFocus])
+
+  useEffect(() => {
     if (sidebarOpen) {
-      requestAnimationFrame(() => searchRef.current?.focus())
+      requestAnimationFrame(() => {
+        searchRef.current?.focus()
+      })
     } else {
       setSearch("")
     }
@@ -99,11 +112,10 @@ export default function ChatSidebar() {
     : null
 
   return (
-    <>
-      {/* Backdrop */}
+    <div className="relative w-0 shrink-0 overflow-visible md:w-[300px] md:shrink-0">
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px] transition-opacity duration-200",
+          "fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px] transition-opacity duration-200 md:hidden",
           sidebarOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
@@ -112,60 +124,57 @@ export default function ChatSidebar() {
         aria-hidden
       />
 
-      {/* Sidebar panel */}
-      <div
+      <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-full w-[300px] bg-[#18191b] text-white",
-          "flex flex-col border-r border-white/[0.06]",
-          "shadow-2xl shadow-black/40",
-          "transition-transform duration-250 ease-[cubic-bezier(0.16,1,0.3,1)]",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          "flex h-full w-[300px] flex-col border-r border-white/[0.06] bg-[#18191b] text-white shadow-2xl shadow-black/40",
+          "fixed inset-y-0 left-0 z-50 transition-transform duration-250 ease-[cubic-bezier(0.16,1,0.3,1)]",
+          "md:relative md:inset-auto md:z-auto md:translate-x-0 md:shadow-none",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-3 pt-3 pb-2 shrink-0">
-          <span className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider pl-1">
+        <div className="flex shrink-0 items-center justify-between px-3 pb-2 pt-3">
+          <span className="pl-1 text-[13px] font-semibold uppercase tracking-wider text-gray-400">
             Agents
           </span>
           <Button
             variant="ghost"
             size="icon"
             onClick={close}
-            className="h-7 w-7 text-gray-500 hover:text-white hover:bg-white/10"
+            className="h-7 w-7 text-gray-500 hover:bg-white/10 hover:text-white md:hidden"
             aria-label="Close sidebar"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
 
-        {/* Search */}
-        <div className="px-3 pb-2 shrink-0">
+        <div className="shrink-0 px-3 pb-2">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500" />
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
             <input
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search Agents..."
-              className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] py-2 pl-8 pr-3 text-sm text-white placeholder:text-gray-500 focus:border-white/15 focus:outline-none focus:ring-0 transition-colors"
+              className="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] py-2 pl-8 pr-3 text-sm text-white placeholder:text-gray-500 transition-colors focus:border-white/15 focus:outline-none focus:ring-0"
             />
           </div>
         </div>
 
-        {/* New Agent */}
-        <div className="px-3 pb-2 shrink-0">
+        <div className="shrink-0 px-3 pb-2">
           <Button
             onClick={handleNewChat}
             variant="ghost"
-            className="w-full justify-start gap-2 border border-white/10 text-white hover:bg-white/[0.06] h-9 text-sm"
+            className="h-9 w-full justify-start gap-2 border border-white/10 text-sm text-white hover:bg-white/[0.06]"
           >
             <Plus className="h-4 w-4" />
             New Agent
           </Button>
         </div>
 
-        {/* Session list */}
-        <div className="flex-1 overflow-y-auto px-2 pb-2">
+        <nav
+          className="flex-1 overflow-y-auto px-2 pb-2"
+          aria-label="Conversations"
+        >
           {loading ? (
             <div className="flex flex-col gap-2 px-1 pt-2">
               {[...Array(4)].map((_, i) => (
@@ -179,7 +188,7 @@ export default function ChatSidebar() {
             <div className="space-y-3 pt-1">
               {sessionSections.map((section) => (
                 <div key={`${section.tier}-${section.label}`}>
-                  <div className="px-3 pb-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                  <div className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
                     {section.label}
                   </div>
                   <div className="space-y-0.5">
@@ -197,7 +206,7 @@ export default function ChatSidebar() {
                           <Link
                             href={`/chat/${session.session_id}`}
                             prefetch={false}
-                            className="flex items-center gap-3 flex-1 min-w-0 px-3 py-2.5"
+                            className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5"
                             onClick={close}
                           >
                             <MessageSquare
@@ -215,22 +224,22 @@ export default function ChatSidebar() {
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <div className="h-7 w-7 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mr-1.5 rounded-md cursor-pointer">
+                              <div className="mr-1.5 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-500 opacity-0 transition-opacity hover:bg-white/10 hover:text-white group-hover:opacity-100">
                                 <MoreHorizontal className="h-3.5 w-3.5" />
                               </div>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="w-44 bg-[#202123] border-white/10"
+                              className="w-44 border-white/10 bg-[#202123]"
                             >
                               <DropdownMenuItem
                                 variant="destructive"
                                 onClick={(e) =>
                                   handleDeleteSession(session.session_id, e)
                                 }
-                                className="text-red-400 hover:bg-red-500/10 hover:text-red-400 cursor-pointer"
+                                className="cursor-pointer text-red-400 hover:bg-red-500/10 hover:text-red-400"
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
+                                <Trash2 className="mr-2 h-4 w-4" />
                                 Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -251,8 +260,8 @@ export default function ChatSidebar() {
               No agents yet
             </div>
           )}
-        </div>
-      </div>
-    </>
+        </nav>
+      </aside>
+    </div>
   )
 }

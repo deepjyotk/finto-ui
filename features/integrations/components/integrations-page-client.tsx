@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Building2, AlertCircle } from "lucide-react"
-import Header from "@/components/layout/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -145,22 +144,17 @@ export default function IntegrationsPageClient({
 
   if (error && error !== "unauthorized") {
     return (
-      <>
-        <Header />
-        <div className="container mx-auto p-6 max-w-6xl">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        </div>
-      </>
+      <div className="container mx-auto p-6 max-w-6xl">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
     )
   }
 
   return (
-    <>
-      <Header />
-      <div className="container mx-auto p-6 max-w-6xl">
+    <div className="container mx-auto p-6 max-w-6xl">
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Portfolio Integrations</h1>
@@ -219,7 +213,6 @@ export default function IntegrationsPageClient({
           )}
           onSubmit={handleConnectBroker}
         />
-      </div>
-    </>
+    </div>
   )
 }
