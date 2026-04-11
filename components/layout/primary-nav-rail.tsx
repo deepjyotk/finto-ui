@@ -77,6 +77,10 @@ export default function PrimaryNavRail() {
         : "text-gray-400 hover:bg-white/[0.05] hover:text-gray-200"
     )
 
+  if (!isAuthenticated) {
+    return null
+  }
+
   return (
     <TooltipProvider delayDuration={300}>
       <nav
@@ -148,42 +152,38 @@ export default function PrimaryNavRail() {
               <TooltipContent side="right">Coming soon</TooltipContent>
             </Tooltip>
           </li>
-          {isAuthenticated && (
-            <>
-              <li>
-                <Link
-                  href="/portfolio"
-                  className={itemClass(isPortfolioActive)}
-                  aria-current={isPortfolioActive ? "page" : undefined}
-                >
-                  <PieChart
-                    className={cn(
-                      "h-[18px] w-[18px] shrink-0",
-                      isPortfolioActive ? "text-[#22d3ee]" : "text-gray-500"
-                    )}
-                    aria-hidden
-                  />
-                  Portfolio
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/integrations"
-                  className={itemClass(isIntegrationsActive)}
-                  aria-current={isIntegrationsActive ? "page" : undefined}
-                >
-                  <Puzzle
-                    className={cn(
-                      "h-[18px] w-[18px] shrink-0",
-                      isIntegrationsActive ? "text-[#22d3ee]" : "text-gray-500"
-                    )}
-                    aria-hidden
-                  />
-                  Integrations
-                </Link>
-              </li>
-            </>
-          )}
+          <li>
+            <Link
+              href="/portfolio"
+              className={itemClass(isPortfolioActive)}
+              aria-current={isPortfolioActive ? "page" : undefined}
+            >
+              <PieChart
+                className={cn(
+                  "h-[18px] w-[18px] shrink-0",
+                  isPortfolioActive ? "text-[#22d3ee]" : "text-gray-500"
+                )}
+                aria-hidden
+              />
+              Portfolio
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/integrations"
+              className={itemClass(isIntegrationsActive)}
+              aria-current={isIntegrationsActive ? "page" : undefined}
+            >
+              <Puzzle
+                className={cn(
+                  "h-[18px] w-[18px] shrink-0",
+                  isIntegrationsActive ? "text-[#22d3ee]" : "text-gray-500"
+                )}
+                aria-hidden
+              />
+              Integrations
+            </Link>
+          </li>
         </ul>
       </nav>
     </TooltipProvider>
