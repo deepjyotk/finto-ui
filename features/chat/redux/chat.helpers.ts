@@ -1,5 +1,5 @@
 import type { ChatMessage, C1ActionEvent } from "./chat.types"
-import type { MessageItem } from "@/features/chat/apis/chat-api"
+import type { MessageItem, SessionItem } from "@/features/chat/apis/chat-api"
 
 /* ---------- Helpers ---------- */
 export const normalizeApiMessages = (items: MessageItem[] | undefined): ChatMessage[] => {
@@ -66,6 +66,71 @@ export const formatSessionDate = (date: string) => {
     return `${Math.floor(diffInHours / 24)} days ago`
   }
   return dateObj.toLocaleDateString()
+}
+
+function startOfLocalDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+/** ChatGPT-style sidebar sections (calendar-based). */
+export interface ChatHistorySection {
+  tier: number
+  label: string
+  sessions: SessionItem[]
+}
+
+function getHistoryBucket(isoDate: string): { tier: number; label: string } {
+  const sessionDate = new Date(isoDate)
+  const today = new Date()
+  const startToday = startOfLocalDay(today)
+  const startSession = startOfLocalDay(sessionDate)
+  const diffDays = Math.round((startToday.getTime() - startSession.getTime()) / 86400000)
+
+  if (diffDays < 0) {
+    return { tier: 0, label: "Today" }
+  }
+  if (diffDays === 0) return { tier: 0, label: "Today" }
+  if (diffDays === 1) return { tier: 1, label: "Yesterday" }
+  if (diffDays <= 7) return { tier: 2, label: "Previous 7 days" }
+  if (diffDays <= 30) return { tier: 3, label: "Previous 30 days" }
+  return {
+    tier: 4,
+    label: sessionDate.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
+  }
+}
+
+/** Group sessions (newest-first from API) into labeled sections like ChatGPT. */
+export function groupChatSessionsForSidebar(sessions: SessionItem[]): ChatHistorySection[] {
+  const map = new Map<string, ChatHistorySection>()
+  for (const s of sessions) {
+    const { tier, label } = getHistoryBucket(s.started_at)
+    const key = `${tier}:${label}`
+    let g = map.get(key)
+    if (!g) {
+      g = { tier, label, sessions: [] }
+      map.set(key, g)
+    }
+    g.sessions.push(s)
+  }
+  return [...map.values()].sort((a, b) => {
+    if (a.tier !== b.tier) return a.tier - b.tier
+    const ta = Math.max(...a.sessions.map((x) => new Date(x.started_at).getTime()))
+    const tb = Math.max(...b.sessions.map((x) => new Date(x.started_at).getTime()))
+    return tb - ta
+  })
+}
+
+export function truncateChatTitle(text: string, maxLen = 80): string {
+  const t = text.trim().replace(/\s+/g, " ")
+  if (t.length <= maxLen) return t
+  return `${t.slice(0, Math.max(0, maxLen - 1)).trimEnd()}\u2026`
+}
+
+/** Primary line for a session row (first user message, or "New chat"). */
+export function getSessionDisplayTitle(session: SessionItem, maxLen = 80): string {
+  const p = session.preview?.trim()
+  if (p) return truncateChatTitle(p, maxLen)
+  return "New chat"
 }
 
 export const getUserInitials = (fullName?: string | null) => {

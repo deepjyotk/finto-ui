@@ -249,6 +249,10 @@ export const sendMessage = createAsyncThunk<
   } finally {
     sendMessageAbortController = null
     dispatch(setIsLoading(false))
+    const userOnly = getState().chat.messages.filter((m) => m.role === "user")
+    if (userOnly.length === 1) {
+      void dispatch(loadChatSessions())
+    }
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("credits-updated"))
     }

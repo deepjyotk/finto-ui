@@ -40,6 +40,8 @@ export interface ChatMetadataResponse {
 export interface SessionItem {
   session_id: string;
   started_at: string;
+  /** First user message; used for history titles (ChatGPT-style). */
+  preview?: string | null;
 }
 
 export interface MessageItem {

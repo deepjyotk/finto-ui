@@ -15,12 +15,15 @@ import { useToast } from "@/hooks/use-toast"
 import type { LoginFormData, RegisterFormData } from "@/features/auth/redux"
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { FEATURE_FLAGS } from "@/lib/feature-flags"
 
 const RESEND_COOLDOWN_SECONDS = 63
 
 const HAS_GOOGLE_AUTH =
   typeof process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID === "string" &&
   process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID.length > 0
+
+const HIDE_BASIC_AUTH = FEATURE_FLAGS.HIDE_BASIC_AUTH
 
 interface AuthModalProps {
   isOpen: boolean
@@ -94,6 +97,16 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
     setResendCooldown(0)
     setError("")
   }
+
+  useEffect(() => {
+    if (!isOpen || !HIDE_BASIC_AUTH || mode !== "verify-otp") return
+    setMode("login")
+    setOtpValue("")
+    setPendingEmail("")
+    setPendingUsername("")
+    setPendingPassword("")
+    setError("")
+  }, [isOpen, HIDE_BASIC_AUTH, mode])
 
   const handleModeToggle = () => {
     setMode(mode === "login" ? "register" : "login")
@@ -400,59 +413,69 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
                     width={384}
                   />
                 </div>
-                <div className="relative py-1">
-                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                    <span className="w-full border-t border-white/10" />
+                {!HIDE_BASIC_AUTH ? (
+                  <div className="relative py-1">
+                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                      <span className="w-full border-t border-white/10" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase tracking-wide">
+                      <span className="bg-background px-3 text-muted-foreground">or</span>
+                    </div>
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase tracking-wide">
-                    <span className="bg-background px-3 text-muted-foreground">or</span>
-                  </div>
-                </div>
+                ) : null}
               </>
             ) : null}
-            <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="login-username">Username</Label>
-              <Input
-                id="login-username"
-                type="text"
-                placeholder="johndoe"
-                value={loginForm.username}
-                onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                required
-                disabled={isSubmitting}
-              />
-            </div>
+            {!HIDE_BASIC_AUTH ? (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-username">Username</Label>
+                  <Input
+                    id="login-username"
+                    type="text"
+                    placeholder="johndoe"
+                    value={loginForm.username}
+                    onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="login-password">Password</Label>
-              <Input
-                id="login-password"
-                type="password"
-                placeholder="••••••••"
-                value={loginForm.password}
-                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                required
-                disabled={isSubmitting}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Password</Label>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Signing in..." : "Sign In"}
-            </Button>
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Signing in..." : "Sign In"}
+                </Button>
 
-            <p className="text-sm text-center text-muted-foreground">
-              Don't have an account?{" "}
-              <button
-                type="button"
-                onClick={handleModeToggle}
-                className="text-primary hover:underline font-medium"
-                disabled={isSubmitting}
-              >
-                Sign up
-              </button>
-            </p>
-            </form>
+                <p className="text-sm text-center text-muted-foreground">
+                  Don't have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={handleModeToggle}
+                    className="text-primary hover:underline font-medium"
+                    disabled={isSubmitting}
+                  >
+                    Sign up
+                  </button>
+                </p>
+              </form>
+            ) : !HAS_GOOGLE_AUTH ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Sign-in is not available. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID or disable NEXT_PUBLIC_HIDE_BASIC_AUTH.
+                </AlertDescription>
+              </Alert>
+            ) : null}
           </div>
         ) : (
           <div className="space-y-4">
@@ -475,102 +498,112 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Au
                     width={384}
                   />
                 </div>
-                <div className="relative py-1">
-                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                    <span className="w-full border-t border-white/10" />
+                {!HIDE_BASIC_AUTH ? (
+                  <div className="relative py-1">
+                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                      <span className="w-full border-t border-white/10" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase tracking-wide">
+                      <span className="bg-background px-3 text-muted-foreground">or</span>
+                    </div>
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase tracking-wide">
-                    <span className="bg-background px-3 text-muted-foreground">or</span>
-                  </div>
-                </div>
+                ) : null}
               </>
             ) : null}
-            <form onSubmit={handleRegister} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="register-username">Username</Label>
-              <Input
-                id="register-username"
-                type="text"
-                placeholder="johndoe"
-                value={registerForm.username}
-                onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
-                required
-                disabled={isSubmitting}
-              />
-            </div>
+            {!HIDE_BASIC_AUTH ? (
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="register-username">Username</Label>
+                  <Input
+                    id="register-username"
+                    type="text"
+                    placeholder="johndoe"
+                    value={registerForm.username}
+                    onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="register-email">Email</Label>
-              <Input
-                id="register-email"
-                type="email"
-                placeholder="john@example.com"
-                value={registerForm.email}
-                onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-                required
-                disabled={isSubmitting}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-email">Email</Label>
+                  <Input
+                    id="register-email"
+                    type="email"
+                    placeholder="john@example.com"
+                    value={registerForm.email}
+                    onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="register-fullname">Full Name</Label>
-              <Input
-                id="register-fullname"
-                type="text"
-                placeholder="John Doe"
-                value={registerForm.full_name}
-                onChange={(e) => setRegisterForm({ ...registerForm, full_name: e.target.value })}
-                required
-                disabled={isSubmitting}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-fullname">Full Name</Label>
+                  <Input
+                    id="register-fullname"
+                    type="text"
+                    placeholder="John Doe"
+                    value={registerForm.full_name}
+                    onChange={(e) => setRegisterForm({ ...registerForm, full_name: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="register-password">Password</Label>
-              <Input
-                id="register-password"
-                type="password"
-                placeholder="••••••••"
-                value={registerForm.password}
-                onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                required
-                minLength={8}
-                disabled={isSubmitting}
-              />
-              <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-password">Password</Label>
+                  <Input
+                    id="register-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={registerForm.password}
+                    onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                    required
+                    minLength={8}
+                    disabled={isSubmitting}
+                  />
+                  <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="register-confirm-password">Confirm Password</Label>
-              <Input
-                id="register-confirm-password"
-                type="password"
-                placeholder="••••••••"
-                value={registerForm.confirmPassword}
-                onChange={(e) =>
-                  setRegisterForm({ ...registerForm, confirmPassword: e.target.value })
-                }
-                required
-                disabled={isSubmitting}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-confirm-password">Confirm Password</Label>
+                  <Input
+                    id="register-confirm-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={registerForm.confirmPassword}
+                    onChange={(e) =>
+                      setRegisterForm({ ...registerForm, confirmPassword: e.target.value })
+                    }
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating account..." : "Create Account"}
-            </Button>
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Creating account..." : "Create Account"}
+                </Button>
 
-            <p className="text-sm text-center text-muted-foreground">
-              Already have an account?{" "}
-              <button
-                type="button"
-                onClick={handleModeToggle}
-                className="text-primary hover:underline font-medium"
-                disabled={isSubmitting}
-              >
-                Sign in
-              </button>
-            </p>
-            </form>
+                <p className="text-sm text-center text-muted-foreground">
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={handleModeToggle}
+                    className="text-primary hover:underline font-medium"
+                    disabled={isSubmitting}
+                  >
+                    Sign in
+                  </button>
+                </p>
+              </form>
+            ) : !HAS_GOOGLE_AUTH ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Sign-in is not available. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID or disable NEXT_PUBLIC_HIDE_BASIC_AUTH.
+                </AlertDescription>
+              </Alert>
+            ) : null}
           </div>
         )}
       </DialogContent>

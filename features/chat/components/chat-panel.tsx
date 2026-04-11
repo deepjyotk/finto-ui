@@ -7,14 +7,10 @@ import { Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { AppDispatch } from "@/lib/store"
 import type { ChatModeItem, LLMModelItem, SessionItem } from "@/features/chat/apis/chat-api"
-import { setChatPanelOpen, startNewChat, deleteChatSession } from "@/features/chat/redux"
+import { setChatPanelOpen, startNewChat, deleteChatSession, getSessionDisplayTitle } from "@/features/chat/redux"
 import ChatDisplay from "./chat-display"
 import UserTextEnter from "./user-text-enter"
 import { FEATURE_FLAGS } from "@/lib/feature-flags"
-
-function truncateSessionLabel(id: string) {
-  return `Chat ${id.slice(0, 6)}`
-}
 
 interface ChatPanelProps {
   onSendMessage: (message: string, modelId: string) => Promise<void>
@@ -116,7 +112,9 @@ export default function ChatPanel({
                 {isActive && (
                   <div className="absolute inset-x-0 top-0 h-[2px] bg-[#22d3ee]" />
                 )}
-                <span className="max-w-[100px] truncate">{truncateSessionLabel(s.session_id)}</span>
+                <span className="max-w-[100px] truncate" title={getSessionDisplayTitle(s)}>
+                  {getSessionDisplayTitle(s, 28)}
+                </span>
                 <span
                   role="button"
                   tabIndex={0}

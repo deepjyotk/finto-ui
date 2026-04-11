@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import ReactMarkdown from "react-markdown"
+import { ChevronRight } from "lucide-react"
 import remarkGfm from "remark-gfm"
 import { cn } from "@/lib/utils"
 import type {
@@ -201,6 +202,55 @@ function ToolAccordion({ tool }: { tool: ToolCallState }) {
   )
 }
 
+function chainSummaryLine(steps: StepState[], isStreaming: boolean): string {
+  if (steps.length === 0) return ""
+  const running = steps.find((s) => s.status === "running")
+  if (isStreaming && running) return running.title
+  if (isStreaming) return steps[steps.length - 1]?.title ?? "…"
+  return `${steps.length} step${steps.length === 1 ? "" : "s"}`
+}
+
+function ChainOfThoughtSection({ steps, isStreaming }: { steps: StepState[]; isStreaming: boolean }) {
+  const [open, setOpen] = useState(isStreaming)
+
+  useEffect(() => {
+    if (isStreaming) setOpen(true)
+    else setOpen(false)
+  }, [isStreaming])
+
+  const summary = chainSummaryLine(steps, isStreaming)
+
+  return (
+    <div className="rounded-lg border border-white/[0.08] bg-white/[0.02]">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
+      >
+        <ChevronRight
+          className={cn(
+            "h-4 w-4 flex-shrink-0 text-gray-500 transition-transform duration-200",
+            open && "rotate-90"
+          )}
+          aria-hidden
+        />
+        <span className="text-sm font-medium text-gray-200">Reasoning</span>
+        <span className="ml-auto min-w-0 truncate pl-2 text-xs text-gray-500">{summary}</span>
+      </button>
+      {open && (
+        <div className="border-t border-white/[0.06] px-2 pb-2 pt-1.5">
+          <div className="space-y-1.5">
+            {steps.map((step) => (
+              <StepCard key={step.stepName} step={step} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function StepCard({ step }: { step: StepState }) {
   const [expanded, setExpanded] = useState(false)
   const hasTools = step.toolCalls.length > 0
@@ -302,13 +352,9 @@ export default function A2UIRenderer({ events = [], isStreaming = false, content
 
   return (
     <div className="space-y-3">
-      {/* Step timeline */}
+      {/* Step timeline — collapsible (Cursor / Claude-style) */}
       {hasSteps && (
-        <div className="space-y-1.5">
-          {steps.map((step) => (
-            <StepCard key={step.stepName} step={step} />
-          ))}
-        </div>
+        <ChainOfThoughtSection steps={steps} isStreaming={isStreaming} />
       )}
 
       {/* Streaming indicator while no answer content yet */}

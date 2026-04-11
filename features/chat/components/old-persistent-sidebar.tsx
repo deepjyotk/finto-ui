@@ -13,7 +13,8 @@ import {
   selectIsChatSessionsLoading,
   selectChatSidebarCollapsed,
   toggleChatSidebarCollapsed,
-  formatSessionDate,
+  groupChatSessionsForSidebar,
+  getSessionDisplayTitle,
   startNewChat,
 } from "@/features/chat/redux"
 import { Button } from "@/components/ui/button"
@@ -80,6 +81,8 @@ export default function OldPersistentSidebar() {
   const activeSessionId = pathname?.startsWith("/chat/")
     ? pathname.split("/")[2] ?? null
     : null
+
+  const sessionSections = groupChatSessionsForSidebar(sessions)
 
   const getUserInitials = () => {
     if (!user?.full_name || user.full_name.trim() === "") return "U"
@@ -161,15 +164,6 @@ export default function OldPersistentSidebar() {
           )}
         </div>
 
-        {/* Session label (expanded only) */}
-        {!collapsed && (
-          <div className="px-4 pb-1 shrink-0">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-              Chat Sessions
-            </span>
-          </div>
-        )}
-
         {/* Session list */}
         <div className={cn("flex-1 overflow-y-auto pb-2", collapsed ? "px-1.5" : "px-2")}>
           {loading ? (
@@ -185,111 +179,110 @@ export default function OldPersistentSidebar() {
               ))}
             </div>
           ) : sessions.length > 0 ? (
-            <div className="space-y-0.5 pt-1">
-              {sessions.map((session) => {
-                const isActive = activeSessionId === session.session_id
-                const sessionDate = formatSessionDate(session.started_at)
-                const isHovered = hoveredSessionId === session.session_id
-
-                if (collapsed) {
-                  return (
-                    <Tooltip key={session.session_id}>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={`/chat/${session.session_id}`}
-                          prefetch={false}
-                          className={cn(
-                            "flex h-9 w-full items-center justify-center rounded-lg transition-colors",
-                            isActive
-                              ? "bg-white/[0.09] text-[#22d3ee]"
-                              : "text-gray-500 hover:bg-white/[0.05] hover:text-gray-300"
-                          )}
-                        >
-                          <MessageSquare className="h-4 w-4" />
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p className="font-medium">Chat Session</p>
-                        <p className="text-xs text-gray-400">{sessionDate}</p>
-                        <p className="text-xs text-gray-500 font-mono">
-                          {session.session_id.substring(0, 8)}…
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )
-                }
-
-                return (
-                  <div
-                    key={session.session_id}
-                    className={cn(
-                      "group flex items-center rounded-lg transition-colors",
-                      isActive ? "bg-white/[0.09]" : "hover:bg-white/[0.05]"
-                    )}
-                    onMouseEnter={() => setHoveredSessionId(session.session_id)}
-                    onMouseLeave={() => setHoveredSessionId(null)}
-                  >
-                    <Link
-                      href={`/chat/${session.session_id}`}
-                      prefetch={false}
-                      className="flex items-center gap-2.5 flex-1 min-w-0 px-2.5 py-2.5"
-                    >
-                      <MessageSquare
-                        className={cn(
-                          "h-3.5 w-3.5 shrink-0 transition-colors",
-                          isActive ? "text-[#22d3ee]" : "text-gray-500"
-                        )}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div
-                          className={cn(
-                            "truncate text-[13px] font-medium",
-                            isActive ? "text-white" : "text-gray-300"
-                          )}
-                        >
-                          Chat Session
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[11px] text-gray-500 truncate">
-                            {sessionDate}
-                          </span>
-                          <span className="text-[11px] text-gray-600 font-mono shrink-0">
-                            {session.session_id.substring(0, 7)}…
-                          </span>
-                        </div>
+            <div className={cn("space-y-3 pt-1", collapsed ? "space-y-0.5" : "")}>
+              {collapsed
+                ? sessions.map((session) => {
+                    const isActive = activeSessionId === session.session_id
+                    return (
+                      <Tooltip key={session.session_id}>
+                        <TooltipTrigger asChild>
+                          <Link
+                            href={`/chat/${session.session_id}`}
+                            prefetch={false}
+                            className={cn(
+                              "flex h-9 w-full items-center justify-center rounded-lg transition-colors",
+                              isActive
+                                ? "bg-white/[0.09] text-[#22d3ee]"
+                                : "text-gray-500 hover:bg-white/[0.05] hover:text-gray-300"
+                            )}
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-[240px]">
+                          <p className="font-medium break-words">
+                            {getSessionDisplayTitle(session)}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  })
+                : sessionSections.map((section) => (
+                    <div key={`${section.tier}-${section.label}`}>
+                      <div className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                        {section.label}
                       </div>
-                    </Link>
+                      <div className="space-y-0.5">
+                        {section.sessions.map((session) => {
+                          const isActive = activeSessionId === session.session_id
+                          const isHovered = hoveredSessionId === session.session_id
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <div
-                          className={cn(
-                            "h-6 w-6 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 shrink-0 mr-1.5 rounded cursor-pointer transition-opacity",
-                            isHovered || isActive ? "opacity-100" : "opacity-0"
-                          )}
-                        >
-                          <MoreHorizontal className="h-3.5 w-3.5" />
-                        </div>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="w-44 bg-[#202123] border-white/10"
-                      >
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={(e) =>
-                            handleDeleteSession(session.session_id, e)
-                          }
-                          className="text-red-400 hover:bg-red-500/10 hover:text-red-400 cursor-pointer"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                )
-              })}
+                          return (
+                            <div
+                              key={session.session_id}
+                              className={cn(
+                                "group flex items-center rounded-lg transition-colors",
+                                isActive ? "bg-white/[0.09]" : "hover:bg-white/[0.05]"
+                              )}
+                              onMouseEnter={() => setHoveredSessionId(session.session_id)}
+                              onMouseLeave={() => setHoveredSessionId(null)}
+                            >
+                              <Link
+                                href={`/chat/${session.session_id}`}
+                                prefetch={false}
+                                className="flex items-center gap-2.5 flex-1 min-w-0 px-2.5 py-2.5"
+                              >
+                                <MessageSquare
+                                  className={cn(
+                                    "h-3.5 w-3.5 shrink-0 transition-colors",
+                                    isActive ? "text-[#22d3ee]" : "text-gray-500"
+                                  )}
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div
+                                    className={cn(
+                                      "truncate text-[13px] font-medium",
+                                      isActive ? "text-white" : "text-gray-300"
+                                    )}
+                                  >
+                                    {getSessionDisplayTitle(session)}
+                                  </div>
+                                </div>
+                              </Link>
+
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <div
+                                    className={cn(
+                                      "h-6 w-6 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 shrink-0 mr-1.5 rounded cursor-pointer transition-opacity",
+                                      isHovered || isActive ? "opacity-100" : "opacity-0"
+                                    )}
+                                  >
+                                    <MoreHorizontal className="h-3.5 w-3.5" />
+                                  </div>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="w-44 bg-[#202123] border-white/10"
+                                >
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    onClick={(e) =>
+                                      handleDeleteSession(session.session_id, e)
+                                    }
+                                    className="text-red-400 hover:bg-red-500/10 hover:text-red-400 cursor-pointer"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
             </div>
           ) : (
             !collapsed && (

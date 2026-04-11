@@ -14,9 +14,15 @@
  *   false → Use the A2UI streaming event pipeline; renders a step timeline
  *            + tool accordion + final answer in place of C1Component.
  *
+ * HIDE_BASIC_AUTH
+ *   true  → Hide username/password login and registration forms in the UI only.
+ *            Google sign-in is unchanged. Backend auth endpoints are not disabled.
+ *   false → Show email/username + password fields (default).
+ *
  * Set in .env / .env.local:
  *   NEXT_PUBLIC_CURSOR_STYLE_UI_ENABLED=true   # or false
  *   NEXT_PUBLIC_THESYS_ENABLED=true            # or false
+ *   NEXT_PUBLIC_HIDE_BASIC_AUTH=true           # or false
  */
 export const FEATURE_FLAGS = {
   CURSOR_STYLE_UI_ENABLED:
@@ -24,6 +30,9 @@ export const FEATURE_FLAGS = {
 
   THESYS_ENABLED:
     (process.env.NEXT_PUBLIC_THESYS_ENABLED ?? "true").toLowerCase() !== "false",
+
+  HIDE_BASIC_AUTH:
+    (process.env.NEXT_PUBLIC_HIDE_BASIC_AUTH ?? "false").toLowerCase() === "true",
 } as const
 
 export type FeatureFlags = typeof FEATURE_FLAGS

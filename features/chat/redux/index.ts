@@ -72,4 +72,8 @@ export {
   parseC1Action,
   formatSessionDate,
   getUserInitials,
+  groupChatSessionsForSidebar,
+  truncateChatTitle,
+  getSessionDisplayTitle,
 } from "./chat.helpers"
+export type { ChatHistorySection } from "./chat.helpers"
