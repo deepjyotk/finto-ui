@@ -32,7 +32,13 @@ export default function PrimaryNavRail() {
 
   useEffect(() => {
     if (!isAuthenticated) return
-    if (pathname?.startsWith("/portfolio") || pathname?.startsWith("/integrations")) {
+    // Home must load sessions too; otherwise chatHref stays "/chat/new" until the user
+    // visits portfolio/integrations and the list never hydrates from Redux.
+    if (
+      pathname === "/" ||
+      pathname?.startsWith("/portfolio") ||
+      pathname?.startsWith("/integrations")
+    ) {
       dispatch(loadChatSessions())
     }
   }, [isAuthenticated, pathname, dispatch])
