@@ -1,5 +1,95 @@
 import type { A2UIClientEvent } from "@/features/chat/redux/chat.types"
 
+export interface SendA2UIResumeMessageOptions {
+  sessionId: string
+  formValues: Record<string, string>
+  brokerId?: string
+  modelId: string
+  signal?: AbortSignal
+  onEvent?: (event: A2UIClientEvent) => void
+  onComplete?: () => void
+  onAbort?: () => void
+  onError?: (error: Error) => void
+}
+
+/**
+ * Resume a paused LangGraph thread after HITL (POST /api/v1/a2ui/resume).
+ */
+export const sendA2UIResumeMessage = async ({
+  sessionId,
+  formValues,
+  brokerId = "",
+  modelId,
+  signal,
+  onEvent,
+  onComplete,
+  onAbort,
+  onError,
+}: SendA2UIResumeMessageOptions): Promise<void> => {
+  try {
+    const response = await fetch("/api/a2ui/resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: sessionId,
+        form_values: formValues,
+        broker_id: brokerId,
+        model_payload: modelId,
+      }),
+      signal,
+    })
+
+    if (!response.ok) {
+      throw new Error(`A2UI resume request failed: ${response.statusText}`)
+    }
+
+    const reader = response.body?.getReader()
+    if (!reader) throw new Error("Response body is not readable")
+
+    const decoder = new TextDecoder()
+    let buffer = ""
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+
+      const frames = buffer.split("\n\n")
+      buffer = frames.pop() ?? ""
+
+      for (const frame of frames) {
+        const line = frame.trim()
+        if (!line.startsWith("data:")) continue
+
+        const payload = line.slice("data:".length).trim()
+
+        if (payload === "[DONE]") {
+          onComplete?.()
+          return
+        }
+
+        try {
+          const event = JSON.parse(payload) as A2UIClientEvent
+          onEvent?.(event)
+        } catch {
+          // skip malformed
+        }
+      }
+    }
+
+    onComplete?.()
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      onAbort?.()
+      return
+    }
+    const err = error instanceof Error ? error : new Error("Unknown error occurred")
+    onError?.(err)
+    throw err
+  }
+}
+
 export interface SendA2UIChatMessageOptions {
   content: string
   sessionId: string

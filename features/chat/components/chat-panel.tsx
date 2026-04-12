@@ -1,15 +1,22 @@
 "use client"
 
 import { useRef, useEffect, useCallback } from "react"
-import { useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { useRouter } from "next/navigation"
 import { Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { AppDispatch } from "@/lib/store"
 import type { ChatModeItem, LLMModelItem, SessionItem } from "@/features/chat/apis/chat-api"
-import { setChatPanelOpen, startNewChat, deleteChatSession, getSessionDisplayTitle } from "@/features/chat/redux"
+import {
+  setChatPanelOpen,
+  startNewChat,
+  deleteChatSession,
+  getSessionDisplayTitle,
+  selectHitlResumeAssistantMessageId,
+} from "@/features/chat/redux"
 import ChatDisplay from "./chat-display"
 import UserTextEnter from "./user-text-enter"
+import HitlScreenerPanel from "./hitl-screener-panel"
 import { FEATURE_FLAGS } from "@/lib/feature-flags"
 
 interface ChatPanelProps {
@@ -32,6 +39,7 @@ export default function ChatPanel({
   llmModels,
 }: ChatPanelProps) {
   const dispatch = useDispatch<AppDispatch>()
+  const hitlResumeAssistantMessageId = useSelector(selectHitlResumeAssistantMessageId)
   const router = useRouter()
   const tabsRef = useRef<HTMLDivElement>(null)
   const activeTabRef = useRef<HTMLButtonElement>(null)
@@ -63,16 +71,34 @@ export default function ChatPanel({
     [dispatch, sessionId, router],
   )
 
+  const hitlOpen = Boolean(hitlResumeAssistantMessageId)
+
   // ── Old / classic UI: no tab bar, full-width chat ──────────────────────────
   if (!FEATURE_FLAGS.CURSOR_STYLE_UI_ENABLED) {
     return (
-      <div className="flex h-full flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)]">
-        {/* ChatDisplay owns the overflow-y-auto container — keeping it full-width
-            puts the scrollbar at the very right edge of the screen. Content
-            centering (max-w-3xl) is applied inside ChatDisplay itself. */}
-        <ChatDisplay centerContent />
-        {/* Centre the input row the same way so it aligns with the messages. */}
-        <div className="w-full max-w-3xl mx-auto shrink-0">
+      <div className="flex h-full min-h-0 flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)]">
+        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <ChatDisplay centerContent={!hitlOpen} />
+          </div>
+          {hitlOpen && (
+            <aside
+              className="flex max-h-[min(50vh,380px)] shrink-0 flex-col border-t border-white/[0.08] bg-[#080b10] shadow-[0_-8px_32px_rgba(0,0,0,0.35)] md:max-h-none md:w-[380px] md:border-t-0 md:border-l md:shadow-[-6px_0_32px_rgba(0,0,0,0.45)]"
+              aria-label="Screening parameters"
+            >
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-l-xl md:border md:border-white/10 md:border-r-0 md:bg-[#0B0F14]">
+                <HitlScreenerPanel />
+              </div>
+            </aside>
+          )}
+        </div>
+        <div
+          className={
+            hitlOpen
+              ? "w-full shrink-0 border-t border-white/[0.08]"
+              : "mx-auto w-full max-w-3xl shrink-0"
+          }
+        >
           <UserTextEnter
             onSendMessage={onSendMessage}
             disabled={disabled}
@@ -88,9 +114,9 @@ export default function ChatPanel({
 
   // ── Cursor-style UI: tab bar + chat ─────────────────────────────────────────
   return (
-    <div className="flex h-full flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)]">
+    <div className="flex h-full min-h-0 flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)]">
       {/* Tab bar */}
-      <div className="flex items-center border-b border-white/[0.08] shrink-0 bg-[#0d1017]">
+      <div className="flex shrink-0 items-center border-b border-white/[0.08] bg-[#0d1017]">
         <div
           ref={tabsRef}
           className="flex flex-1 items-center overflow-x-auto scrollbar-none"
@@ -152,7 +178,21 @@ export default function ChatPanel({
         </div>
       </div>
 
-      <ChatDisplay />
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <ChatDisplay />
+        </div>
+        {hitlOpen && (
+          <aside
+            className="flex max-h-[min(45vh,360px)] shrink-0 flex-col border-t border-white/[0.08] bg-[#080b10] shadow-[0_-8px_32px_rgba(0,0,0,0.35)] md:max-h-none md:w-[min(100%,380px)] md:max-w-[380px] md:border-t-0 md:border-l md:shadow-[-6px_0_32px_rgba(0,0,0,0.45)]"
+            aria-label="Screening parameters"
+          >
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-l-xl md:border md:border-white/10 md:border-r-0 md:bg-[#0B0F14]">
+              <HitlScreenerPanel />
+            </div>
+          </aside>
+        )}
+      </div>
 
       <UserTextEnter
         onSendMessage={onSendMessage}

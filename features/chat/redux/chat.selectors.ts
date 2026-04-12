@@ -17,3 +17,5 @@ export const selectChatSidebarCollapsed = (state: RootState) => state.chat.sideb
 export const selectSelectedBrokerId = (state: RootState) => state.chat.selectedBrokerId
 export const selectSelectedModelId = (state: RootState) => state.chat.selectedModelId
 export const selectChatPanelOpen = (state: RootState) => state.chat.chatPanelOpen
+export const selectHitlResumeAssistantMessageId = (state: RootState) =>
+  state.chat.hitlResumeAssistantMessageId

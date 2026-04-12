@@ -21,12 +21,15 @@ export {
   setChatPanelOpen,
   toggleChatPanelOpen,
   appendA2UIEvent,
+  setHitlResumeAssistantMessageId,
+  clearHitlResume,
 } from "./chat.slice"
 
 // Thunks
 export {
   initializeChatSession,
   sendMessage,
+  resumeA2UIChat,
   abortChatSend,
   loadChatSessions,
   deleteChatSession,
@@ -51,6 +54,7 @@ export {
   selectSelectedBrokerId,
   selectSelectedModelId,
   selectChatPanelOpen,
+  selectHitlResumeAssistantMessageId,
 } from "./chat.selectors"
 
 // Types

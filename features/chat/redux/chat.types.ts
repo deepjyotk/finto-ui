@@ -11,6 +11,7 @@ export type A2UIEventType =
   | "tool_result"
   | "message_chunk"
   | "message_complete"
+  | "hitl_form"
   | "error"
 
 export interface A2UIStepStartPayload {
@@ -52,6 +53,12 @@ export interface A2UIErrorPayload {
   code?: string
 }
 
+/** LangGraph HITL interrupt — render ``a2ui_form`` and resume via ``/a2ui/resume``. */
+export interface A2UIHitlFormPayload {
+  thread_id: string
+  interrupt_value: Record<string, unknown>
+}
+
 export interface A2UIClientEvent {
   event: A2UIEventType
   id: string
@@ -63,6 +70,7 @@ export interface A2UIClientEvent {
     | A2UIToolResultPayload
     | A2UIMessageChunkPayload
     | A2UIMessageCompletePayload
+    | A2UIHitlFormPayload
     | A2UIErrorPayload
 }
 
@@ -103,6 +111,8 @@ export interface ChatState {
   selectedBrokerId: string | null
   selectedModelId: string
   chatPanelOpen: boolean
+  /** Assistant message id waiting for HITL resume (screener form). */
+  hitlResumeAssistantMessageId: string | null
 }
 
 /* ---------- Thunk Types ---------- */

@@ -11,7 +11,7 @@ import {
   getSessions,
   deleteSession,
 } from "@/features/chat/apis/chat-api"
-import { sendA2UIChatMessage } from "@/features/chat/apis/a2ui-chat-api"
+import { sendA2UIChatMessage, sendA2UIResumeMessage } from "@/features/chat/apis/a2ui-chat-api"
 import { signOut, logout } from "@/features/auth/redux"
 import { FEATURE_FLAGS } from "@/lib/feature-flags"
 import {
@@ -22,6 +22,9 @@ import {
   setChatSidebarOpen,
   toggleChatSidebarCollapsed as toggleChatSidebarCollapsedAction,
   appendA2UIEvent,
+  setHitlResumeAssistantMessageId,
+  clearHitlResume,
+  setChatPanelOpen,
 } from "./chat.slice"
 
 /** AbortController for the in-flight `sendMessage` request (client-side stop). */
@@ -115,6 +118,7 @@ export const sendMessage = createAsyncThunk<
   }
 
   dispatch(addMessage(userMessage))
+  dispatch(clearHitlResume())
   dispatch(setIsLoading(true))
 
   sendMessageAbortController = new AbortController()
@@ -194,6 +198,12 @@ export const sendMessage = createAsyncThunk<
         onEvent: (event) => {
           // Append the A2UI event to the message so the renderer can react
           dispatch(appendA2UIEvent({ id: assistantMessageId, event }))
+          if (event.event === "hitl_form") {
+            dispatch(setHitlResumeAssistantMessageId(assistantMessageId))
+            if (FEATURE_FLAGS.CURSOR_STYLE_UI_ENABLED) {
+              dispatch(setChatPanelOpen(true))
+            }
+          }
 
           // Also update isStreaming so the shimmer logic stays accurate
           dispatch(
@@ -253,6 +263,86 @@ export const sendMessage = createAsyncThunk<
     if (userOnly.length === 1) {
       void dispatch(loadChatSessions())
     }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("credits-updated"))
+    }
+  }
+})
+
+export const resumeA2UIChat = createAsyncThunk<
+  void,
+  { formValues: Record<string, string> },
+  { state: RootState; dispatch: AppDispatch }
+>("chat/resumeA2UI", async ({ formValues }, { getState, dispatch }) => {
+  const { sessionId, selectedBrokerId, selectedModelId, hitlResumeAssistantMessageId } =
+    getState().chat
+  if (!sessionId || !hitlResumeAssistantMessageId) return
+
+  const assistantMessageId = hitlResumeAssistantMessageId
+  dispatch(setIsLoading(true))
+  dispatch(
+    updateMessage({
+      id: assistantMessageId,
+      changes: { isStreaming: true },
+    })
+  )
+
+  try {
+    await sendA2UIResumeMessage({
+      sessionId,
+      formValues,
+      brokerId: selectedBrokerId || "",
+      modelId: selectedModelId,
+      onEvent: (event) => {
+        dispatch(appendA2UIEvent({ id: assistantMessageId, event }))
+        if (event.event === "hitl_form") {
+          dispatch(setHitlResumeAssistantMessageId(assistantMessageId))
+        }
+        dispatch(
+          updateMessage({
+            id: assistantMessageId,
+            changes: { isStreaming: true },
+          })
+        )
+      },
+      onComplete: () => {
+        dispatch(
+          updateMessage({
+            id: assistantMessageId,
+            changes: { isStreaming: false },
+          })
+        )
+        // Let the HITL panel show a checkmark briefly before unmounting.
+        window.setTimeout(() => {
+          dispatch(clearHitlResume())
+        }, 900)
+      },
+      onError: () => {
+        dispatch(
+          updateMessage({
+            id: assistantMessageId,
+            changes: {
+              content: "Sorry, resume failed. Please try again.",
+              isStreaming: false,
+            },
+          })
+        )
+        dispatch(clearHitlResume())
+      },
+    })
+  } catch {
+    dispatch(
+      updateMessage({
+        id: assistantMessageId,
+        changes: {
+          content: "Sorry, resume failed. Please try again.",
+          isStreaming: false,
+        },
+      })
+    )
+    dispatch(clearHitlResume())
+  } finally {
+    dispatch(setIsLoading(false))
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("credits-updated"))
     }

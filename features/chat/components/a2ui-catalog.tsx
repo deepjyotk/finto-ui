@@ -1,5 +1,9 @@
 "use client"
 
+import { Fragment, type FormEvent, type ReactNode } from "react"
+
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import {
   PieChart,
@@ -38,6 +42,8 @@ export type A2UIComponentType =
   | "text"
   | "divider"
   | "chart"
+  | "form"
+  | "form-field"
 
 export interface A2UIComponent {
   type: A2UIComponentType
@@ -49,6 +55,16 @@ export interface A2UIResponse {
   type: "a2ui_response"
   root: string[]
   components: Record<string, A2UIComponent>
+}
+
+export function isA2UIResponse(obj: unknown): obj is A2UIResponse {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    (obj as A2UIResponse).type === "a2ui_response" &&
+    Array.isArray((obj as A2UIResponse).root) &&
+    typeof (obj as A2UIResponse).components === "object"
+  )
 }
 
 export function parseA2UIResponse(raw: string): A2UIResponse | null {
@@ -548,13 +564,124 @@ export function A2UIChart({
   )
 }
 
+// ─── Form components (HITL / configurable tool args) ─────────────────────────
+
+function dispatchFormSubmit(formId: string, form: HTMLFormElement) {
+  const fd = new FormData(form)
+  const values: Record<string, string> = {}
+  fd.forEach((v, k) => {
+    values[k] = v instanceof File ? "" : String(v)
+  })
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("a2ui-form-submit", {
+        detail: { formId, values },
+        bubbles: true,
+      })
+    )
+  }
+}
+
+/** Renders a semantic &lt;form&gt; with named inputs. Child component ids are listed in props.children only (do not repeat them in root). */
+function A2UIFormShell({
+  id,
+  formId,
+  title,
+  submitLabel,
+  childIds,
+  allComponents,
+}: {
+  id: string
+  formId: string
+  title: string
+  submitLabel: string
+  childIds: string[]
+  allComponents: Record<string, A2UIComponent>
+}) {
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    dispatchFormSubmit(formId, e.currentTarget)
+  }
+
+  return (
+    <form
+      key={id}
+      id={formId}
+      onSubmit={onSubmit}
+      className="space-y-4 rounded-xl border border-white/10 bg-white/[0.04] p-4"
+    >
+      {title ? <h3 className="text-lg font-semibold tracking-tight text-white">{title}</h3> : null}
+      {childIds.map((cid) => {
+        const c = allComponents[cid]
+        if (!c) return null
+        return (
+          <Fragment key={cid}>{renderA2UIComponentNode(cid, c, allComponents)}</Fragment>
+        )
+      })}
+      <div className="pt-2">
+        <button
+          type="submit"
+          className="inline-flex h-9 items-center justify-center rounded-md bg-cyan-600 px-4 text-sm font-medium text-white transition hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
+        >
+          {submitLabel}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function A2UIFormField({
+  id,
+  name,
+  label,
+  inputType,
+  defaultValue,
+  placeholder,
+  step,
+  min,
+  max,
+  helpText,
+}: {
+  id: string
+  name: string
+  label: string
+  inputType: "text" | "number"
+  defaultValue: string
+  placeholder: string
+  step?: string
+  min?: string
+  max?: string
+  helpText: string
+}) {
+  const inputId = `${id}-${name}`
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={inputId} className="text-gray-200">
+        {label}
+      </Label>
+      <Input
+        id={inputId}
+        name={name}
+        type={inputType}
+        defaultValue={defaultValue}
+        placeholder={placeholder}
+        step={step}
+        min={min}
+        max={max}
+        className="border-white/15 bg-white/[0.06] text-white placeholder:text-gray-500"
+      />
+      {helpText ? <p className="text-xs text-gray-500">{helpText}</p> : null}
+    </div>
+  )
+}
+
 // ─── Render a single component from the catalog ──────────────────────────────
 
-export function renderA2UIComponent(
+function renderA2UIComponentNode(
   id: string,
   component: A2UIComponent,
   allComponents: Record<string, A2UIComponent>
-): React.ReactNode {
+): ReactNode {
   const { type, props } = component
 
   switch (type) {
@@ -616,7 +743,70 @@ export function renderA2UIComponent(
           unit={props.unit !== undefined ? String(props.unit) : undefined}
         />
       )
+    case "form": {
+      const childIds = (props.children as string[]) ?? []
+      const formId = props.form_id !== undefined ? String(props.form_id) : id
+      const title = props.title !== undefined ? String(props.title) : ""
+      const submitLabel = props.submit_label !== undefined ? String(props.submit_label) : "Submit"
+      return (
+        <A2UIFormShell
+          id={id}
+          formId={formId}
+          title={title}
+          submitLabel={submitLabel}
+          childIds={childIds}
+          allComponents={allComponents}
+        />
+      )
+    }
+    case "form-field": {
+      const name = String(props.name ?? "")
+      const label = String(props.label ?? name)
+      const inputType = props.input_type === "number" ? "number" : "text"
+      const defaultValue =
+        props.default !== undefined && props.default !== null ? String(props.default) : ""
+      const placeholder = props.placeholder !== undefined ? String(props.placeholder) : ""
+      const step = props.step !== undefined ? String(props.step) : undefined
+      const min = props.min !== undefined ? String(props.min) : undefined
+      const max = props.max !== undefined ? String(props.max) : undefined
+      const helpText = props.help_text !== undefined ? String(props.help_text) : ""
+      return (
+        <A2UIFormField
+          id={id}
+          name={name}
+          label={label}
+          inputType={inputType}
+          defaultValue={defaultValue}
+          placeholder={placeholder}
+          step={step}
+          min={min}
+          max={max}
+          helpText={helpText}
+        />
+      )
+    }
     default:
       return null
   }
+}
+
+export function renderA2UIComponent(
+  id: string,
+  component: A2UIComponent,
+  allComponents: Record<string, A2UIComponent>
+): ReactNode {
+  return renderA2UIComponentNode(id, component, allComponents)
+}
+
+/** Render a full A2UI document from an object (e.g. HITL ``a2ui_form`` from the API). */
+export function A2UIResponseTree({ response }: { response: A2UIResponse }) {
+  return (
+    <div className="space-y-3">
+      {response.root.map((id) => {
+        const component = response.components[id]
+        if (!component) return null
+        return <Fragment key={id}>{renderA2UIComponent(id, component, response.components)}</Fragment>
+      })}
+    </div>
+  )
 }

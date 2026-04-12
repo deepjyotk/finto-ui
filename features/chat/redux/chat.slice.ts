@@ -22,6 +22,7 @@ const initialState: ChatState = {
   selectedBrokerId: null,
   selectedModelId: "auto",
   chatPanelOpen: true,
+  hitlResumeAssistantMessageId: null,
 }
 
 /* ---------- Slice ---------- */
@@ -93,6 +94,12 @@ const chatSlice = createSlice({
         msg.a2uiEvents.push(action.payload.event)
       }
     },
+    setHitlResumeAssistantMessageId: (state, action: PayloadAction<string | null>) => {
+      state.hitlResumeAssistantMessageId = action.payload
+    },
+    clearHitlResume: (state) => {
+      state.hitlResumeAssistantMessageId = null
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -150,6 +157,8 @@ export const {
   setChatPanelOpen,
   toggleChatPanelOpen,
   appendA2UIEvent,
+  setHitlResumeAssistantMessageId,
+  clearHitlResume,
 } = chatSlice.actions
 
 export default chatSlice.reducer
