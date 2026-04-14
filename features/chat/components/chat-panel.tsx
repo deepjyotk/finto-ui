@@ -13,6 +13,7 @@ import {
   deleteChatSession,
   getSessionDisplayTitle,
   selectHitlResumeAssistantMessageId,
+  selectChatMessages,
 } from "@/features/chat/redux"
 import ChatDisplay from "./chat-display"
 import UserTextEnter from "./user-text-enter"
@@ -40,6 +41,7 @@ export default function ChatPanel({
 }: ChatPanelProps) {
   const dispatch = useDispatch<AppDispatch>()
   const hitlResumeAssistantMessageId = useSelector(selectHitlResumeAssistantMessageId)
+  const messages = useSelector(selectChatMessages)
   const router = useRouter()
   const tabsRef = useRef<HTMLDivElement>(null)
   const activeTabRef = useRef<HTMLButtonElement>(null)
@@ -71,7 +73,12 @@ export default function ChatPanel({
     [dispatch, sessionId, router],
   )
 
-  const hitlOpen = Boolean(hitlResumeAssistantMessageId)
+  const hitlOpen = (() => {
+    if (!hitlResumeAssistantMessageId) return false
+    const msg = messages.find((m) => m.id === hitlResumeAssistantMessageId)
+    if (!msg?.a2uiEvents?.length) return false
+    return msg.a2uiEvents.some((e) => e.event === "hitl_form")
+  })()
 
   // ── Old / classic UI: no tab bar, full-width chat ──────────────────────────
   if (!FEATURE_FLAGS.CURSOR_STYLE_UI_ENABLED) {

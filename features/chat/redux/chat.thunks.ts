@@ -418,6 +418,7 @@ export const startNewChat = createAsyncThunk<
   { router: { push: (path: string) => void } },
   { dispatch: AppDispatch }
 >("chat/startNewChat", async ({ router }, { dispatch }) => {
+  dispatch(clearHitlResume())
   const response = await createChatSession()
   const newSessionId = response.session_id
   router.push(`/chat/${newSessionId}`)
