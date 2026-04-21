@@ -16,6 +16,13 @@ const cleanSymbol = (s: string) => s.replace(/\.NS$/i, "")
 const medalIcon = (rank: number) =>
   rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : null
 
+const getPlayerName = (entry: LeaderboardResponse["leaderboard"][number]) => {
+  if (entry.username?.trim()) return entry.username
+  if (entry.display_name?.trim()) return entry.display_name
+  if (entry.is_anonymous) return "Anonymous Player"
+  return "Unknown User"
+}
+
 export default function Leaderboard({ data, currentUserId }: LeaderboardProps) {
   const { contest_date, nifty_return_pct, is_settled, total_participants, leaderboard } = data
 
@@ -74,13 +81,14 @@ export default function Leaderboard({ data, currentUserId }: LeaderboardProps) {
           </div>
         ) : (
           leaderboard.map((entry) => {
-            const isMe = currentUserId === entry.user_id
+            const isMe = !!currentUserId && !!entry.user_id && currentUserId === entry.user_id
             const medal = medalIcon(entry.rank)
             const excessPos = (entry.excess_return_pct ?? 0) >= 0
+            const playerName = getPlayerName(entry)
 
             return (
               <div
-                key={entry.user_id}
+                key={`${entry.user_id ?? entry.anon_id ?? playerName}-${entry.rank}`}
                 className={cn(
                   "grid grid-cols-[32px_1fr_auto_auto] items-start gap-x-3 border-b border-white/[0.04] px-4 py-3 text-sm last:border-0",
                   isMe
@@ -97,11 +105,16 @@ export default function Leaderboard({ data, currentUserId }: LeaderboardProps) {
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className={cn("font-semibold truncate", isMe ? "text-[#22d3ee]" : "text-white")}>
-                      {entry.username}
+                      {playerName}
                     </span>
                     {isMe && (
                       <span className="shrink-0 rounded-full bg-[#22d3ee]/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#22d3ee]">
                         You
+                      </span>
+                    )}
+                    {!!entry.is_anonymous && (
+                      <span className="shrink-0 rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gray-400">
+                        Guest
                       </span>
                     )}
                   </div>

@@ -42,8 +42,11 @@ export interface MyResult {
 
 export interface LeaderboardEntry {
   rank: number
-  user_id: string
-  username: string
+  user_id: string | null
+  username: string | null
+  display_name?: string | null
+  anon_id?: string | null
+  is_anonymous?: boolean
   stocks: string[]
   portfolio_return_pct: number | null
   excess_return_pct: number | null
@@ -143,3 +146,34 @@ export const getAnonLivePerformance = (anonId: string) =>
     `/api/v1/game/anon/live-performance?anon_id=${encodeURIComponent(anonId)}`,
     { method: "GET" },
   )
+
+// ---------------------------------------------------------------------------
+// Stock search
+// ---------------------------------------------------------------------------
+
+export interface StockSearchResult {
+  symbol: string
+  symbol_ns: string
+  company_name: string
+}
+
+export interface StockSearchResponse {
+  query: string
+  results: StockSearchResult[]
+}
+
+export const searchGameStocks = (
+  query: string,
+  options?: { limit?: number; semantic?: boolean },
+) => {
+  const params = new URLSearchParams({
+    q: query,
+    limit: String(options?.limit ?? 10),
+  })
+  if (options?.semantic) params.set("semantic", "true")
+
+  return apiClient.request<StockSearchResponse>(
+    `/api/v1/game/stocks/search?${params.toString()}`,
+    { method: "GET" },
+  )
+}
