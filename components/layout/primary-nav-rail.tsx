@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { MessageSquare, Newspaper, Search, Bell, PieChart, Puzzle } from "lucide-react"
+import { MessageSquare, Newspaper, Search, Bell, PieChart, Puzzle, Trophy } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -58,6 +58,7 @@ export default function PrimaryNavRail() {
     (pathname?.startsWith("/chat/") ?? false)
   const isPortfolioActive = pathname === "/portfolio"
   const isIntegrationsActive = pathname === "/integrations" || pathname?.startsWith("/integrations/")
+  const isGameActive = pathname === "/game" || pathname?.startsWith("/game/")
 
   const handleSearch = () => {
     if (pathname?.startsWith("/chat") && chatShell) {
@@ -172,6 +173,22 @@ export default function PrimaryNavRail() {
                 aria-hidden
               />
               Portfolio
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/game"
+              className={itemClass(isGameActive)}
+              aria-current={isGameActive ? "page" : undefined}
+            >
+              <Trophy
+                className={cn(
+                  "h-[18px] w-[18px] shrink-0",
+                  isGameActive ? "text-[#22d3ee]" : "text-gray-500"
+                )}
+                aria-hidden
+              />
+              Game
             </Link>
           </li>
           <li>
