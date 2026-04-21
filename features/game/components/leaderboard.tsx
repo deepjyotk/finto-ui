@@ -8,7 +8,10 @@ interface LeaderboardProps {
   currentUserId?: string
 }
 
-const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`
+const fmtPct = (n: number | null | undefined) => {
+  if (n == null) return "—"
+  return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`
+}
 const cleanSymbol = (s: string) => s.replace(/\.NS$/i, "")
 const medalIcon = (rank: number) =>
   rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : null
@@ -35,7 +38,11 @@ export default function Leaderboard({ data, currentUserId }: LeaderboardProps) {
             <span
               className={cn(
                 "font-semibold",
-                nifty_return_pct >= 0 ? "text-emerald-400" : "text-red-400",
+                nifty_return_pct == null
+                  ? "text-gray-500"
+                  : nifty_return_pct >= 0
+                  ? "text-emerald-400"
+                  : "text-red-400",
               )}
             >
               {fmtPct(nifty_return_pct)}
@@ -69,7 +76,7 @@ export default function Leaderboard({ data, currentUserId }: LeaderboardProps) {
           leaderboard.map((entry) => {
             const isMe = currentUserId === entry.user_id
             const medal = medalIcon(entry.rank)
-            const excessPos = entry.excess_return_pct >= 0
+            const excessPos = (entry.excess_return_pct ?? 0) >= 0
 
             return (
               <div
@@ -108,7 +115,11 @@ export default function Leaderboard({ data, currentUserId }: LeaderboardProps) {
                   <span
                     className={cn(
                       "pt-0.5 text-right text-sm font-semibold tabular-nums",
-                      entry.portfolio_return_pct >= 0 ? "text-emerald-400" : "text-red-400",
+                      entry.portfolio_return_pct == null
+                        ? "text-gray-500"
+                        : entry.portfolio_return_pct >= 0
+                        ? "text-emerald-400"
+                        : "text-red-400",
                     )}
                   >
                     {fmtPct(entry.portfolio_return_pct)}
@@ -122,7 +133,11 @@ export default function Leaderboard({ data, currentUserId }: LeaderboardProps) {
                   <span
                     className={cn(
                       "pt-0.5 text-right text-sm font-bold tabular-nums",
-                      excessPos ? "text-emerald-400" : "text-red-400",
+                      entry.excess_return_pct == null
+                        ? "text-gray-500"
+                        : excessPos
+                        ? "text-emerald-400"
+                        : "text-red-400",
                     )}
                   >
                     {fmtPct(entry.excess_return_pct)}

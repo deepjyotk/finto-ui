@@ -45,13 +45,13 @@ export interface LeaderboardEntry {
   user_id: string
   username: string
   stocks: string[]
-  portfolio_return_pct: number
-  excess_return_pct: number
+  portfolio_return_pct: number | null
+  excess_return_pct: number | null
 }
 
 export interface LeaderboardResponse {
   contest_date: string
-  nifty_return_pct: number
+  nifty_return_pct: number | null
   is_settled: boolean
   total_participants: number
   leaderboard: LeaderboardEntry[]
