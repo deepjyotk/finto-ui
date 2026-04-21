@@ -204,7 +204,7 @@ function VibeBarBlock({ vibe }: { vibe: VibeBlock }) {
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-const DEFAULT_POLL_INTERVAL = 1000_000
+const DEFAULT_POLL_INTERVAL = 5_000
 
 export default function LivePerformance({
   anonId,
