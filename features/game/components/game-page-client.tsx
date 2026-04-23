@@ -21,6 +21,7 @@ import PicksLockedCard from "./picks-locked-card"
 import ScoreCard from "./score-card"
 import Leaderboard from "./leaderboard"
 import LivePerformance from "./live-performance"
+import MyPicksHistory from "./my-picks-history"
 import { useAnonGame } from "../hooks/use-anon-game"
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -251,6 +252,14 @@ export default function GamePageClient() {
                 >
                   Leaderboard
                 </TabsTrigger>
+                {isAuthenticated && (
+                  <TabsTrigger
+                    value="history"
+                    className="flex-1 rounded-lg text-xs data-[state=active]:bg-[#22d3ee]/10 data-[state=active]:text-[#22d3ee]"
+                  >
+                    History
+                  </TabsTrigger>
+                )}
               </TabsList>
             )}
 
@@ -385,6 +394,18 @@ export default function GamePageClient() {
                 </div>
               )}
             </TabsContent>
+
+            {isAuthenticated && (
+              <TabsContent value="history" className="mt-0">
+                <MyPicksHistory
+                  onPlayToday={
+                    status?.active_contest_date
+                      ? () => setContestDate(status.active_contest_date!)
+                      : undefined
+                  }
+                />
+              </TabsContent>
+            )}
 
             {/* If there are no tabs (plain leaderboard for spectators) show inline */}
             {!resultsReady && !picksLocked && !canPick && leaderboard && isToday && !isAuthenticated && (

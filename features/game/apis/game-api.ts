@@ -177,3 +177,31 @@ export const searchGameStocks = (
     { method: "GET" },
   )
 }
+
+// ---------------------------------------------------------------------------
+// My picks history
+// ---------------------------------------------------------------------------
+
+export interface MyHistoryStock {
+  symbol: string
+  entry_price: number
+  return_pct: number | null
+}
+
+export interface MyHistoryEntry {
+  contest_date: string
+  is_settled: boolean
+  stocks: MyHistoryStock[]
+  portfolio_return_pct: number | null
+  nifty_return_pct: number | null
+  excess_return_pct: number | null
+  rank: number | null
+  total_participants?: number | null
+}
+
+export interface MyHistoryResponse {
+  history: MyHistoryEntry[]
+}
+
+export const getMyHistory = (limit = 30) =>
+  apiClient.request<MyHistoryResponse>(`/api/v1/game/my-history?limit=${limit}`, { method: "GET" })
