@@ -22,6 +22,7 @@ import ScoreCard from "./score-card"
 import Leaderboard from "./leaderboard"
 import LivePerformance from "./live-performance"
 import MyPicksHistory from "./my-picks-history"
+import UserProfileModal from "./user-profile-modal"
 import { useAnonGame } from "../hooks/use-anon-game"
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -31,9 +32,10 @@ function todayIST(): string {
 }
 
 function addDays(dateStr: string, delta: number): string {
-  const d = new Date(dateStr + "T00:00:00")
-  d.setDate(d.getDate() + delta)
-  return d.toISOString().slice(0, 10)
+  // Parse as UTC to avoid local-timezone offset corrupting the date string
+  const [y, m, d] = dateStr.split("-").map(Number)
+  const date = new Date(Date.UTC(y, m - 1, d + delta))
+  return date.toISOString().slice(0, 10)
 }
 
 function fmtDisplayDate(dateStr: string): string {
@@ -71,6 +73,9 @@ export default function GamePageClient() {
   const { anonId, displayName, setDisplayName } = useAnonGame()
   const [anonStatus, setAnonStatus] = useState<GameStatus | null>(null)
   const [anonLockedStocks, setAnonLockedStocks] = useState<string[]>([])
+
+  // User profile modal
+  const [profileUserId, setProfileUserId] = useState<string | null>(null)
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -155,13 +160,13 @@ export default function GamePageClient() {
 
   // ── Derive UI state ───────────────────────────────────────────────────────
   const authPhase = inferPhase(status)
-  const canPick = isAuthenticated && authPhase === "open"
+  const canPick = isAuthenticated && authPhase === "open" && isToday
   const picksLocked = isAuthenticated && authPhase === "submitted"
   const resultsReady = isAuthenticated && authPhase === "settled"
 
   // Anon derived states (only meaningful when not authenticated)
   const anonPhase = inferPhase(anonStatus)
-  const anonCanPick = !isAuthenticated && anonPhase === "open"
+  const anonCanPick = !isAuthenticated && anonPhase === "open" && isToday
   const anonPicksLocked = !isAuthenticated && anonPhase === "submitted"
   const anonResultsReady = !isAuthenticated && anonPhase === "settled"
   // True when logged in (e.g. via Google) but picks were only submitted anonymously before login
@@ -397,7 +402,7 @@ export default function GamePageClient() {
 
             <TabsContent value="leaderboard" className="mt-0">
               {leaderboard ? (
-                <Leaderboard data={leaderboard} currentUserId={user?.user_id} />
+                <Leaderboard data={leaderboard} currentUserId={user?.user_id} onPlayerClick={setProfileUserId} />
               ) : (
                 <div className="py-10 text-center text-sm text-gray-600">
                   No leaderboard data yet.
@@ -421,7 +426,7 @@ export default function GamePageClient() {
             {!resultsReady && !picksLocked && !canPick && leaderboard && isToday && !isAuthenticated && (
               <div>
                 {leaderboard && (
-                  <Leaderboard data={leaderboard} currentUserId={user?.user_id} />
+                  <Leaderboard data={leaderboard} currentUserId={user?.user_id} onPlayerClick={setProfileUserId} />
                 )}
               </div>
             )}
@@ -429,5 +434,7 @@ export default function GamePageClient() {
         )}
       </div>
     </div>
+
+    <UserProfileModal userId={profileUserId} onClose={() => setProfileUserId(null)} />
   )
 }

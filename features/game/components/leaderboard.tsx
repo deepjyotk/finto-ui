@@ -6,6 +6,7 @@ import type { LeaderboardResponse } from "../apis/game-api"
 interface LeaderboardProps {
   data: LeaderboardResponse
   currentUserId?: string
+  onPlayerClick?: (userId: string) => void
 }
 
 const fmtPct = (n: number | null | undefined) => {
@@ -23,7 +24,7 @@ const getPlayerName = (entry: LeaderboardResponse["leaderboard"][number]) => {
   return "Unknown User"
 }
 
-export default function Leaderboard({ data, currentUserId }: LeaderboardProps) {
+export default function Leaderboard({ data, currentUserId, onPlayerClick }: LeaderboardProps) {
   const { contest_date, nifty_return_pct, is_settled, total_participants, leaderboard } = data
 
   const formatted = new Date(contest_date + "T00:00:00").toLocaleDateString("en-IN", {
@@ -85,15 +86,21 @@ export default function Leaderboard({ data, currentUserId }: LeaderboardProps) {
             const medal = medalIcon(entry.rank)
             const excessPos = (entry.excess_return_pct ?? 0) >= 0
             const playerName = getPlayerName(entry)
+            const isClickable = !entry.is_anonymous && !!entry.user_id && !!onPlayerClick
 
             return (
               <div
                 key={`${entry.user_id ?? entry.anon_id ?? playerName}-${entry.rank}`}
+                role={isClickable ? "button" : undefined}
+                tabIndex={isClickable ? 0 : undefined}
+                onClick={() => isClickable && onPlayerClick!(entry.user_id!)}
+                onKeyDown={(e) => { if (isClickable && (e.key === "Enter" || e.key === " ")) onPlayerClick!(entry.user_id!) }}
                 className={cn(
                   "grid grid-cols-[32px_1fr_auto_auto] items-start gap-x-3 border-b border-white/[0.04] px-4 py-3 text-sm last:border-0",
                   isMe
                     ? "bg-[#22d3ee]/[0.06] ring-1 ring-inset ring-[#22d3ee]/20"
                     : "bg-[#111318] hover:bg-[#1a1f2e]",
+                  isClickable && "cursor-pointer",
                 )}
               >
                 {/* Rank */}

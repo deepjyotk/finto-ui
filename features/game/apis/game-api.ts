@@ -205,3 +205,33 @@ export interface MyHistoryResponse {
 
 export const getMyHistory = (limit = 30) =>
   apiClient.request<MyHistoryResponse>(`/api/v1/game/my-history?limit=${limit}`, { method: "GET" })
+
+// ---------------------------------------------------------------------------
+// Public user profile
+// ---------------------------------------------------------------------------
+
+export interface UserProfileEntry {
+  contest_date: string
+  is_settled: boolean
+  stocks: string[]
+  portfolio_return_pct: number | null
+  nifty_return_pct: number | null
+  excess_return_pct: number | null
+  rank: number | null
+  total_participants: number | null
+}
+
+export interface UserProfile {
+  user_id: string
+  username: string
+  full_name?: string | null
+  total_games: number
+  wins: number
+  history: UserProfileEntry[]
+}
+
+export const getUserProfile = (userId: string, limit = 30) =>
+  apiClient.request<UserProfile>(
+    `/api/v1/game/users/${encodeURIComponent(userId)}/profile?limit=${limit}`,
+    { method: "GET" },
+  )

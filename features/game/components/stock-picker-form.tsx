@@ -188,10 +188,27 @@ interface StockPickerFormProps {
 }
 
 export default function StockPickerForm({ onSuccess, anonConfig }: StockPickerFormProps) {
-  const [stocks, setStocks] = useState<string[]>(["" ,"", "", "", ""])
+  const DRAFT_KEY = "finto_picks_draft"
+
+  const [stocks, setStocks] = useState<string[]>(() => {
+    if (typeof window === "undefined") return ["", "", "", "", ""]
+    try {
+      const saved = sessionStorage.getItem(DRAFT_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved) as string[]
+        if (Array.isArray(parsed) && parsed.length === 5) return parsed
+      }
+    } catch { /* ignore */ }
+    return ["", "", "", "", ""]
+  })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [nameInput, setNameInput] = useState(anonConfig?.displayName ?? "")
+
+  // Persist draft picks on every change
+  useEffect(() => {
+    try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(stocks)) } catch { /* ignore */ }
+  }, [stocks])
 
   // Keep name input in sync when anonConfig.displayName loads from localStorage
   const prevDisplayName = anonConfig?.displayName
@@ -232,6 +249,7 @@ export default function StockPickerForm({ onSuccess, anonConfig }: StockPickerFo
         const result = await submitPicks({ stocks: uniqueFilled })
         resultStocks = result.stocks
       }
+      try { sessionStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
       onSuccess(resultStocks)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit picks")
