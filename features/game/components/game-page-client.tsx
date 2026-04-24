@@ -164,6 +164,9 @@ export default function GamePageClient() {
   const anonCanPick = !isAuthenticated && anonPhase === "open"
   const anonPicksLocked = !isAuthenticated && anonPhase === "submitted"
   const anonResultsReady = !isAuthenticated && anonPhase === "settled"
+  // True when logged in (e.g. via Google) but picks were only submitted anonymously before login
+  const hasAnonPicksWhileAuthenticated =
+    isAuthenticated && anonPhase === "submitted" && authPhase !== "submitted" && authPhase !== "settled"
   const anonDisplayStocks =
     anonLockedStocks.length > 0 ? anonLockedStocks : []
 
@@ -266,6 +269,13 @@ export default function GamePageClient() {
             <TabsContent value="game" className="mt-0">
               {/* CAN PICK */}
               {canPick && <StockPickerForm onSuccess={handlePicksSubmitted} />}
+
+              {/* Authenticated but submitted picks only as anonymous (e.g. logged in via Google after playing as guest) */}
+              {hasAnonPicksWhileAuthenticated && isToday && anonId && (
+                <div className="mt-4">
+                  <LivePerformance anonId={anonId} />
+                </div>
+              )}
 
               {/* NOT LOGGED IN — anon game flow */}
               {!isAuthenticated && (
