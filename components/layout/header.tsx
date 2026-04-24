@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PanelLeft, Plus, ExternalLink, LogOut, Puzzle, Coins, Link2 } from "lucide-react"
 import AuthModal from "@/features/auth/components/auth-modal"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import useKiteConnection from "@/features/integrations/hooks/use-kite-connection"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
@@ -33,10 +33,21 @@ export default function Header() {
 
   const { connected, getLoginUrl } = useKiteConnection()
 
+  // Track whether the user was actually authenticated so we only show the
+  // session-expired popup when a real session lapses — not on cold page loads.
+  const wasAuthenticatedRef = useRef(false)
+  useEffect(() => {
+    if (isAuthenticated) wasAuthenticatedRef.current = true
+  }, [isAuthenticated])
+
   useEffect(() => {
     const onAuthExpired = () => {
       dispatch(logout())
-      setShowAuthModal(true)
+      // Only prompt re-login if the user had an active session that expired.
+      // Ignore 401s that fire during the initial auth-check on page load.
+      if (wasAuthenticatedRef.current) {
+        setShowAuthModal(true)
+      }
     }
     window.addEventListener("auth-expired", onAuthExpired as EventListener)
     return () => window.removeEventListener("auth-expired", onAuthExpired as EventListener)

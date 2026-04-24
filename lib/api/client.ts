@@ -111,7 +111,6 @@ export class ApiClient {
     const response = await fetch(url, { ...options, credentials: "include", headers });
 
     if (toleratedStatuses.includes(response.status)) {
-      notifyAuthExpired(response.status);
       return null;
     }
 
