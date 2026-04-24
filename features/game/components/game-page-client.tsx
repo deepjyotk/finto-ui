@@ -183,6 +183,7 @@ export default function GamePageClient() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
+    <>
     <div className="min-h-full bg-[#0B0F14] px-4 py-6 md:px-8 md:py-8">
       <div className="mx-auto max-w-2xl space-y-6">
 
@@ -436,5 +437,6 @@ export default function GamePageClient() {
     </div>
 
     <UserProfileModal userId={profileUserId} onClose={() => setProfileUserId(null)} />
+  </>
   )
 }
