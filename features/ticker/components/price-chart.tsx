@@ -27,8 +27,6 @@ const PERIODS: { label: string; value: PricePeriod }[] = [
   { label: "1M", value: "1mo" },
   { label: "6M", value: "6mo" },
   { label: "1Y", value: "1y" },
-  { label: "3Y", value: "3y" },
-  { label: "5Y", value: "5y" },
   { label: "Max", value: "max" },
 ]
 

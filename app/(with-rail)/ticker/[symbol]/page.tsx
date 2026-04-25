@@ -71,7 +71,7 @@ export default async function TickerPage({ params, searchParams }: Props) {
     <TickerClient
       symbol={upperSymbol}
       initialData={ssrData}
-      initialPeriod={(period as "1mo" | "6mo" | "1y" | "3y" | "5y" | "max") ?? "1y"}
+      initialPeriod={(period as "1mo" | "6mo" | "1y" | "max") ?? "1y"}
       initialInterval={(interval as "1d" | "1wk" | "1mo") ?? "1d"}
     />
   )

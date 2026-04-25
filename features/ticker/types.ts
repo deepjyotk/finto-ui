@@ -115,5 +115,6 @@ export interface TickerResponse {
   ticker_info?: TickerInfo | null
 }
 
-export type PricePeriod = "1mo" | "6mo" | "1y" | "3y" | "5y" | "max"
+/** Aligned with price_bars_1d chart ranges: Max ≈ 2Y of history in DB */
+export type PricePeriod = "1mo" | "6mo" | "1y" | "max"
 export type PriceInterval = "1d" | "1wk" | "1mo"
