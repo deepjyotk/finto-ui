@@ -113,6 +113,10 @@ function formatCellValue(value: unknown, format: string): string {
   return raw
 }
 
+function isLikelyUrl(value: string): boolean {
+  return /^https?:\/\/\S+$/i.test(value.trim())
+}
+
 // ─── Catalog components ──────────────────────────────────────────────────────
 
 interface HeadingProps {
@@ -177,8 +181,8 @@ export function A2UIDataTable({ columns, rows }: DataTableProps) {
   if (!columns?.length || !rows?.length) return null
   const rightAlignFormats = new Set(["currency_inr", "number", "percentage"])
   return (
-    <div className="overflow-x-auto rounded-xl border border-white/10">
-      <table className="w-full min-w-max border-collapse text-sm" aria-label="Financial data table">
+    <div className="rounded-xl border border-white/10">
+      <table className="w-full table-fixed border-collapse text-sm" aria-label="Financial data table">
         <thead>
           <tr className="border-b border-white/10 bg-white/[0.06]">
             {columns.map((col, i) => (
@@ -186,7 +190,7 @@ export function A2UIDataTable({ columns, rows }: DataTableProps) {
                 key={i}
                 scope="col"
                 className={cn(
-                  "whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400",
+                  "px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400",
                   rightAlignFormats.has(col.format ?? "") ? "text-right" : "text-left"
                 )}
               >
@@ -208,16 +212,31 @@ export function A2UIDataTable({ columns, rows }: DataTableProps) {
                 const raw = row[ci]
                 const formatted = formatCellValue(raw, col.format ?? "text")
                 const isNumeric = rightAlignFormats.has(col.format ?? "")
+                const isUrlCell =
+                  !isNumeric &&
+                  typeof raw === "string" &&
+                  (col.key.toLowerCase() === "url" || isLikelyUrl(raw))
                 return (
                   <td
                     key={ci}
                     className={cn(
-                      "whitespace-nowrap px-4 py-3 text-gray-200",
-                      isNumeric ? "text-right font-mono tabular-nums" : "text-left",
+                      "px-4 py-3 align-top text-gray-200",
+                      isNumeric ? "text-right font-mono tabular-nums" : "text-left whitespace-normal break-words",
                       ci === 0 && "font-semibold text-white"
                     )}
                   >
-                    {formatted}
+                    {isUrlCell ? (
+                      <a
+                        href={raw}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-cyan-300 underline decoration-cyan-500/50 underline-offset-2 break-all hover:text-cyan-200"
+                      >
+                        {formatted}
+                      </a>
+                    ) : (
+                      formatted
+                    )}
                   </td>
                 )
               })}
