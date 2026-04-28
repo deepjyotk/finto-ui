@@ -1,50 +1,54 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import ReactMarkdown from "react-markdown"
+import { useEffect, useMemo, useState } from "react"
 import { ChevronRight } from "lucide-react"
-import remarkGfm from "remark-gfm"
+import { A2uiSurface, MarkdownContext } from "@a2ui/react/v0_9"
+import { renderMarkdown } from "@a2ui/markdown-it"
 import { cn } from "@/lib/utils"
 import type {
   A2UIClientEvent,
-  A2UIStepStartPayload,
+  A2UIErrorPayload,
   A2UIStepCompletePayload,
+  A2UIStepStartPayload,
   A2UIToolCallPayload,
   A2UIToolResultPayload,
-  A2UIErrorPayload,
 } from "@/features/chat/redux/chat.types"
 import {
-  parseA2UIResponse,
-  renderA2UIComponent,
+  A2UI_MAIN_SURFACE_ID,
+  parseStoredA2UIDocument,
+  renderMarkdownFallback,
+  useA2UIMessageProcessor,
 } from "@/features/chat/components/a2ui-catalog"
 
-// ---------------------------------------------------------------------------
-// Type guards
-// ---------------------------------------------------------------------------
-
-function isStepStart(e: A2UIClientEvent): e is A2UIClientEvent & { payload: A2UIStepStartPayload } {
-  return e.event === "step_start"
+function isStepStart(
+  event: A2UIClientEvent
+): event is A2UIClientEvent & { payload: A2UIStepStartPayload } {
+  return event.event === "step_start"
 }
+
 function isStepComplete(
-  e: A2UIClientEvent
-): e is A2UIClientEvent & { payload: A2UIStepCompletePayload } {
-  return e.event === "step_complete"
-}
-function isToolCall(e: A2UIClientEvent): e is A2UIClientEvent & { payload: A2UIToolCallPayload } {
-  return e.event === "tool_call"
-}
-function isToolResult(
-  e: A2UIClientEvent
-): e is A2UIClientEvent & { payload: A2UIToolResultPayload } {
-  return e.event === "tool_result"
-}
-function isError(e: A2UIClientEvent): e is A2UIClientEvent & { payload: A2UIErrorPayload } {
-  return e.event === "error"
+  event: A2UIClientEvent
+): event is A2UIClientEvent & { payload: A2UIStepCompletePayload } {
+  return event.event === "step_complete"
 }
 
-// ---------------------------------------------------------------------------
-// Derive step/tool state from flat event list
-// ---------------------------------------------------------------------------
+function isToolCall(
+  event: A2UIClientEvent
+): event is A2UIClientEvent & { payload: A2UIToolCallPayload } {
+  return event.event === "tool_call"
+}
+
+function isToolResult(
+  event: A2UIClientEvent
+): event is A2UIClientEvent & { payload: A2UIToolResultPayload } {
+  return event.event === "tool_result"
+}
+
+function isError(
+  event: A2UIClientEvent
+): event is A2UIClientEvent & { payload: A2UIErrorPayload } {
+  return event.event === "error"
+}
 
 interface StepState {
   stepName: string
@@ -53,6 +57,7 @@ interface StepState {
   status: "running" | "done" | "error"
   toolCalls: ToolCallState[]
 }
+
 interface ToolCallState {
   toolName: string
   displayName: string
@@ -65,80 +70,76 @@ function buildSteps(events: A2UIClientEvent[]): StepState[] {
   const stepsMap = new Map<string, StepState>()
   const stepsOrder: string[] = []
 
-  for (const evt of events) {
-    if (isStepStart(evt)) {
-      const p = evt.payload
-      if (!stepsMap.has(p.step_name)) {
-        stepsOrder.push(p.step_name)
-        stepsMap.set(p.step_name, {
-          stepName: p.step_name,
-          title: p.title,
-          description: p.description,
+  for (const event of events) {
+    if (isStepStart(event)) {
+      const payload = event.payload
+      if (!stepsMap.has(payload.step_name)) {
+        stepsOrder.push(payload.step_name)
+        stepsMap.set(payload.step_name, {
+          stepName: payload.step_name,
+          title: payload.title,
+          description: payload.description,
           status: "running",
           toolCalls: [],
         })
       }
-    } else if (isStepComplete(evt)) {
-      const s = stepsMap.get(evt.payload.step_name)
-      if (s) s.status = evt.payload.status === "error" ? "error" : "done"
-    } else if (isToolCall(evt)) {
+    } else if (isStepComplete(event)) {
+      const step = stepsMap.get(event.payload.step_name)
+      if (step) step.status = event.payload.status === "error" ? "error" : "done"
+    } else if (isToolCall(event)) {
       const step =
-        stepsMap.get(evt.payload.step_name) ?? stepsMap.get(stepsOrder.at(-1) ?? "")
+        stepsMap.get(event.payload.step_name) ?? stepsMap.get(stepsOrder.at(-1) ?? "")
       if (step) {
         step.toolCalls.push({
-          toolName: evt.payload.tool_name,
-          displayName: evt.payload.display_name,
-          inputSummary: evt.payload.input_summary,
+          toolName: event.payload.tool_name,
+          displayName: event.payload.display_name,
+          inputSummary: event.payload.input_summary,
           status: "pending",
         })
       }
-    } else if (isToolResult(evt)) {
+    } else if (isToolResult(event)) {
       const step =
-        stepsMap.get(evt.payload.step_name) ?? stepsMap.get(stepsOrder.at(-1) ?? "")
+        stepsMap.get(event.payload.step_name) ?? stepsMap.get(stepsOrder.at(-1) ?? "")
       if (step) {
-        const tc = step.toolCalls
+        const toolCall = step.toolCalls
           .slice()
           .reverse()
-          .find((t) => t.toolName === evt.payload.tool_name && t.status === "pending")
-        if (tc) {
-          tc.outputSummary = evt.payload.output_summary
-          tc.status = evt.payload.status === "error" ? "error" : "success"
+          .find((item) => item.toolName === event.payload.tool_name && item.status === "pending")
+
+        if (toolCall) {
+          toolCall.outputSummary = event.payload.output_summary
+          toolCall.status = event.payload.status === "error" ? "error" : "success"
         }
       }
     }
   }
-  return stepsOrder.map((n) => stepsMap.get(n)!).filter(Boolean)
+
+  return stepsOrder.map((name) => stepsMap.get(name)!).filter(Boolean)
 }
 
 function extractFinalContent(events: A2UIClientEvent[]): string {
-  // Prefer the terminal message_complete payload when present — it is the
-  // server's full assembled answer. Joining message_chunk deltas is used only
-  // while streaming or if no complete event arrived.
   for (let i = events.length - 1; i >= 0; i--) {
-    const evt = events[i]
-    if (evt.event === "message_complete") {
-      const content = (evt.payload as { content: string }).content
+    const event = events[i]
+    if (event.event === "message_complete") {
+      const content = (event.payload as { content: string }).content
       if (content.length > 0) return content
       break
     }
   }
+
   const chunks: string[] = []
-  for (const evt of events) {
-    if (evt.event === "message_chunk") {
-      chunks.push((evt.payload as { chunk: string }).chunk)
+  for (const event of events) {
+    if (event.event === "message_chunk") {
+      chunks.push((event.payload as { chunk: string }).chunk)
     }
   }
   return chunks.length ? chunks.join("") : ""
 }
 
 function extractError(events: A2UIClientEvent[]): string | null {
-  const err = events.find(isError)
-  return err ? (err.payload as A2UIErrorPayload).message : null
+  const error = events.find(isError)
+  return error ? error.payload.message : null
 }
-
-// ---------------------------------------------------------------------------
-// Step timeline sub-components
-// ---------------------------------------------------------------------------
 
 function StatusDot({ status }: { status: "running" | "done" | "error" }) {
   return (
@@ -155,11 +156,12 @@ function StatusDot({ status }: { status: "running" | "done" | "error" }) {
 
 function ToolAccordion({ tool }: { tool: ToolCallState }) {
   const [open, setOpen] = useState(false)
+
   return (
     <div className="mt-1 rounded-md border border-white/5 bg-white/[0.02]">
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 hover:text-white transition-colors"
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 transition-colors hover:text-white"
       >
         <span
           className={cn(
@@ -180,21 +182,21 @@ function ToolAccordion({ tool }: { tool: ToolCallState }) {
         </svg>
       </button>
       {open && (
-        <div className="border-t border-white/5 px-3 py-2 space-y-1.5 text-xs text-gray-400">
+        <div className="space-y-1.5 border-t border-white/5 px-3 py-2 text-xs text-gray-400">
           {tool.inputSummary && (
             <div>
-              <span className="text-gray-500 uppercase tracking-wide text-[10px]">Input</span>
-              <p className="mt-0.5 text-gray-300 break-words">{tool.inputSummary}</p>
+              <span className="text-[10px] uppercase tracking-wide text-gray-500">Input</span>
+              <p className="mt-0.5 break-words text-gray-300">{tool.inputSummary}</p>
             </div>
           )}
           {tool.outputSummary && (
             <div>
-              <span className="text-gray-500 uppercase tracking-wide text-[10px]">Output</span>
-              <p className="mt-0.5 text-gray-300 break-words">{tool.outputSummary}</p>
+              <span className="text-[10px] uppercase tracking-wide text-gray-500">Output</span>
+              <p className="mt-0.5 break-words text-gray-300">{tool.outputSummary}</p>
             </div>
           )}
           {!tool.inputSummary && !tool.outputSummary && (
-            <p className="text-gray-500 italic">No details available</p>
+            <p className="italic text-gray-500">No details available</p>
           )}
         </div>
       )}
@@ -204,7 +206,7 @@ function ToolAccordion({ tool }: { tool: ToolCallState }) {
 
 function chainSummaryLine(steps: StepState[], isStreaming: boolean): string {
   if (steps.length === 0) return ""
-  const running = steps.find((s) => s.status === "running")
+  const running = steps.find((step) => step.status === "running")
   if (isStreaming && running) return running.title
   if (isStreaming) return steps[steps.length - 1]?.title ?? "…"
   return `${steps.length} step${steps.length === 1 ? "" : "s"}`
@@ -224,7 +226,7 @@ function ChainOfThoughtSection({ steps, isStreaming }: { steps: StepState[]; isS
     <div className="rounded-lg border border-white/[0.08] bg-white/[0.02]">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
       >
@@ -254,6 +256,7 @@ function ChainOfThoughtSection({ steps, isStreaming }: { steps: StepState[]; isS
 function StepCard({ step }: { step: StepState }) {
   const [expanded, setExpanded] = useState(false)
   const hasTools = step.toolCalls.length > 0
+
   return (
     <div
       className={cn(
@@ -265,7 +268,7 @@ function StepCard({ step }: { step: StepState }) {
     >
       <div
         className={cn("flex items-center gap-2", hasTools && "cursor-pointer")}
-        onClick={() => hasTools && setExpanded((v) => !v)}
+        onClick={() => hasTools && setExpanded((value) => !value)}
       >
         <StatusDot status={step.status} />
         <span className="flex-1 text-sm font-medium text-gray-200">{step.title}</span>
@@ -290,8 +293,8 @@ function StepCard({ step }: { step: StepState }) {
       </div>
       {expanded && hasTools && (
         <div className="mt-2 space-y-1">
-          {step.toolCalls.map((tc, i) => (
-            <ToolAccordion key={`${tc.toolName}-${i}`} tool={tc} />
+          {step.toolCalls.map((tool, index) => (
+            <ToolAccordion key={`${tool.toolName}-${index}`} tool={tool} />
           ))}
         </div>
       )}
@@ -299,87 +302,68 @@ function StepCard({ step }: { step: StepState }) {
   )
 }
 
-// ---------------------------------------------------------------------------
-// A2UI component tree renderer
-// ---------------------------------------------------------------------------
-
-function A2UIComponentTree({ content }: { content: string }) {
-  const response = parseA2UIResponse(content)
-
-  if (!response) {
-    // Fallback: plain Markdown (handles non-JSON responses gracefully)
-    return (
-      <div className="prose prose-invert prose-sm max-w-none prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-p:text-gray-200 prose-a:text-cyan-400 prose-strong:text-white prose-table:text-sm">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-3">
-      {response.root.map((id) => {
-        const component = response.components[id]
-        if (!component) return null
-        return renderA2UIComponent(id, component, response.components)
-      })}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Public component
-// ---------------------------------------------------------------------------
-
 interface A2UIRendererProps {
+  messageId: string
   events?: A2UIClientEvent[]
-  /** Stored message content (A2UI JSON or plain text) — used as fallback on page reload
-   *  when the live event stream is no longer available. */
   content?: string
   isStreaming?: boolean
 }
 
-export default function A2UIRenderer({ events = [], isStreaming = false, content: storedContent }: A2UIRendererProps) {
+export default function A2UIRenderer({
+  messageId,
+  events = [],
+  isStreaming = false,
+  content: storedContent,
+}: A2UIRendererProps) {
   const steps = buildSteps(events)
   const streamedContent = extractFinalContent(events)
-  // On reload there are no events — fall back to the persisted message content
   const finalContent = streamedContent || (!isStreaming ? (storedContent ?? "") : "")
   const errorMessage = extractError(events)
 
-  const hasSteps = steps.length > 0
-  const hasAnswer = finalContent.trim().length > 0
+  const { getSurface } = useA2UIMessageProcessor({
+    messageKey: messageId,
+    events,
+    content: storedContent,
+  })
 
-  if (!hasSteps && !hasAnswer && !errorMessage) return null
+  const mainSurface = getSurface(A2UI_MAIN_SURFACE_ID)
+  const storedDocument = useMemo(() => parseStoredA2UIDocument(finalContent), [finalContent])
+  const hasRenderableSurface = !!mainSurface || !!storedDocument
+  const hasPlainFallback = !hasRenderableSurface && finalContent.trim().length > 0
+  const hasSteps = steps.length > 0
+
+  if (!hasSteps && !hasRenderableSurface && !hasPlainFallback && !errorMessage) return null
 
   return (
     <div className="space-y-3">
-      {/* Step timeline — collapsible (Cursor / Claude-style) */}
-      {hasSteps && (
-        <ChainOfThoughtSection steps={steps} isStreaming={isStreaming} />
-      )}
+      {hasSteps && <ChainOfThoughtSection steps={steps} isStreaming={isStreaming} />}
 
-      {/* Streaming indicator while no answer content yet */}
-      {isStreaming && !hasAnswer && !hasSteps && (
+      {isStreaming && !hasRenderableSurface && !hasPlainFallback && !hasSteps && (
         <div className="flex items-center gap-2 text-xs text-gray-400">
           <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--color-secondary)]" />
           <span>Processing…</span>
         </div>
       )}
 
-      {/* Final answer — A2UI component tree (with Markdown fallback) */}
-      {(hasAnswer || isStreaming) && (
+      {(hasRenderableSurface || hasPlainFallback || isStreaming) && (
         <div className={cn(hasSteps && "border-t border-white/5 pt-3")}>
-          {isStreaming && !hasAnswer ? (
+          {mainSurface ? (
+            <div className="a2ui-dark">
+              <MarkdownContext.Provider value={renderMarkdown}>
+                <A2uiSurface surface={mainSurface} />
+              </MarkdownContext.Provider>
+            </div>
+          ) : isStreaming && !hasPlainFallback ? (
             <div className="flex items-center gap-2 text-xs text-gray-400">
               <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--color-secondary)]" />
               <span className="tracking-wide">Generating answer…</span>
             </div>
-          ) : (
-            <A2UIComponentTree content={finalContent} />
-          )}
+          ) : hasPlainFallback ? (
+            renderMarkdownFallback(finalContent)
+          ) : null}
         </div>
       )}
 
-      {/* Error state */}
       {errorMessage && (
         <div className="flex items-start gap-2 rounded-md border border-red-400/20 bg-red-950/10 px-3 py-2 text-sm text-red-300">
           <svg

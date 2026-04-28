@@ -198,6 +198,15 @@ export const sendMessage = createAsyncThunk<
         onEvent: (event) => {
           // Append the A2UI event to the message so the renderer can react
           dispatch(appendA2UIEvent({ id: assistantMessageId, event }))
+          if (event.event === "message_complete") {
+            const payload = event.payload as { content?: string }
+            dispatch(
+              updateMessage({
+                id: assistantMessageId,
+                changes: { content: payload.content ?? "" },
+              })
+            )
+          }
           if (event.event === "hitl_form") {
             dispatch(setHitlResumeAssistantMessageId(assistantMessageId))
             if (FEATURE_FLAGS.CURSOR_STYLE_UI_ENABLED) {
@@ -295,6 +304,15 @@ export const resumeA2UIChat = createAsyncThunk<
       modelId: selectedModelId,
       onEvent: (event) => {
         dispatch(appendA2UIEvent({ id: assistantMessageId, event }))
+        if (event.event === "message_complete") {
+          const payload = event.payload as { content?: string }
+          dispatch(
+            updateMessage({
+              id: assistantMessageId,
+              changes: { content: payload.content ?? "" },
+            })
+          )
+        }
         if (event.event === "hitl_form") {
           dispatch(setHitlResumeAssistantMessageId(assistantMessageId))
         }

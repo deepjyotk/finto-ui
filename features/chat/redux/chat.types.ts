@@ -1,4 +1,5 @@
 import type { SessionItem } from "@/features/chat/apis/chat-api"
+import type { A2uiMessage } from "@a2ui/web_core/v0_9"
 
 // ---------------------------------------------------------------------------
 // A2UI event types (mirror of backend src/a2ui/schemas.py)
@@ -9,6 +10,7 @@ export type A2UIEventType =
   | "step_complete"
   | "tool_call"
   | "tool_result"
+  | "a2ui_message"
   | "message_chunk"
   | "message_complete"
   | "hitl_form"
@@ -44,6 +46,10 @@ export interface A2UIMessageChunkPayload {
   chunk: string
 }
 
+export interface A2UIMessagePayload {
+  message: A2uiMessage
+}
+
 export interface A2UIMessageCompletePayload {
   content: string
 }
@@ -53,10 +59,11 @@ export interface A2UIErrorPayload {
   code?: string
 }
 
-/** LangGraph HITL interrupt — render ``a2ui_form`` and resume via ``/a2ui/resume``. */
+/** LangGraph HITL interrupt metadata for rendering and resuming the A2UI form surface. */
 export interface A2UIHitlFormPayload {
   thread_id: string
-  interrupt_value: Record<string, unknown>
+  surface_id: string
+  task?: string
 }
 
 export interface A2UIClientEvent {
@@ -68,6 +75,7 @@ export interface A2UIClientEvent {
     | A2UIStepCompletePayload
     | A2UIToolCallPayload
     | A2UIToolResultPayload
+    | A2UIMessagePayload
     | A2UIMessageChunkPayload
     | A2UIMessageCompletePayload
     | A2UIHitlFormPayload

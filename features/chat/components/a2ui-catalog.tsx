@@ -1,10 +1,28 @@
 "use client"
 
-import { Fragment, type FormEvent, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import {
+  A2uiSurface,
+  MarkdownContext,
+  basicCatalog,
+  createComponentImplementation,
+  type ReactComponentImplementation,
+} from "@a2ui/react/v0_9"
+import { renderMarkdown } from "@a2ui/markdown-it"
+import {
+  Catalog,
+  DynamicStringSchema,
+  DynamicValueSchema,
+  MessageProcessor,
+  type A2uiClientAction,
+  type A2uiMessage,
+} from "@a2ui/web_core/v0_9"
+import { z } from "zod"
 
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import type { A2UIClientEvent } from "@/features/chat/redux/chat.types"
 import {
   PieChart,
   Pie,
@@ -23,128 +41,41 @@ import {
   ResponsiveContainer,
 } from "recharts"
 
+export const FINANCE_CHAT_CATALOG_ID =
+  "https://explainly.ai/catalogs/finance-chat-v1.json"
+export const A2UI_STORED_DOCUMENT_TYPE = "a2ui_v0_9_document"
+export const A2UI_MAIN_SURFACE_ID = "main"
+export const A2UI_HITL_SURFACE_ID = "hitl-form"
+
 // ---------------------------------------------------------------------------
-// A2UI v0.8 Component Catalog
-//
-// These are the pre-approved native React components that the A2UI renderer
-// maps component type strings → concrete UI.  Agents can only request types
-// from this catalog — no arbitrary code execution.
+// Shared display components
 // ---------------------------------------------------------------------------
-
-// ─── Type definitions ───────────────────────────────────────────────────────
-
-export type A2UIComponentType =
-  | "heading"
-  | "badge"
-  | "data-table"
-  | "metric-card"
-  | "info-box"
-  | "text"
-  | "divider"
-  | "chart"
-  | "form"
-  | "form-field"
-
-export interface A2UIComponent {
-  type: A2UIComponentType
-  props: Record<string, unknown>
-  children?: string[]
-}
-
-export interface A2UIResponse {
-  type: "a2ui_response"
-  root: string[]
-  components: Record<string, A2UIComponent>
-}
-
-export function isA2UIResponse(obj: unknown): obj is A2UIResponse {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    (obj as A2UIResponse).type === "a2ui_response" &&
-    Array.isArray((obj as A2UIResponse).root) &&
-    typeof (obj as A2UIResponse).components === "object"
-  )
-}
-
-export function parseA2UIResponse(raw: string): A2UIResponse | null {
-  try {
-    const trimmed = raw.trim()
-    // Strip accidental markdown code fences (```json ... ```)
-    const cleaned = trimmed
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```\s*$/, "")
-      .trim()
-    const parsed = JSON.parse(cleaned)
-    if (
-      parsed &&
-      parsed.type === "a2ui_response" &&
-      Array.isArray(parsed.root) &&
-      typeof parsed.components === "object"
-    ) {
-      return parsed as A2UIResponse
-    }
-    return null
-  } catch {
-    return null
-  }
-}
-
-// ─── Formatting helpers ──────────────────────────────────────────────────────
-
-function formatCellValue(value: unknown, format: string): string {
-  const raw = value === null || value === undefined ? "" : String(value)
-  if (!raw) return "—"
-  if (format === "currency_inr") {
-    const num = parseFloat(raw.replace(/[₹,]/g, ""))
-    if (isNaN(num)) return raw
-    return `₹${num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-  }
-  if (format === "percentage") {
-    const num = parseFloat(raw)
-    if (isNaN(num)) return raw
-    return `${num.toFixed(2)}%`
-  }
-  if (format === "number") {
-    const num = parseFloat(raw)
-    if (isNaN(num)) return raw
-    return num.toLocaleString("en-IN")
-  }
-  return raw
-}
-
-function isLikelyUrl(value: string): boolean {
-  return /^https?:\/\/\S+$/i.test(value.trim())
-}
-
-// ─── Catalog components ──────────────────────────────────────────────────────
-
-interface HeadingProps {
-  text: string
-  level?: 1 | 2 | 3
-}
-export function A2UIHeading({ text, level = 1 }: HeadingProps) {
-  const sizeClass =
-    level === 1
-      ? "text-2xl font-bold text-white"
-      : level === 2
-        ? "text-xl font-semibold text-white"
-        : "text-base font-semibold text-gray-200"
-  return <p className={cn(sizeClass, "mb-1 leading-tight")}>{text}</p>
-}
 
 interface BadgeProps {
   text: string
   variant?: "success" | "warning" | "error" | "info" | "neutral"
 }
+
+function normalizeBadgeVariant(value: unknown): NonNullable<BadgeProps["variant"]> {
+  return value === "success" ||
+    value === "warning" ||
+    value === "error" ||
+    value === "info" ||
+    value === "neutral"
+    ? value
+    : "neutral"
+}
+
 export function A2UIBadge({ text, variant = "neutral" }: BadgeProps) {
+  const safeVariant = normalizeBadgeVariant(variant)
   const variantClass = {
     success: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
     warning: "bg-amber-500/20 text-amber-300 border-amber-500/30",
     error: "bg-red-500/20 text-red-300 border-red-500/30",
     info: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
     neutral: "bg-white/10 text-gray-300 border-white/20",
-  }[variant]
+  }[safeVariant]
+
   return (
     <span
       className={cn(
@@ -156,95 +87,15 @@ export function A2UIBadge({ text, variant = "neutral" }: BadgeProps) {
       <span
         className={cn(
           "h-1.5 w-1.5 rounded-full",
-          variant === "success" && "bg-emerald-400",
-          variant === "warning" && "bg-amber-400",
-          variant === "error" && "bg-red-400",
-          variant === "info" && "bg-cyan-400",
-          variant === "neutral" && "bg-gray-400"
+          safeVariant === "success" && "bg-emerald-400",
+          safeVariant === "warning" && "bg-amber-400",
+          safeVariant === "error" && "bg-red-400",
+          safeVariant === "info" && "bg-cyan-400",
+          safeVariant === "neutral" && "bg-gray-400"
         )}
       />
       {text}
     </span>
-  )
-}
-
-interface TableColumn {
-  key: string
-  label: string
-  format?: string
-}
-interface DataTableProps {
-  columns: TableColumn[]
-  rows: unknown[][]
-}
-export function A2UIDataTable({ columns, rows }: DataTableProps) {
-  if (!columns?.length || !rows?.length) return null
-  const rightAlignFormats = new Set(["currency_inr", "number", "percentage"])
-  return (
-    <div className="rounded-xl border border-white/10">
-      <table className="w-full table-fixed border-collapse text-sm" aria-label="Financial data table">
-        <thead>
-          <tr className="border-b border-white/10 bg-white/[0.06]">
-            {columns.map((col, i) => (
-              <th
-                key={i}
-                scope="col"
-                className={cn(
-                  "px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400",
-                  rightAlignFormats.has(col.format ?? "") ? "text-right" : "text-left"
-                )}
-              >
-                {col.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, ri) => (
-            <tr
-              key={ri}
-              className={cn(
-                "border-b border-white/5 transition-colors hover:bg-white/[0.04]",
-                ri % 2 === 0 ? "bg-transparent" : "bg-white/[0.02]"
-              )}
-            >
-              {columns.map((col, ci) => {
-                const raw = row[ci]
-                const formatted = formatCellValue(raw, col.format ?? "text")
-                const isNumeric = rightAlignFormats.has(col.format ?? "")
-                const isUrlCell =
-                  !isNumeric &&
-                  typeof raw === "string" &&
-                  (col.key.toLowerCase() === "url" || isLikelyUrl(raw))
-                return (
-                  <td
-                    key={ci}
-                    className={cn(
-                      "px-4 py-3 align-top text-gray-200",
-                      isNumeric ? "text-right font-mono tabular-nums" : "text-left whitespace-normal break-words",
-                      ci === 0 && "font-semibold text-white"
-                    )}
-                  >
-                    {isUrlCell ? (
-                      <a
-                        href={raw}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-cyan-300 underline decoration-cyan-500/50 underline-offset-2 break-all hover:text-cyan-200"
-                      >
-                        {formatted}
-                      </a>
-                    ) : (
-                      formatted
-                    )}
-                  </td>
-                )
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   )
 }
 
@@ -253,13 +104,15 @@ interface MetricCardProps {
   value: string
   change?: string
 }
+
 export function A2UIMetricCard({ label, value, change }: MetricCardProps) {
   const isPositive = change?.startsWith("+")
   const isNegative = change?.startsWith("-")
+
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
-      <p className="mb-1 text-xs text-gray-500 uppercase tracking-wide">{label}</p>
-      <p className="text-xl font-semibold text-white tabular-nums">{value}</p>
+      <p className="mb-1 text-xs uppercase tracking-wide text-gray-500">{label}</p>
+      <p className="text-xl font-semibold tabular-nums text-white">{value}</p>
       {change && (
         <p
           className={cn(
@@ -280,7 +133,15 @@ interface InfoBoxProps {
   text: string
   variant?: "info" | "warning" | "success" | "error"
 }
+
+function normalizeInfoBoxVariant(value: unknown): NonNullable<InfoBoxProps["variant"]> {
+  return value === "info" || value === "warning" || value === "success" || value === "error"
+    ? value
+    : "info"
+}
+
 export function A2UIInfoBox({ text, variant = "info" }: InfoBoxProps) {
+  const safeVariant = normalizeInfoBoxVariant(variant)
   const styles = {
     info: {
       wrapper: "border-cyan-500/20 bg-cyan-950/20",
@@ -302,11 +163,12 @@ export function A2UIInfoBox({ text, variant = "info" }: InfoBoxProps) {
       icon: "text-red-400",
       text: "text-red-200",
     },
-  }[variant]
+  }[safeVariant]
+
   return (
     <div
       className={cn("flex items-start gap-2.5 rounded-lg border px-4 py-3", styles.wrapper)}
-      aria-label={`${variant} notice`}
+      aria-label={`${safeVariant} notice`}
       role="note"
     >
       <svg
@@ -328,37 +190,253 @@ export function A2UIInfoBox({ text, variant = "info" }: InfoBoxProps) {
   )
 }
 
-export function A2UIText({ content }: { content: string }) {
-  return <p className="text-sm leading-relaxed text-gray-300">{content}</p>
+interface TableColumn {
+  key: string
+  label: string
+  format?: "text" | "currency_inr" | "number" | "percentage"
 }
 
-export function A2UIDivider() {
-  return <hr className="border-white/10" />
+interface DataTableProps {
+  columns: TableColumn[]
+  rows: unknown[]
 }
 
-// ─── Chart component ─────────────────────────────────────────────────────────
+function formatCellValue(value: unknown, format: string): string {
+  const raw = value === null || value === undefined ? "" : String(value)
+  if (!raw) return "—"
+  if (format === "currency_inr") {
+    const num = parseFloat(raw.replace(/[₹,]/g, ""))
+    if (Number.isNaN(num)) return raw
+    return `₹${num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
+  if (format === "percentage") {
+    const num = parseFloat(raw)
+    if (Number.isNaN(num)) return raw
+    return `${num.toFixed(2)}%`
+  }
+  if (format === "number") {
+    const num = parseFloat(raw)
+    if (Number.isNaN(num)) return raw
+    return num.toLocaleString("en-IN")
+  }
+  return raw
+}
+
+function isLikelyUrl(value: string): boolean {
+  return /^https?:\/\/\S+$/i.test(value.trim())
+}
+
+export function A2UIDataTable({ columns, rows }: DataTableProps) {
+  if (!columns?.length || !rows?.length) return null
+
+  const rightAlignFormats = new Set(["currency_inr", "number", "percentage"])
+  const getCellValue = (row: unknown, column: TableColumn, columnIndex: number): unknown => {
+    if (Array.isArray(row)) return row[columnIndex]
+    if (row && typeof row === "object") return (row as Record<string, unknown>)[column.key]
+    return undefined
+  }
+
+  return (
+    <div className="rounded-xl border border-white/10">
+      <table className="w-full table-fixed border-collapse text-sm" aria-label="Financial data table">
+        <thead>
+          <tr className="border-b border-white/10 bg-white/[0.06]">
+            {columns.map((col, i) => (
+              <th
+                key={i}
+                scope="col"
+                className={cn(
+                  "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400",
+                  rightAlignFormats.has(col.format ?? "") && "text-right"
+                )}
+              >
+                {col.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, ri) => (
+            <tr
+              key={ri}
+              className={cn(
+                "border-b border-white/5 transition-colors hover:bg-white/[0.04]",
+                ri % 2 === 0 ? "bg-transparent" : "bg-white/[0.02]"
+              )}
+            >
+              {columns.map((col, ci) => {
+                const raw = getCellValue(row, col, ci)
+                const formatted = formatCellValue(raw, col.format ?? "text")
+                const isNumeric = rightAlignFormats.has(col.format ?? "")
+                const isUrlCell =
+                  !isNumeric &&
+                  typeof raw === "string" &&
+                  (col.key.toLowerCase() === "url" || isLikelyUrl(raw))
+
+                return (
+                  <td
+                    key={ci}
+                    className={cn(
+                      "px-4 py-3 align-top text-gray-200",
+                      isNumeric ? "text-right font-mono tabular-nums" : "text-left whitespace-normal break-words",
+                      ci === 0 && "font-semibold text-white"
+                    )}
+                  >
+                    {isUrlCell ? (
+                      <a
+                        href={raw}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="break-all text-cyan-300 underline decoration-cyan-500/50 underline-offset-2 hover:text-cyan-200"
+                      >
+                        {formatted}
+                      </a>
+                    ) : (
+                      formatted
+                    )}
+                  </td>
+                )
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+interface NewsSourceItem {
+  source?: string
+  title?: string
+  url?: string
+  href?: string
+  link?: string
+  label?: string
+}
+
+interface SourceListProps {
+  sources: unknown[]
+  title?: string
+}
+
+function normalizeSourceItem(item: unknown): NewsSourceItem | null {
+  if (typeof item === "string") return { title: item }
+  if (!item || typeof item !== "object") return null
+
+  const raw = item as Record<string, unknown>
+  const source =
+    typeof raw.source === "string"
+      ? raw.source
+      : typeof raw.publisher === "string"
+        ? raw.publisher
+        : undefined
+  const title =
+    typeof raw.title === "string"
+      ? raw.title
+      : typeof raw.label === "string"
+        ? raw.label
+        : undefined
+  const url =
+    typeof raw.url === "string"
+      ? raw.url
+      : typeof raw.href === "string"
+        ? raw.href
+        : typeof raw.link === "string"
+          ? raw.link
+          : undefined
+
+  if (!source && !title && !url) return null
+  return { source, title, url }
+}
+
+function getSafeHttpUrl(value: string | undefined): string | null {
+  if (!value) return null
+  try {
+    const parsed = new URL(value)
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : null
+  } catch {
+    return null
+  }
+}
+
+export function A2UISourceList({ sources, title = "Sources" }: SourceListProps) {
+  const items = sources.map(normalizeSourceItem).filter((item): item is NewsSourceItem => Boolean(item))
+  if (!items.length) return null
+
+  return (
+    <div className="mt-1 space-y-2 border-t border-white/10 pt-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{title}</p>
+      <div className="flex flex-col gap-2">
+        {items.map((item, index) => {
+          const url = getSafeHttpUrl(item.url ?? item.href ?? item.link)
+          const source = item.source || "Source"
+          const text = item.title || item.label || url || source
+          const content = (
+            <>
+              <span className="shrink-0 rounded-md border border-cyan-400/20 bg-cyan-400/10 px-1.5 py-0.5 text-[11px] font-medium text-cyan-200">
+                {source}
+              </span>
+              <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-gray-300">
+                {text}
+              </span>
+            </>
+          )
+
+          return url ? (
+            <a
+              key={`${url}-${index}`}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-w-0 items-center gap-2 rounded-md border border-white/10 bg-white/[0.025] px-2.5 py-2 text-xs transition-colors hover:border-cyan-400/40 hover:bg-cyan-400/10 hover:text-cyan-100"
+            >
+              {content}
+            </a>
+          ) : (
+            <div
+              key={`${source}-${text}-${index}`}
+              className="flex min-w-0 items-center gap-2 rounded-md border border-white/10 bg-white/[0.025] px-2.5 py-2 text-xs"
+            >
+              {content}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 const CHART_COLORS = [
-  "#3b82f6", // blue-500
-  "#10b981", // emerald-500
-  "#f59e0b", // amber-500
-  "#8b5cf6", // violet-500
-  "#ef4444", // red-500
-  "#06b6d4", // cyan-500
-  "#f97316", // orange-500
-  "#84cc16", // lime-500
-  "#ec4899", // pink-500
-  "#6366f1", // indigo-500
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#8b5cf6",
+  "#ef4444",
+  "#06b6d4",
+  "#f97316",
+  "#84cc16",
+  "#ec4899",
+  "#6366f1",
 ]
 
 type ChartType = "pie" | "bar" | "line" | "area"
+
+function normalizeChartType(value: unknown): ChartType {
+  return value === "pie" || value === "bar" || value === "line" || value === "area"
+    ? value
+    : "bar"
+}
 
 interface ChartDataPoint {
   name: string
   [key: string]: string | number
 }
 
-/** Coerce LLM/JSON chart values (often strings) to numbers for Recharts. */
+interface ChartSeriesDefinition {
+  key: string
+  label?: string
+}
+
 function coerceChartNumber(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) return value
   if (typeof value === "string") {
@@ -377,17 +455,12 @@ function inferNumericValueKeys(row: ChartDataPoint, xKey: string): string[] {
 }
 
 interface A2UIChartProps {
-  chart_type: ChartType
+  chartType: ChartType
   title?: string
-  /** Array of data objects, each with a "name" key + one or more value keys */
   data: ChartDataPoint[]
-  /** Key(s) to plot as value series (default: "value") */
-  data_keys?: string[]
-  /** Key used for x-axis labels in bar/line/area charts (default: "name") */
-  x_key?: string
-  /** Optional override colors */
+  series?: ChartSeriesDefinition[]
+  xKey?: string
   colors?: string[]
-  /** Unit label shown in tooltip (e.g. "₹", "%") */
   unit?: string
 }
 
@@ -403,12 +476,14 @@ function CustomTooltip({
   unit?: string
 }) {
   if (!active || !payload?.length) return null
+
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0f1117] px-3 py-2 shadow-xl text-xs">
+    <div className="rounded-lg border border-white/10 bg-[#0f1117] px-3 py-2 text-xs shadow-xl">
       {label && <p className="mb-1 font-semibold text-gray-300">{label}</p>}
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.color }} className="tabular-nums">
-          {p.name}: {unit ?? ""}{typeof p.value === "number" ? p.value.toLocaleString("en-IN") : p.value}
+          {p.name}: {unit ?? ""}
+          {typeof p.value === "number" ? p.value.toLocaleString("en-IN") : p.value}
         </p>
       ))}
     </div>
@@ -424,20 +499,20 @@ function PieTooltip({
   active?: boolean
   payload?: { name?: string; value?: number; payload?: Record<string, unknown> }[]
   unit?: string
-  /** Sum of pie values (Recharts does not put `percent` on tooltip payload.payload). */
   pieTotal: number
 }) {
   if (!active || !payload?.length) return null
+
   const d = payload[0]
   const label = d.name ?? String(d.payload?.name ?? "")
   const val = coerceChartNumber(d.value)
-  const pct =
-    pieTotal > 0 && Number.isFinite(val) ? (val / pieTotal) * 100 : null
+  const pct = pieTotal > 0 && Number.isFinite(val) ? (val / pieTotal) * 100 : null
   const pctLabel = pct !== null && Number.isFinite(pct) ? `${pct.toFixed(1)}%` : "—"
+
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0f1117] px-3 py-2 shadow-xl text-xs">
+    <div className="rounded-lg border border-white/10 bg-[#0f1117] px-3 py-2 text-xs shadow-xl">
       <p className="font-semibold text-gray-300">{label}</p>
-      <p className="text-white tabular-nums">
+      <p className="tabular-nums text-white">
         {unit ?? ""}
         {Number.isFinite(val) ? val.toLocaleString("en-IN") : String(d.value ?? "—")} ({pctLabel})
       </p>
@@ -446,386 +521,472 @@ function PieTooltip({
 }
 
 export function A2UIChart({
-  chart_type,
+  chartType,
   title,
   data,
-  data_keys,
-  x_key = "name",
+  series,
+  xKey = "name",
   colors,
   unit,
 }: A2UIChartProps) {
   if (!data?.length) return null
+  const safeChartType = normalizeChartType(chartType)
+
   const palette = colors?.length ? colors : CHART_COLORS
-  // Determine which keys to plot (include string numbers — raw `typeof === "number"` misses JSON strings)
-  const valueKeys =
-    data_keys?.length
-      ? data_keys
-      : inferNumericValueKeys(data[0], x_key)
-  const primaryValueKey = valueKeys[0] ?? "value"
+  const seriesKeys =
+    series?.length
+      ? series.map((item) => item.key)
+      : inferNumericValueKeys(data[0], xKey)
+  const primaryValueKey = seriesKeys[0] ?? "value"
+
   const normalizedData: ChartDataPoint[] = data.map((row) => {
     const next = { ...row }
-    const keysToCoerce = valueKeys.length ? valueKeys : [primaryValueKey]
-    for (const key of keysToCoerce) {
-      if (key in next && key !== x_key) {
+    for (const key of seriesKeys.length ? seriesKeys : [primaryValueKey]) {
+      if (key in next && key !== xKey) {
         const n = coerceChartNumber(next[key])
         if (Number.isFinite(n)) next[key] = n
       }
     }
     return next
   })
+
   const pieTotal =
-    chart_type === "pie"
-      ? normalizedData.reduce((s, row) => s + coerceChartNumber(row[primaryValueKey]), 0)
+    safeChartType === "pie"
+      ? normalizedData.reduce((sum, row) => sum + coerceChartNumber(row[primaryValueKey]), 0)
       : 0
 
   const commonGridProps = {
     strokeDasharray: "3 3",
     stroke: "rgba(255,255,255,0.06)",
   }
+
   const axisProps = {
     tick: { fill: "#9ca3af", fontSize: 11 },
     axisLine: { stroke: "rgba(255,255,255,0.1)" },
     tickLine: false as const,
   }
 
+  const seriesLabels = new Map(
+    (series ?? []).map((item) => [item.key, item.label ?? item.key])
+  )
+
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      {title && (
-        <p className="mb-4 text-sm font-semibold text-gray-200">{title}</p>
-      )}
-      {/* min-h + min-w-0: ResponsiveContainer often collapses in flex layouts without explicit bounds */}
+      {title && <p className="mb-4 text-sm font-semibold text-gray-200">{title}</p>}
       <div className="min-h-[300px] w-full min-w-0">
         <ResponsiveContainer width="100%" height={300}>
-        {chart_type === "pie" ? (
-          <PieChart>
-            <Pie
-              data={normalizedData}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={110}
-              paddingAngle={2}
-              dataKey={primaryValueKey}
-              nameKey="name"
-            >
-              {normalizedData.map((_, i) => (
-                <Cell key={i} fill={palette[i % palette.length]} stroke="transparent" />
-              ))}
-            </Pie>
-            <Tooltip content={<PieTooltip unit={unit} pieTotal={pieTotal} />} />
-            <Legend
-              formatter={(value) => (
-                <span style={{ color: "#d1d5db", fontSize: 12 }}>{value}</span>
+          {safeChartType === "pie" ? (
+            <PieChart>
+              <Pie
+                data={normalizedData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={110}
+                paddingAngle={2}
+                dataKey={primaryValueKey}
+                nameKey="name"
+              >
+                {normalizedData.map((_, i) => (
+                  <Cell key={i} fill={palette[i % palette.length]} stroke="transparent" />
+                ))}
+              </Pie>
+              <Tooltip content={<PieTooltip unit={unit} pieTotal={pieTotal} />} />
+              <Legend formatter={(value) => <span style={{ color: "#d1d5db", fontSize: 12 }}>{value}</span>} />
+            </PieChart>
+          ) : safeChartType === "bar" ? (
+            <BarChart data={normalizedData} barCategoryGap="30%">
+              <CartesianGrid {...commonGridProps} vertical={false} />
+              <XAxis dataKey={xKey} {...axisProps} />
+              <YAxis {...axisProps} tickFormatter={(v) => `${unit ?? ""}${v.toLocaleString("en-IN")}`} />
+              <Tooltip content={<CustomTooltip unit={unit} />} />
+              {seriesKeys.length > 1 && (
+                <Legend formatter={(value) => <span style={{ color: "#d1d5db", fontSize: 12 }}>{seriesLabels.get(String(value)) ?? value}</span>} />
               )}
-            />
-          </PieChart>
-        ) : chart_type === "bar" ? (
-          <BarChart data={normalizedData} barCategoryGap="30%">
-            <CartesianGrid {...commonGridProps} vertical={false} />
-            <XAxis dataKey={x_key} {...axisProps} />
-            <YAxis {...axisProps} tickFormatter={(v) => `${unit ?? ""}${v.toLocaleString("en-IN")}`} />
-            <Tooltip content={<CustomTooltip unit={unit} />} />
-            {valueKeys.length > 1 && <Legend formatter={(v) => <span style={{ color: "#d1d5db", fontSize: 12 }}>{v}</span>} />}
-            {valueKeys.map((key, i) => (
-              <Bar key={key} dataKey={key} fill={palette[i % palette.length]} radius={[4, 4, 0, 0]} />
-            ))}
-          </BarChart>
-        ) : chart_type === "area" ? (
-          <AreaChart data={normalizedData}>
-            <defs>
-              {valueKeys.map((key, i) => (
-                <linearGradient key={key} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={palette[i % palette.length]} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={palette[i % palette.length]} stopOpacity={0} />
-                </linearGradient>
+              {seriesKeys.map((key, i) => (
+                <Bar key={key} dataKey={key} name={seriesLabels.get(key) ?? key} fill={palette[i % palette.length]} radius={[4, 4, 0, 0]} />
               ))}
-            </defs>
-            <CartesianGrid {...commonGridProps} />
-            <XAxis dataKey={x_key} {...axisProps} />
-            <YAxis {...axisProps} tickFormatter={(v) => `${unit ?? ""}${v.toLocaleString("en-IN")}`} />
-            <Tooltip content={<CustomTooltip unit={unit} />} />
-            {valueKeys.length > 1 && <Legend formatter={(v) => <span style={{ color: "#d1d5db", fontSize: 12 }}>{v}</span>} />}
-            {valueKeys.map((key, i) => (
-              <Area
-                key={key}
-                type="monotone"
-                dataKey={key}
-                stroke={palette[i % palette.length]}
-                fill={`url(#grad-${i})`}
-                strokeWidth={2}
-              />
-            ))}
-          </AreaChart>
-        ) : (
-          /* default: line */
-          <LineChart data={normalizedData}>
-            <CartesianGrid {...commonGridProps} />
-            <XAxis dataKey={x_key} {...axisProps} />
-            <YAxis {...axisProps} tickFormatter={(v) => `${unit ?? ""}${v.toLocaleString("en-IN")}`} />
-            <Tooltip content={<CustomTooltip unit={unit} />} />
-            {valueKeys.length > 1 && <Legend formatter={(v) => <span style={{ color: "#d1d5db", fontSize: 12 }}>{v}</span>} />}
-            {valueKeys.map((key, i) => (
-              <Line
-                key={key}
-                type="monotone"
-                dataKey={key}
-                stroke={palette[i % palette.length]}
-                strokeWidth={2}
-                dot={{ r: 3, fill: palette[i % palette.length] }}
-                activeDot={{ r: 5 }}
-              />
-            ))}
-          </LineChart>
-        )}
+            </BarChart>
+          ) : safeChartType === "area" ? (
+            <AreaChart data={normalizedData}>
+              <defs>
+                {seriesKeys.map((key, i) => (
+                  <linearGradient key={key} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={palette[i % palette.length]} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={palette[i % palette.length]} stopOpacity={0} />
+                  </linearGradient>
+                ))}
+              </defs>
+              <CartesianGrid {...commonGridProps} />
+              <XAxis dataKey={xKey} {...axisProps} />
+              <YAxis {...axisProps} tickFormatter={(v) => `${unit ?? ""}${v.toLocaleString("en-IN")}`} />
+              <Tooltip content={<CustomTooltip unit={unit} />} />
+              {seriesKeys.length > 1 && (
+                <Legend formatter={(value) => <span style={{ color: "#d1d5db", fontSize: 12 }}>{seriesLabels.get(String(value)) ?? value}</span>} />
+              )}
+              {seriesKeys.map((key, i) => (
+                <Area
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  name={seriesLabels.get(key) ?? key}
+                  stroke={palette[i % palette.length]}
+                  fill={`url(#grad-${i})`}
+                  strokeWidth={2}
+                />
+              ))}
+            </AreaChart>
+          ) : (
+            <LineChart data={normalizedData}>
+              <CartesianGrid {...commonGridProps} />
+              <XAxis dataKey={xKey} {...axisProps} />
+              <YAxis {...axisProps} tickFormatter={(v) => `${unit ?? ""}${v.toLocaleString("en-IN")}`} />
+              <Tooltip content={<CustomTooltip unit={unit} />} />
+              {seriesKeys.length > 1 && (
+                <Legend formatter={(value) => <span style={{ color: "#d1d5db", fontSize: 12 }}>{seriesLabels.get(String(value)) ?? value}</span>} />
+              )}
+              {seriesKeys.map((key, i) => (
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  name={seriesLabels.get(key) ?? key}
+                  stroke={palette[i % palette.length]}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: palette[i % palette.length] }}
+                  activeDot={{ r: 5 }}
+                />
+              ))}
+            </LineChart>
+          )}
         </ResponsiveContainer>
       </div>
     </div>
   )
 }
 
-// ─── Form components (HITL / configurable tool args) ─────────────────────────
+// ---------------------------------------------------------------------------
+// Official A2UI v0.9 catalog
+// ---------------------------------------------------------------------------
 
-function dispatchFormSubmit(formId: string, form: HTMLFormElement) {
-  const fd = new FormData(form)
-  const values: Record<string, string> = {}
-  fd.forEach((v, k) => {
-    values[k] = v instanceof File ? "" : String(v)
-  })
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(
-      new CustomEvent("a2ui-form-submit", {
-        detail: { formId, values },
-        bubbles: true,
-      })
+const BadgeApi = {
+  name: "Badge",
+  schema: z.object({
+    text: DynamicStringSchema,
+    variant: z.enum(["success", "warning", "error", "info", "neutral"]).optional(),
+  }),
+}
+
+const MetricCardApi = {
+  name: "MetricCard",
+  schema: z.object({
+    label: DynamicStringSchema,
+    value: DynamicStringSchema,
+    change: DynamicStringSchema.optional(),
+  }),
+}
+
+const InfoBoxApi = {
+  name: "InfoBox",
+  schema: z.object({
+    text: DynamicStringSchema,
+    variant: z.enum(["info", "warning", "success", "error"]).optional(),
+  }),
+}
+
+const DataTableApi = {
+  name: "DataTable",
+  schema: z.object({
+    columns: DynamicValueSchema,
+    rows: DynamicValueSchema,
+  }),
+}
+
+const SourceListApi = {
+  name: "SourceList",
+  schema: z.object({
+    sources: DynamicValueSchema,
+    title: DynamicStringSchema.optional(),
+  }),
+}
+
+const ChartApi = {
+  name: "Chart",
+  schema: z.object({
+    chartType: z.enum(["pie", "bar", "line", "area"]),
+    title: DynamicStringSchema.optional(),
+    data: DynamicValueSchema,
+    series: DynamicValueSchema.optional(),
+    xKey: DynamicStringSchema.optional(),
+    colors: DynamicValueSchema.optional(),
+    unit: DynamicStringSchema.optional(),
+  }),
+}
+
+const BadgeComponent = createComponentImplementation(BadgeApi, ({ props }) => (
+  <A2UIBadge
+    text={String(props.text ?? "")}
+    variant={normalizeBadgeVariant(props.variant)}
+  />
+))
+
+const MetricCardComponent = createComponentImplementation(MetricCardApi, ({ props }) => (
+  <A2UIMetricCard
+    label={String(props.label ?? "")}
+    value={String(props.value ?? "")}
+    change={props.change !== undefined ? String(props.change) : undefined}
+  />
+))
+
+const InfoBoxComponent = createComponentImplementation(InfoBoxApi, ({ props }) => (
+  <A2UIInfoBox
+    text={String(props.text ?? "")}
+    variant={normalizeInfoBoxVariant(props.variant)}
+  />
+))
+
+const DataTableComponent = createComponentImplementation(DataTableApi, ({ props }) => (
+  <A2UIDataTable
+    columns={Array.isArray(props.columns) ? (props.columns as TableColumn[]) : []}
+    rows={Array.isArray(props.rows) ? (props.rows as unknown[]) : []}
+  />
+))
+
+const SourceListComponent = createComponentImplementation(SourceListApi, ({ props }) => (
+  <A2UISourceList
+    sources={Array.isArray(props.sources) ? (props.sources as unknown[]) : []}
+    title={props.title !== undefined ? String(props.title) : undefined}
+  />
+))
+
+const ChartComponent = createComponentImplementation(ChartApi, ({ props }) => (
+  <A2UIChart
+    chartType={normalizeChartType(props.chartType)}
+    title={props.title !== undefined ? String(props.title) : undefined}
+    data={Array.isArray(props.data) ? (props.data as ChartDataPoint[]) : []}
+    series={Array.isArray(props.series) ? (props.series as ChartSeriesDefinition[]) : undefined}
+    xKey={props.xKey !== undefined ? String(props.xKey) : "name"}
+    colors={Array.isArray(props.colors) ? (props.colors as string[]) : undefined}
+    unit={props.unit !== undefined ? String(props.unit) : undefined}
+  />
+))
+
+const financeChatComponents: ReactComponentImplementation[] = [
+  ...Array.from(basicCatalog.components.values()),
+  BadgeComponent,
+  MetricCardComponent,
+  InfoBoxComponent,
+  DataTableComponent,
+  SourceListComponent,
+  ChartComponent,
+]
+
+export const financeChatCatalog = new Catalog<ReactComponentImplementation>(
+  FINANCE_CHAT_CATALOG_ID,
+  financeChatComponents,
+  Array.from(basicCatalog.functions.values())
+)
+
+export interface A2UIStoredDocument {
+  type: typeof A2UI_STORED_DOCUMENT_TYPE
+  mainSurfaceId: string
+  messages: A2uiMessage[]
+}
+
+export function parseStoredA2UIDocument(raw: string | undefined | null): A2UIStoredDocument | null {
+  if (!raw) return null
+
+  try {
+    const parsed = JSON.parse(raw)
+    if (
+      parsed &&
+      parsed.type === A2UI_STORED_DOCUMENT_TYPE &&
+      typeof parsed.mainSurfaceId === "string" &&
+      Array.isArray(parsed.messages)
+    ) {
+      return parsed as A2UIStoredDocument
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+function getA2UIMessageFromEvent(event: A2UIClientEvent): A2uiMessage | null {
+  if (event.event !== "a2ui_message") return null
+  const payload = event.payload as { message?: A2uiMessage }
+  return payload.message ?? null
+}
+
+type A2UIActionHandler = (action: A2uiClientAction) => void | Promise<void>
+
+export function useA2UIMessageProcessor({
+  messageKey,
+  events = [],
+  content,
+  onAction,
+}: {
+  messageKey: string
+  events?: A2UIClientEvent[]
+  content?: string
+  onAction?: A2UIActionHandler
+}) {
+  const actionHandlerRef = useRef<A2UIActionHandler | undefined>(onAction)
+  const processorRef = useRef<MessageProcessor<ReactComponentImplementation> | null>(null)
+  const processedEventIdsRef = useRef<Set<string>>(new Set())
+  const processedStoredContentRef = useRef<string | null>(null)
+  const [revision, setRevision] = useState(0)
+
+  useEffect(() => {
+    actionHandlerRef.current = onAction
+  }, [onAction])
+
+  useEffect(() => {
+    const processor = new MessageProcessor<ReactComponentImplementation>(
+      [financeChatCatalog],
+      async (action) => {
+        await actionHandlerRef.current?.(action)
+      }
     )
-  }
-}
 
-/** Renders a semantic &lt;form&gt; with named inputs. Child component ids are listed in props.children only (do not repeat them in root). */
-function A2UIFormShell({
-  id,
-  formId,
-  title,
-  submitLabel,
-  childIds,
-  allComponents,
-}: {
-  id: string
-  formId: string
-  title: string
-  submitLabel: string
-  childIds: string[]
-  allComponents: Record<string, A2UIComponent>
-}) {
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    dispatchFormSubmit(formId, e.currentTarget)
-  }
+    processorRef.current = processor
+    processedEventIdsRef.current = new Set()
+    processedStoredContentRef.current = null
 
-  return (
-    <form
-      key={id}
-      id={formId}
-      onSubmit={onSubmit}
-      className="space-y-4 rounded-xl border border-white/10 bg-white/[0.04] p-4"
-    >
-      {title ? <h3 className="text-lg font-semibold tracking-tight text-white">{title}</h3> : null}
-      {childIds.map((cid) => {
-        const c = allComponents[cid]
-        if (!c) return null
-        return (
-          <Fragment key={cid}>{renderA2UIComponentNode(cid, c, allComponents)}</Fragment>
-        )
-      })}
-      <div className="pt-2">
-        <button
-          type="submit"
-          className="inline-flex h-9 items-center justify-center rounded-md bg-cyan-600 px-4 text-sm font-medium text-white transition hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
-        >
-          {submitLabel}
-        </button>
-      </div>
-    </form>
+    const createdSub = processor.onSurfaceCreated(() => {
+      setRevision((v) => v + 1)
+    })
+    const deletedSub = processor.onSurfaceDeleted(() => {
+      setRevision((v) => v + 1)
+    })
+
+    setRevision((v) => v + 1)
+
+    return () => {
+      createdSub.unsubscribe()
+      deletedSub.unsubscribe()
+      processor.model.dispose()
+      processorRef.current = null
+    }
+  }, [messageKey])
+
+  useEffect(() => {
+    const processor = processorRef.current
+    if (!processor || !content || processedEventIdsRef.current.size > 0) return
+    if (processedStoredContentRef.current === content) return
+
+    const stored = parseStoredA2UIDocument(content)
+    if (!stored) return
+
+    try {
+      processor.processMessages(stored.messages)
+      processedStoredContentRef.current = content
+      setRevision((v) => v + 1)
+    } catch (error) {
+      console.error("Failed to process stored A2UI document", error)
+    }
+  }, [content])
+
+  useEffect(() => {
+    const processor = processorRef.current
+    if (!processor || !events.length) return
+
+    let processedAny = false
+
+    for (const event of events) {
+      const message = getA2UIMessageFromEvent(event)
+      if (!message || processedEventIdsRef.current.has(event.id)) continue
+
+      try {
+        processor.processMessages([message])
+        processedEventIdsRef.current.add(event.id)
+        processedAny = true
+      } catch (error) {
+        console.error("Failed to process streamed A2UI message", error, message)
+      }
+    }
+
+    if (processedAny) {
+      setRevision((v) => v + 1)
+    }
+  }, [events])
+
+  const getSurface = useCallback(
+    (surfaceId: string) => processorRef.current?.model.getSurface(surfaceId) ?? null,
+    [revision]
   )
+
+  return {
+    processor: processorRef.current,
+    revision,
+    getSurface,
+  }
 }
 
-function A2UIFormField({
-  id,
-  name,
-  label,
-  inputType,
-  defaultValue,
-  placeholder,
-  step,
-  min,
-  max,
-  helpText,
+export function findLatestHitlFormPayload(
+  events: A2UIClientEvent[] | undefined
+): { threadId: string; surfaceId: string; task?: string } | null {
+  if (!events?.length) return null
+
+  for (let i = events.length - 1; i >= 0; i--) {
+    const event = events[i]
+    if (event.event !== "hitl_form") continue
+
+    const payload = event.payload as {
+      thread_id?: string
+      surface_id?: string
+      task?: string
+    }
+
+    if (typeof payload.thread_id === "string" && typeof payload.surface_id === "string") {
+      return {
+        threadId: payload.thread_id,
+        surfaceId: payload.surface_id,
+        task: typeof payload.task === "string" ? payload.task : undefined,
+      }
+    }
+  }
+
+  return null
+}
+
+export function A2UIOfficialSurface({
+  messageKey,
+  events,
+  content,
+  surfaceId,
+  onAction,
 }: {
-  id: string
-  name: string
-  label: string
-  inputType: "text" | "number"
-  defaultValue: string
-  placeholder: string
-  step?: string
-  min?: string
-  max?: string
-  helpText: string
+  messageKey: string
+  events?: A2UIClientEvent[]
+  content?: string
+  surfaceId: string
+  onAction?: A2UIActionHandler
 }) {
-  const inputId = `${id}-${name}`
+  const { getSurface } = useA2UIMessageProcessor({
+    messageKey,
+    events,
+    content,
+    onAction,
+  })
+
+  const surface = getSurface(surfaceId)
+  if (!surface) return null
+
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor={inputId} className="text-gray-200">
-        {label}
-      </Label>
-      <Input
-        id={inputId}
-        name={name}
-        type={inputType}
-        defaultValue={defaultValue}
-        placeholder={placeholder}
-        step={step}
-        min={min}
-        max={max}
-        className="border-white/15 bg-white/[0.06] text-white placeholder:text-gray-500"
-      />
-      {helpText ? <p className="text-xs text-gray-500">{helpText}</p> : null}
+    <div className="a2ui-dark">
+      <MarkdownContext.Provider value={renderMarkdown}>
+        <A2uiSurface surface={surface} />
+      </MarkdownContext.Provider>
     </div>
   )
 }
 
-// ─── Render a single component from the catalog ──────────────────────────────
-
-function renderA2UIComponentNode(
-  id: string,
-  component: A2UIComponent,
-  allComponents: Record<string, A2UIComponent>
-): ReactNode {
-  const { type, props } = component
-
-  switch (type) {
-    case "heading":
-      return (
-        <A2UIHeading
-          key={id}
-          text={String(props.text ?? "")}
-          level={(props.level as 1 | 2 | 3) ?? 1}
-        />
-      )
-    case "badge":
-      return (
-        <A2UIBadge
-          key={id}
-          text={String(props.text ?? "")}
-          variant={(props.variant as BadgeProps["variant"]) ?? "neutral"}
-        />
-      )
-    case "data-table":
-      return (
-        <A2UIDataTable
-          key={id}
-          columns={(props.columns as TableColumn[]) ?? []}
-          rows={(props.rows as unknown[][]) ?? []}
-        />
-      )
-    case "metric-card":
-      return (
-        <A2UIMetricCard
-          key={id}
-          label={String(props.label ?? "")}
-          value={String(props.value ?? "")}
-          change={props.change !== undefined ? String(props.change) : undefined}
-        />
-      )
-    case "info-box":
-      return (
-        <A2UIInfoBox
-          key={id}
-          text={String(props.text ?? "")}
-          variant={(props.variant as InfoBoxProps["variant"]) ?? "info"}
-        />
-      )
-    case "text":
-      return <A2UIText key={id} content={String(props.content ?? "")} />
-    case "divider":
-      return <A2UIDivider key={id} />
-    case "chart":
-      return (
-        <A2UIChart
-          key={id}
-          chart_type={(props.chart_type as ChartType) ?? "bar"}
-          title={props.title !== undefined ? String(props.title) : undefined}
-          data={(props.data as ChartDataPoint[]) ?? []}
-          data_keys={props.data_keys !== undefined ? (props.data_keys as string[]) : undefined}
-          x_key={props.x_key !== undefined ? String(props.x_key) : "name"}
-          colors={props.colors !== undefined ? (props.colors as string[]) : undefined}
-          unit={props.unit !== undefined ? String(props.unit) : undefined}
-        />
-      )
-    case "form": {
-      const childIds = (props.children as string[]) ?? []
-      const formId = props.form_id !== undefined ? String(props.form_id) : id
-      const title = props.title !== undefined ? String(props.title) : ""
-      const submitLabel = props.submit_label !== undefined ? String(props.submit_label) : "Submit"
-      return (
-        <A2UIFormShell
-          id={id}
-          formId={formId}
-          title={title}
-          submitLabel={submitLabel}
-          childIds={childIds}
-          allComponents={allComponents}
-        />
-      )
-    }
-    case "form-field": {
-      const name = String(props.name ?? "")
-      const label = String(props.label ?? name)
-      const inputType = props.input_type === "number" ? "number" : "text"
-      const defaultValue =
-        props.default !== undefined && props.default !== null ? String(props.default) : ""
-      const placeholder = props.placeholder !== undefined ? String(props.placeholder) : ""
-      const step = props.step !== undefined ? String(props.step) : undefined
-      const min = props.min !== undefined ? String(props.min) : undefined
-      const max = props.max !== undefined ? String(props.max) : undefined
-      const helpText = props.help_text !== undefined ? String(props.help_text) : ""
-      return (
-        <A2UIFormField
-          id={id}
-          name={name}
-          label={label}
-          inputType={inputType}
-          defaultValue={defaultValue}
-          placeholder={placeholder}
-          step={step}
-          min={min}
-          max={max}
-          helpText={helpText}
-        />
-      )
-    }
-    default:
-      return null
-  }
-}
-
-export function renderA2UIComponent(
-  id: string,
-  component: A2UIComponent,
-  allComponents: Record<string, A2UIComponent>
-): ReactNode {
-  return renderA2UIComponentNode(id, component, allComponents)
-}
-
-/** Render a full A2UI document from an object (e.g. HITL ``a2ui_form`` from the API). */
-export function A2UIResponseTree({ response }: { response: A2UIResponse }) {
+export function renderMarkdownFallback(content: string): ReactNode {
   return (
-    <div className="space-y-3">
-      {response.root.map((id) => {
-        const component = response.components[id]
-        if (!component) return null
-        return <Fragment key={id}>{renderA2UIComponent(id, component, response.components)}</Fragment>
-      })}
+    <div className="prose prose-invert prose-sm max-w-none prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-p:text-gray-200 prose-a:text-cyan-400 prose-strong:text-white prose-table:text-sm">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
     </div>
   )
 }

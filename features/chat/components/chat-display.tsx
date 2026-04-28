@@ -140,6 +140,7 @@ export default function ChatDisplay({ centerContent = false }: ChatDisplayProps)
                     </>
                   ) : (
                     <A2UIRenderer
+                      messageId={message.id}
                       events={message.a2uiEvents}
                       content={message.content}
                       isStreaming={message.isStreaming || false}

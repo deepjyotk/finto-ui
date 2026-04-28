@@ -14,7 +14,9 @@ const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ""
 export function Providers({ children }: { children: React.ReactNode }) {
   // Delay ThemeProvider to client mount to avoid SSR/client style UID mismatch from crayon ThemeProvider
   const [themeReady, setThemeReady] = useState(false)
-  useEffect(() => setThemeReady(true), [])
+  useEffect(() => {
+    setThemeReady(true)
+  }, [])
 
   const themedChildren = themeReady ? <ThemeProvider>{children}</ThemeProvider> : children
 

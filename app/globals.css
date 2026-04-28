@@ -129,6 +129,49 @@
     @apply bg-background text-foreground;
   }
 
+  .a2ui-dark {
+    color-scheme: dark;
+    --a2ui-color-background: transparent;
+    --a2ui-color-on-background: var(--color-foreground, #f9fafb);
+    --a2ui-color-surface: color-mix(in oklab, var(--chat-surface, #111827) 94%, white);
+    --a2ui-color-on-surface: var(--color-foreground, #f9fafb);
+    --a2ui-color-primary: var(--color-secondary, #22d3ee);
+    --a2ui-color-primary-hover: var(--color-secondary-hover, #67e8f9);
+    --a2ui-color-on-primary: var(--color-secondary-foreground, #0f172a);
+    --a2ui-color-secondary: color-mix(in oklab, var(--chat-surface, #111827) 86%, white);
+    --a2ui-color-secondary-hover: color-mix(in oklab, var(--chat-surface, #111827) 78%, white);
+    --a2ui-color-on-secondary: var(--color-foreground, #f9fafb);
+    --a2ui-color-border: rgba(255, 255, 255, 0.12);
+    --a2ui-color-input: rgba(255, 255, 255, 0.06);
+    --a2ui-color-on-input: var(--color-foreground, #f9fafb);
+    --a2ui-border: 1px solid var(--a2ui-color-border);
+    --a2ui-border-radius: 0.5rem;
+    --a2ui-font-family-title: inherit;
+    --a2ui-font-size-xs: 0.75rem;
+    --a2ui-font-size-s: 0.8125rem;
+    --a2ui-font-size-m: 0.9375rem;
+    --a2ui-font-size-l: 1.0625rem;
+    --a2ui-font-size-xl: 1.25rem;
+    --a2ui-font-size-2xl: 1.5rem;
+    --a2ui-line-height-body: 1.55;
+    --a2ui-line-height-headings: 1.25;
+    --a2ui-spacing-xs: 0.25rem;
+    --a2ui-spacing-s: 0.5rem;
+    --a2ui-spacing-m: 0.75rem;
+    --a2ui-spacing-l: 1rem;
+    --a2ui-column-gap: 0.875rem;
+    --a2ui-row-gap: 0.75rem;
+    --a2ui-card-background: rgba(255, 255, 255, 0.035);
+    --a2ui-card-border: 1px solid rgba(255, 255, 255, 0.12);
+    --a2ui-card-border-radius: 0.5rem;
+    --a2ui-card-padding: 0.875rem 1rem;
+    --a2ui-card-margin: 0;
+    --a2ui-card-box-shadow: none;
+    --a2ui-divider-spacing: 0.5rem;
+    --a2ui-text-caption-color: rgba(229, 231, 235, 0.62);
+    --a2ui-text-a-color: var(--color-secondary, #22d3ee);
+  }
+
   /* Hide the duplicate Crayon shell sidebar immediately on first paint */
   .chat-shell .crayon-shell-sidebar-container,
   .chat-shell .crayon-shell-sidebar-container__overlay {
@@ -155,4 +198,3 @@
     --ag-checkbox-checked-color: #22d3ee;
   }
 }
-

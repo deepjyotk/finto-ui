@@ -1,39 +1,21 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { CheckCircle2, SlidersHorizontal } from "lucide-react"
+import type { A2uiClientAction } from "@a2ui/web_core/v0_9"
 import type { AppDispatch } from "@/lib/store"
 import {
   resumeA2UIChat,
-  selectHitlResumeAssistantMessageId,
   selectChatMessages,
+  selectHitlResumeAssistantMessageId,
 } from "@/features/chat/redux"
-import type { A2UIClientEvent } from "@/features/chat/redux/chat.types"
-import { A2UIResponseTree, isA2UIResponse } from "@/features/chat/components/a2ui-catalog"
+import {
+  A2UIOfficialSurface,
+  findLatestHitlFormPayload,
+} from "@/features/chat/components/a2ui-catalog"
 
-const HITL_SCREENER_FORM_ID = "hitl_screener_params"
-
-function findLatestHitlPayload(
-  events: A2UIClientEvent[] | undefined
-): Record<string, unknown> | null {
-  if (!events?.length) return null
-  for (let i = events.length - 1; i >= 0; i--) {
-    const e = events[i]
-    if (e.event === "hitl_form") {
-      const p = e.payload as { interrupt_value?: Record<string, unknown> }
-      return p.interrupt_value ?? null
-    }
-  }
-  return null
-}
-
-/**
- * Renders the screener HITL form in the wide (Live Preview) panel when the
- * backend emits ``hitl_form``. Submitting dispatches ``resumeA2UIChat``.
- */
 interface HitlScreenerPanelProps {
-  /** When true, outer chrome is omitted (parent already shows a title bar). */
   embedInPreview?: boolean
 }
 
@@ -47,30 +29,28 @@ export default function HitlScreenerPanel({ embedInPreview = false }: HitlScreen
     setSubmitPhase("editing")
   }, [pendingId])
 
-  const msg = pendingId ? messages.find((m) => m.id === pendingId) : undefined
-  const interrupt = findLatestHitlPayload(msg?.a2uiEvents)
-  const rawForm = interrupt?.a2ui_form
-  const a2ui = isA2UIResponse(rawForm) ? rawForm : null
-  const taskFull = typeof interrupt?.task === "string" ? interrupt.task : null
-  const taskHint = taskFull
-    ? taskFull.length > 220
-      ? `${taskFull.slice(0, 220)}…`
-      : taskFull
-    : null
+  const message = pendingId ? messages.find((item) => item.id === pendingId) : undefined
+  const hitlPayload = useMemo(
+    () => findLatestHitlFormPayload(message?.a2uiEvents),
+    [message?.a2uiEvents]
+  )
 
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const ce = e as CustomEvent<{ formId: string; values: Record<string, string> }>
-      const { formId, values } = ce.detail ?? {}
-      if (formId !== HITL_SCREENER_FORM_ID) return
-      setSubmitPhase("sent")
-      void dispatch(resumeA2UIChat({ formValues: values }))
-    }
-    window.addEventListener("a2ui-form-submit", handler as EventListener)
-    return () => window.removeEventListener("a2ui-form-submit", handler as EventListener)
-  }, [dispatch])
+  const taskHint = useMemo(() => {
+    const task = hitlPayload?.task
+    if (!task) return null
+    return task.length > 220 ? `${task.slice(0, 220)}…` : task
+  }, [hitlPayload?.task])
 
-  if (!pendingId || !a2ui) return null
+  const handleAction = (action: A2uiClientAction) => {
+    if (action.name !== "submit_hitl_form") return
+    const formValues = Object.fromEntries(
+      Object.entries(action.context ?? {}).map(([key, value]) => [key, value == null ? "" : String(value)])
+    )
+    setSubmitPhase("sent")
+    void dispatch(resumeA2UIChat({ formValues }))
+  }
+
+  if (!pendingId || !message || !hitlPayload) return null
 
   if (submitPhase === "sent") {
     return (
@@ -100,7 +80,7 @@ export default function HitlScreenerPanel({ embedInPreview = false }: HitlScreen
         <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-4 py-3">
           <SlidersHorizontal className="h-4 w-4 text-[#22d3ee]" />
           <span className="text-sm font-semibold text-white">Screener parameters</span>
-          <span className="text-xs text-gray-500">— edit and run screening</span>
+          <span className="text-xs text-gray-500">— review and submit</span>
         </div>
       )}
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
@@ -110,7 +90,13 @@ export default function HitlScreenerPanel({ embedInPreview = false }: HitlScreen
             {taskHint}
           </p>
         )}
-        <A2UIResponseTree response={a2ui} />
+        <A2UIOfficialSurface
+          messageKey={message.id}
+          events={message.a2uiEvents}
+          content={message.content}
+          surfaceId={hitlPayload.surfaceId}
+          onAction={handleAction}
+        />
       </div>
     </div>
   )
