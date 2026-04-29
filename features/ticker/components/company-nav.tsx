@@ -6,6 +6,7 @@ import { TrendingUp, TrendingDown, Search, X, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { CompanyInfo } from "../types"
 import { apiClient } from "@/lib/api/client"
+import CompanyLogo from "./company-logo"
 
 interface Props {
   company: CompanyInfo
@@ -175,6 +176,7 @@ export default function CompanyNav({ company, priceChange, lastUpdated }: Props)
                         i !== results.length - 1 && "border-b border-white/[0.05]",
                       )}
                     >
+                      <CompanyLogo symbol={item.symbol} size={24} className="shrink-0" />
                       <span className="shrink-0 font-mono text-xs font-bold text-white">{item.symbol}</span>
                       <span className="min-w-0 flex-1 truncate text-xs text-gray-500">{item.company_name}</span>
                     </button>
@@ -186,6 +188,7 @@ export default function CompanyNav({ company, priceChange, lastUpdated }: Props)
         ) : (
           /* ── Normal row ── */
           <>
+            <CompanyLogo symbol={company.symbol} size={26} className="shrink-0" />
             <h1 className="min-w-0 flex-1 truncate text-sm font-bold text-white">
               {company.company_name}
               <span className="ml-1.5 text-xs font-normal text-gray-500">({company.symbol})</span>

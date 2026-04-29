@@ -3,6 +3,7 @@
 import { ExternalLink, TrendingUp, TrendingDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { CompanyInfo, KeyRatio, TickerInfo } from "../types"
+import CompanyLogo from "./company-logo"
 
 interface Props {
   company: CompanyInfo
@@ -63,16 +64,19 @@ export default function SummaryCard({ company, keyRatios, priceChange, tickerInf
     <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111318]">
       {/* Header */}
       <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
-        {/* Left: name + price */}
+        {/* Left: logo + name + price */}
         <div className="flex flex-col gap-2">
-          <div>
-            <h2 className="text-xl font-extrabold leading-tight text-white">
-              {company.company_name}
-            </h2>
-            <p className="mt-0.5 text-xs text-gray-500">
-              {company.exchange} · {company.symbol_ns}
-              {company.sector ? ` · ${company.sector}` : ""}
-            </p>
+          <div className="flex items-center gap-3">
+            <CompanyLogo symbol={company.symbol} size={44} />
+            <div>
+              <h2 className="text-xl font-extrabold leading-tight text-white">
+                {company.company_name}
+              </h2>
+              <p className="mt-0.5 text-xs text-gray-500">
+                {company.exchange} · {company.symbol_ns}
+                {company.sector ? ` · ${company.sector}` : ""}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-3xl font-extrabold tabular-nums text-white">

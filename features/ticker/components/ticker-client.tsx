@@ -1,9 +1,21 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { ExternalLink, RefreshCw, Search } from "lucide-react"
+import { useEffect } from "react"
+import { RefreshCw, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getTicker } from "../api"
+import { useAppDispatch, useAppSelector } from "@/lib/hooks"
+import {
+  fetchTicker,
+  hydrateTickerData,
+  setPeriod,
+  setCurrentSymbol,
+  selectTickerData,
+  selectTickerLoading,
+  selectTickerError,
+  selectTickerNotFound,
+  selectPeriod,
+  selectInterval,
+} from "../redux"
 import type { TickerResponse, PricePeriod, PriceInterval } from "../types"
 import CompanyNav from "./company-nav"
 import SummaryCard from "./summary-card"
@@ -15,6 +27,7 @@ import CompanyOverviewCard from "./company-overview-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 interface TickerClientProps {
   symbol: string
@@ -29,48 +42,39 @@ export default function TickerClient({
   initialPeriod,
   initialInterval,
 }: TickerClientProps) {
+  const dispatch = useAppDispatch()
   const router = useRouter()
-  const [data, setData] = useState<TickerResponse | null>(initialData)
-  const [loading, setLoading] = useState(initialData === null)
-  const [error, setError] = useState<string | null>(null)
-  const [notFound, setNotFound] = useState(false)
-  const [period, setPeriod] = useState<PricePeriod>(initialPeriod)
-  const [interval] = useState<PriceInterval>(initialInterval)
-  const [searchQuery, setSearchQuery] = useState("")
 
-  const fetchData = useCallback(
-    async (p: PricePeriod, i: PriceInterval) => {
-      setLoading(true)
-      setError(null)
-      setNotFound(false)
-      try {
-        const result = await getTicker(symbol, { price_period: p, price_interval: i })
-        setData(result)
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Failed to load data"
-        if (msg.includes("404") || msg.toLowerCase().includes("not found")) {
-          setNotFound(true)
-        } else {
-          setError(msg)
-        }
-      } finally {
-        setLoading(false)
-      }
-    },
-    [symbol],
-  )
-
-  // Only fetch client-side if SSR returned no data
+  // ── Seed Redux from SSR props (runs once per symbol) ─────────────────────
   useEffect(() => {
-    if (!initialData) {
-      void fetchData(period, interval)
+    dispatch(setCurrentSymbol(symbol))
+    if (initialData) {
+      dispatch(hydrateTickerData({ symbol, data: initialData }))
+    } else {
+      dispatch(fetchTicker({ symbol, period: initialPeriod, interval: initialInterval }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [symbol])
 
-  const handlePeriodChange = async (p: PricePeriod) => {
-    setPeriod(p)
-    await fetchData(p, interval)
+  // ── Redux selectors ───────────────────────────────────────────────────────
+  const data = useAppSelector((s) => selectTickerData(s, symbol))
+  const loading = useAppSelector((s) => selectTickerLoading(s, symbol))
+  const error = useAppSelector((s) => selectTickerError(s, symbol))
+  const notFound = useAppSelector((s) => selectTickerNotFound(s, symbol))
+  const period = useAppSelector(selectPeriod)
+  const interval = useAppSelector(selectInterval)
+
+  // localSearchQuery is pure ephemeral UI state — no business value, stays local
+  const [searchQuery, setSearchQuery] = useState("")
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+  const handlePeriodChange = (p: PricePeriod) => {
+    dispatch(setPeriod(p))
+    dispatch(fetchTicker({ symbol, period: p, interval }))
+  }
+
+  const handleRetry = () => {
+    dispatch(fetchTicker({ symbol, period, interval }))
   }
 
   const handleSearch = (e: React.FormEvent) => {
@@ -97,7 +101,7 @@ export default function TickerClient({
             placeholder="e.g. INFY, TCS, HDFCBANK"
             className="bg-[#111318] border-white/10 text-white placeholder:text-gray-600"
           />
-          <Button type="submit" className="gap-1 bg-[#22d3ee] text-black hover:bg-[#06b6d4]">
+          <Button type="submit" className={cn("gap-1 bg-[#22d3ee] text-black hover:bg-[#06b6d4]")}>
             <Search className="h-4 w-4" /> Go
           </Button>
         </form>
@@ -105,23 +109,19 @@ export default function TickerClient({
     )
   }
 
-  // ── Error ──────────────────────────────────────────────────────────────────
+  // ── Error ─────────────────────────────────────────────────────────────────
   if (error && !data) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
         <p className="text-sm text-red-400">{error}</p>
-        <Button
-          variant="outline"
-          className="gap-2"
-          onClick={() => void fetchData(period, interval)}
-        >
+        <Button variant="outline" className="gap-2" onClick={handleRetry}>
           <RefreshCw className="h-4 w-4" /> Retry
         </Button>
       </div>
     )
   }
 
-  // ── Loading (no SSR data) ──────────────────────────────────────────────────
+  // ── Loading (no SSR data yet) ─────────────────────────────────────────────
   if (loading && !data) {
     return <TickerSkeleton />
   }
@@ -151,9 +151,9 @@ export default function TickerClient({
 
       {/* Stale/error banner when refetching after period change */}
       {error && data && (
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-400 mx-4 mt-3">
+        <div className="mx-4 mt-3 flex items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-400">
           <span>Could not refresh price data. Showing cached results.</span>
-          <button onClick={() => void fetchData(period, interval)} className="underline">
+          <button onClick={handleRetry} className="underline">
             Retry
           </button>
         </div>
@@ -181,7 +181,7 @@ export default function TickerClient({
           />
         </section>
 
-        {/* About — after chart for context, only when available */}
+        {/* About */}
         {data.ticker_info && (
           <section id="overview">
             <CompanyOverviewCard info={data.ticker_info} />
@@ -195,7 +195,7 @@ export default function TickerClient({
           </section>
         ) : null}
 
-        {/* Profit & Loss — annual */}
+        {/* Profit & Loss */}
         <section id="profit-loss">
           {data.annual_pnl?.rows?.length ? (
             <FinancialTable statement={data.annual_pnl} title="Profit & Loss" />
@@ -206,14 +206,14 @@ export default function TickerClient({
           )}
         </section>
 
-        {/* Balance Sheet — annual only */}
+        {/* Balance Sheet */}
         {data.annual_balance_sheet?.rows?.length ? (
           <section id="balance-sheet">
             <FinancialTable statement={data.annual_balance_sheet} title="Balance Sheet" />
           </section>
         ) : null}
 
-        {/* Cash Flow — annual only */}
+        {/* Cash Flow */}
         {data.annual_cash_flow?.rows?.length ? (
           <section id="cash-flow">
             <FinancialTable statement={data.annual_cash_flow} title="Cash Flow" />
