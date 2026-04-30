@@ -3,15 +3,14 @@
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
-  ResponsiveContainer,
-  ComposedChart,
+  Area,
   Bar,
+  CartesianGrid,
+  ComposedChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Line,
-  ReferenceLine,
 } from "recharts"
 import type { PriceBar, PricePeriod, PriceInterval } from "../types"
 
@@ -30,10 +29,15 @@ const PERIODS: { label: string; value: PricePeriod }[] = [
   { label: "Max", value: "max" },
 ]
 
+const LINE_COLOR = "#22d3ee"
+const GRADIENT_ID = "priceAreaGradient"
+
+// ── helpers ────────────────────────────────────────────────────────────────
+
 function fmtDate(dateStr: string, period: PricePeriod): string {
   const d = new Date(dateStr + "T00:00:00")
-  if (period === "1mo") return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })
-  if (period === "6mo") return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+  if (period === "1mo" || period === "6mo")
+    return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })
   return d.toLocaleDateString("en-IN", { month: "short", year: "2-digit" })
 }
 
@@ -45,63 +49,136 @@ function tickInterval(length: number): number {
   return 120
 }
 
-// Recharts doesn't natively support candlesticks — we simulate with floating bars
-// Each "candle" is rendered as a stacked bar: [low→open] invisible + [open→close] colored + wick lines
-function buildCandleData(bars: PriceBar[]) {
-  return bars.map((b) => {
-    const o = b.open ?? b.close ?? 0
-    const c = b.close ?? b.open ?? 0
-    const h = b.high ?? Math.max(o, c)
-    const l = b.low ?? Math.min(o, c)
-    const up = c >= o
-    const bodyLow = Math.min(o, c)
-    const bodyHigh = Math.max(o, c)
-    return {
-      date: b.date,
-      close: b.close,
-      volume: b.volume,
-      // For the floating bar: base = low, invisible gap, body
-      baseLine: l,
-      bodyBase: bodyLow - l, // invisible lower stack
-      bodySize: bodyHigh - bodyLow || 0.01,
-      upperWick: h - bodyHigh,
-      up,
-      high: h,
-      low: l,
-      open: o,
-    }
-  })
+function fmtPrice(v: number): string {
+  return "₹" + v.toLocaleString("en-IN", { maximumFractionDigits: 0 })
 }
 
+// ── chart data shape ───────────────────────────────────────────────────────
+
+interface ChartPoint {
+  date: string
+  close: number | null
+  open: number | null
+  high: number | null
+  low: number | null
+  volume: number | null
+  up: boolean
+}
+
+function buildChartData(bars: PriceBar[]): ChartPoint[] {
+  return bars.map((b) => ({
+    date: b.date,
+    close: b.close ?? null,
+    open: b.open,
+    high: b.high,
+    low: b.low,
+    volume: b.volume,
+    up: (b.close ?? 0) >= (b.open ?? 0),
+  }))
+}
+
+// ── tooltip ────────────────────────────────────────────────────────────────
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function CandleTooltip({ active, payload }: any) {
+function PriceTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null
-  const d = payload[0]?.payload
+  const d: ChartPoint = payload[0]?.payload
   if (!d) return null
+  const up = (d.close ?? 0) >= (d.open ?? 0)
+
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1a1f2e] px-3 py-2 text-xs">
-      <p className="mb-1 font-semibold text-white">{d.date}</p>
-      <p className="text-gray-400">O: <span className="tabular-nums text-white">{d.open?.toFixed(2)}</span></p>
-      <p className="text-gray-400">H: <span className="tabular-nums text-emerald-400">{d.high?.toFixed(2)}</span></p>
-      <p className="text-gray-400">L: <span className="tabular-nums text-red-400">{d.low?.toFixed(2)}</span></p>
-      <p className="text-gray-400">C: <span className="tabular-nums text-white">{d.close?.toFixed(2)}</span></p>
-      {d.volume && <p className="text-gray-400">Vol: <span className="tabular-nums text-gray-300">{(d.volume / 1e5).toFixed(2)}L</span></p>}
+    <div className="rounded-xl border border-white/10 bg-[#1a1f2e]/95 px-3 py-2.5 text-xs shadow-2xl backdrop-blur-sm">
+      <p className="mb-2 font-semibold tracking-wide text-gray-300">{d.date}</p>
+      <div className="space-y-1">
+        <Row label="O" value={d.open?.toFixed(2)} />
+        <Row label="H" value={d.high?.toFixed(2)} color="text-emerald-400" />
+        <Row label="L" value={d.low?.toFixed(2)} color="text-red-400" />
+        <Row
+          label="C"
+          value={d.close?.toFixed(2)}
+          color={up ? "text-emerald-400" : "text-red-400"}
+          bold
+        />
+        {d.volume != null && (
+          <>
+            <div className="my-1.5 border-t border-white/5" />
+            <Row
+              label="Vol"
+              value={(d.volume / 1e5).toFixed(2) + "L"}
+              color="text-gray-400"
+            />
+          </>
+        )}
+      </div>
     </div>
   )
 }
 
-export default function PriceChart({ priceHistory, period, interval, loading, onPeriodChange }: Props) {
-  const candleData = buildCandleData(priceHistory)
-  const ticks = tickInterval(candleData.length)
+function Row({
+  label,
+  value,
+  color = "text-white",
+  bold,
+}: {
+  label: string
+  value?: string
+  color?: string
+  bold?: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between gap-5">
+      <span className="text-gray-500">{label}</span>
+      <span className={cn("tabular-nums", bold && "font-semibold", color)}>
+        {value ?? "–"}
+      </span>
+    </div>
+  )
+}
+
+// ── volume bar shape ───────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function VolumeBar(props: any) {
+  const { x, y, width, height, payload } = props
+  const fill = payload.up
+    ? "rgba(34,211,238,0.28)"
+    : "rgba(248,113,113,0.28)"
+  return (
+    <rect
+      x={x}
+      y={y}
+      width={Math.max(width - 0.5, 0.5)}
+      height={height}
+      fill={fill}
+      rx={1}
+    />
+  )
+}
+
+// ── component ──────────────────────────────────────────────────────────────
+
+export default function PriceChart({
+  priceHistory,
+  period,
+  loading,
+  onPeriodChange,
+}: Props) {
+  const data = buildChartData(priceHistory)
+  const prices = data.map((d) => d.close).filter((v): v is number => v !== null)
+  const firstClose = prices[0] ?? 0
+  const lastClose = prices[prices.length - 1] ?? 0
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111318]">
-      {/* Header */}
+      {/* ── header ── */}
       <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3">
         <span className="text-sm font-semibold text-white">Price Chart</span>
-        <div className="flex items-center gap-1">
-          {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin text-gray-500" />}
-          <div className="flex rounded-lg border border-white/[0.07] bg-[#0B0F14] p-0.5 gap-0.5">
+
+        <div className="flex items-center gap-2">
+          {loading && (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-500" />
+          )}
+          <div className="flex gap-0.5 rounded-lg border border-white/[0.07] bg-[#0B0F14] p-0.5">
             {PERIODS.map((p) => (
               <button
                 key={p.value}
@@ -120,102 +197,137 @@ export default function PriceChart({ priceHistory, period, interval, loading, on
         </div>
       </div>
 
-      <div className="p-4">
-        {priceHistory.length === 0 ? (
-          <div className="flex h-48 items-center justify-center text-sm text-gray-600">No price data</div>
+      {/* ── charts ── */}
+      <div className="px-3 pb-4 pt-3">
+        {data.length === 0 ? (
+          <div className="flex h-64 items-center justify-center text-sm text-gray-600">
+            No price data
+          </div>
         ) : (
-          <>
-            {/* Main candle chart */}
-            <div className="h-64 w-full">
+          /*
+           * Tailwind overrides for Recharts internals:
+           * – hide the default axis lines/tick lines (we control stroke via props)
+           * – strip any border/outline Recharts adds to its wrapper div
+           */
+          <div className="[&_.recharts-cartesian-axis-line]:hidden [&_.recharts-cartesian-axis-tick-line]:hidden [&_.recharts-wrapper]:!border-0 [&_.recharts-wrapper]:!outline-none">
+            {/* price area chart */}
+            <div className="h-[272px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={candleData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <ComposedChart
+                  data={data}
+                  margin={{ top: 8, right: 0, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient
+                      id={GRADIENT_ID}
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="0%"
+                        stopColor={LINE_COLOR}
+                        stopOpacity={0.18}
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor={LINE_COLOR}
+                        stopOpacity={0}
+                      />
+                    </linearGradient>
+                  </defs>
+
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255,255,255,0.04)"
+                    vertical={false}
+                  />
+
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: "#6b7280", fontSize: 10 }}
+                    tick={{ fill: "#4b5563", fontSize: 10 }}
                     tickLine={false}
                     axisLine={false}
-                    interval={ticks}
+                    interval={tickInterval(data.length)}
                     tickFormatter={(v) => fmtDate(v as string, period)}
+                    dy={6}
                   />
+
                   <YAxis
+                    orientation="right"
                     domain={["auto", "auto"]}
-                    tick={{ fill: "#6b7280", fontSize: 10 }}
+                    tick={{ fill: "#4b5563", fontSize: 10 }}
                     tickLine={false}
                     axisLine={false}
-                    width={60}
-                    tickFormatter={(v: number) => "₹" + v.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                    width={58}
+                    tickFormatter={fmtPrice}
                   />
-                  <Tooltip content={<CandleTooltip />} />
 
-                  {/* Invisible base (low) */}
-                  <Bar dataKey="baseLine" stackId="candle" fill="transparent" legendType="none" />
-                  {/* Invisible lower wick gap */}
-                  <Bar dataKey="bodyBase" stackId="candle" fill="transparent" legendType="none" />
-                  {/* Colored candle body */}
-                  <Bar
-                    dataKey="bodySize"
-                    stackId="candle"
-                    legendType="none"
-                    minPointSize={1}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    fill="#34d399"
-                    // Color each bar individually via cell
-                    // recharts renders fill prop per-bar via Cell; we override below
-                    isAnimationActive={false}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    shape={(props: any) => {
-                      const { x, y, width, height, payload } = props
-                      const color = payload.up ? "#34d399" : "#f87171"
-                      // Draw wick lines + body rect
-                      const midX = x + width / 2
-                      const bodyTop = y
-                      const bodyBottom = y + height
-                      // upper wick: from bodyTop up by upperWick pixels (scaled)
-                      // We only have pixel coords for body; wick must be approximate
-                      return (
-                        <g>
-                          {/* body */}
-                          <rect x={x + 1} y={bodyTop} width={Math.max(width - 2, 1)} height={Math.max(height, 1)} fill={color} rx={1} />
-                        </g>
-                      )
+                  <Tooltip
+                    content={<PriceTooltip />}
+                    cursor={{
+                      stroke: "rgba(255,255,255,0.08)",
+                      strokeWidth: 1,
+                      strokeDasharray: "4 4",
                     }}
                   />
-                  {/* Closing price line overlay */}
-                  <Line
-                    dataKey="close"
+
+                  <Area
                     type="monotone"
-                    stroke="#22d3ee"
-                    strokeWidth={1.5}
+                    dataKey="close"
+                    stroke={LINE_COLOR}
+                    strokeWidth={1.75}
+                    fill={`url(#${GRADIENT_ID})`}
                     dot={false}
-                    legendType="none"
+                    activeDot={{
+                      r: 3.5,
+                      fill: LINE_COLOR,
+                      strokeWidth: 0,
+                    }}
                     connectNulls
+                    isAnimationActive={false}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
 
-            {/* Volume chart */}
-            <div className="mt-2 h-16 w-full">
+            {/* volume chart */}
+            <div className="mt-1 h-14 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={candleData} margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
+                <ComposedChart
+                  data={data}
+                  margin={{ top: 2, right: 0, left: 0, bottom: 0 }}
+                >
                   <XAxis dataKey="date" hide />
-                  <YAxis hide />
+                  <YAxis hide domain={["auto", "auto"]} />
                   <Bar
                     dataKey="volume"
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    shape={(props: any) => {
-                      const { x, y, width, height, payload } = props
-                      const color = payload.up ? "rgba(52,211,153,0.35)" : "rgba(248,113,113,0.35)"
-                      return <rect x={x} y={y} width={width} height={height} fill={color} />
-                    }}
                     isAnimationActive={false}
+                    shape={<VolumeBar />}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
-            <p className="mt-1 text-right text-[10px] text-gray-700">Volume</p>
-          </>
+
+            <p className="mt-1 pr-[62px] text-right text-[10px] tracking-wide text-gray-700">
+              Volume
+            </p>
+
+            {/* trend badge */}
+            {prices.length >= 2 && (
+              <p
+                className={cn(
+                  "mt-2 text-right text-[10px] font-medium",
+                  lastClose >= firstClose ? "text-emerald-500" : "text-red-500",
+                )}
+              >
+                {lastClose >= firstClose ? "▲" : "▼"}{" "}
+                {Math.abs(((lastClose - firstClose) / firstClose) * 100).toFixed(2)}
+                % this period
+              </p>
+            )}
+          </div>
         )}
       </div>
     </div>
