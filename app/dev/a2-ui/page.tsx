@@ -10,7 +10,7 @@ import {
   A2UI_MAIN_SURFACE_ID,
   A2UI_STORED_DOCUMENT_TYPE,
   FINANCE_CHAT_CATALOG_ID,
-} from "@/features/chat/components/a2ui-catalog"
+} from "@/features/chat/components/a2-ui/a2ui-catalog"
 import type { A2UIClientEvent } from "@/features/chat/redux/chat.types"
 import type { A2uiMessage } from "@a2ui/web_core/v0_9"
 

@@ -18,7 +18,7 @@ import {
   parseStoredA2UIDocument,
   renderMarkdownFallback,
   useA2UIMessageProcessor,
-} from "@/features/chat/components/a2ui-catalog"
+} from "@/features/chat/components/a2-ui/a2ui-catalog"
 
 function isStepStart(
   event: A2UIClientEvent

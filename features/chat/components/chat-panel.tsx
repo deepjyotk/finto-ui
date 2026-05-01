@@ -17,7 +17,7 @@ import {
 } from "@/features/chat/redux"
 import ChatDisplay from "./chat-display"
 import UserTextEnter from "./user-text-enter"
-import HitlScreenerPanel from "./hitl-screener-panel"
+import { HitlScreenerPanel } from "./a2-ui/hitl"
 import { FEATURE_FLAGS } from "@/lib/feature-flags"
 
 interface ChatPanelProps {
