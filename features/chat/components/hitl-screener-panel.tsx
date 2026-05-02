@@ -13,6 +13,7 @@ import {
   type A2UIActionHandler,
   A2UIOfficialSurface,
   findLatestHitlFormPayload,
+  getLiveA2UIDirtyFieldNames,
   getLiveA2UIFieldValues,
 } from "@/features/chat/components/a2-ui/a2ui-catalog"
 
@@ -46,19 +47,23 @@ export default function HitlScreenerPanel({ embedInPreview = false }: HitlScreen
   const handleAction: A2UIActionHandler = (action, clientDataModel) => {
     if (action.name !== "submit_hitl_form") return
 
-    const actionValues = Object.fromEntries(
+    const legacyActionValues = Object.fromEntries(
       Object.entries(action.context ?? {}).map(([key, value]) => [
         key,
         value == null ? "" : String(value),
       ])
     )
-    const syncedFields =
-      hitlPayload?.surfaceId
-        ? clientDataModel?.surfaces?.[hitlPayload.surfaceId]?.fields
-        : undefined
+    const surfaceData = hitlPayload?.surfaceId
+      ? clientDataModel?.surfaces?.[hitlPayload.surfaceId]
+      : undefined
+    const syncedFields = surfaceData?.fields
+    const syncedFieldMeta = surfaceData?.fieldMeta
     const liveFields = hitlPayload?.surfaceId
       ? getLiveA2UIFieldValues(hitlPayload.surfaceId)
       : {}
+    const liveDirtyFieldNames = hitlPayload?.surfaceId
+      ? getLiveA2UIDirtyFieldNames(hitlPayload.surfaceId)
+      : []
     const domFields = Object.fromEntries(
       Array.from(
         surfaceHostRef.current?.querySelectorAll<HTMLElement>("[data-a2ui-field-name]") ?? []
@@ -79,7 +84,26 @@ export default function HitlScreenerPanel({ embedInPreview = false }: HitlScreen
             ])
           )
         : {}
-    const formValues = { ...actionValues, ...modelValues, ...liveFields, ...domFields }
+    const fieldMeta =
+      syncedFieldMeta && typeof syncedFieldMeta === "object" && !Array.isArray(syncedFieldMeta)
+        ? (syncedFieldMeta as Record<string, { dirty?: unknown }>)
+        : null
+    const allValues = { ...legacyActionValues, ...modelValues, ...liveFields, ...domFields }
+    const dirtyFieldNames = new Set(
+      fieldMeta
+        ? Object.entries(fieldMeta)
+            .filter(([, meta]) => meta?.dirty === true)
+            .map(([fieldName]) => fieldName)
+        : Object.keys(legacyActionValues)
+    )
+    for (const fieldName of liveDirtyFieldNames) {
+      dirtyFieldNames.add(fieldName)
+    }
+    dirtyFieldNames.delete("_intent")
+
+    const formValues = Object.fromEntries(
+      Object.entries(allValues).filter(([fieldName]) => dirtyFieldNames.has(fieldName))
+    )
 
     setSubmitPhase("sent")
     void dispatch(resumeA2UIChat({ formValues }))

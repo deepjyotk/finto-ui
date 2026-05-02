@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react"
 import ReactMarkdown from "react-markdown"
@@ -35,15 +36,24 @@ import { cn } from "@/lib/utils"
 import type { A2UIClientEvent } from "@/features/chat/redux/chat.types"
 
 import {
+  clearLiveA2UISurfaceValues,
+  getFieldDirtyPath,
   getFieldNameFromDataPath,
+  getLiveA2UIFieldValidationErrors,
+  getLiveA2UIDirtyFieldNames,
   getLiveA2UIFieldValues,
   rememberLiveFieldValue,
+  subscribeLiveA2UIValidationErrors,
 } from "@/features/chat/components/a2-ui/live-field-values"
 import { A2UIBadge, normalizeBadgeVariant } from "@/features/chat/components/a2-ui/custom-components/a2ui-badge"
 import {
   A2UIBasicTextField,
   type BasicTextFieldProps,
 } from "@/features/chat/components/a2-ui/custom-components/a2ui-basic-text-field"
+import {
+  A2UIBasicSelectField,
+  type BasicSelectOption,
+} from "@/features/chat/components/a2-ui/custom-components/a2ui-basic-select-field"
 import {
   A2UIChart,
   normalizeChartType,
@@ -62,7 +72,12 @@ export const A2UI_STORED_DOCUMENT_TYPE = "a2ui_v0_9_document"
 export const A2UI_MAIN_SURFACE_ID = "main"
 export const A2UI_HITL_SURFACE_ID = "hitl-form"
 
-export { getLiveA2UIFieldValues } from "@/features/chat/components/a2-ui/live-field-values"
+export {
+  clearLiveA2UISurfaceValues,
+  getLiveA2UIDirtyFieldNames,
+  getLiveA2UIFieldValues,
+  setLiveA2UIValidationErrors,
+} from "@/features/chat/components/a2-ui/live-field-values"
 
 // ---------------------------------------------------------------------------
 // Official A2UI v0.9 catalog + finance extensions
@@ -109,6 +124,24 @@ const SourceListApi = {
   }),
 }
 
+const SelectFieldApi = {
+  name: "SelectField",
+  schema: z
+    .object({
+      label: DynamicStringSchema,
+      value: DynamicStringSchema.optional(),
+      options: z.array(
+        z
+          .object({
+            label: DynamicStringSchema,
+            value: z.string(),
+          })
+          .strict()
+      ),
+    })
+    .strict(),
+}
+
 const ChartApi = {
   name: "Chart",
   schema: z.object({
@@ -150,6 +183,16 @@ function normalizeTextFieldVariant(
     value === "obscured"
     ? value
     : "shortText"
+}
+
+function useLiveA2UIValidationErrors(surfaceId: string, fieldName: string | null): string[] {
+  useSyncExternalStore(
+    subscribeLiveA2UIValidationErrors,
+    () => JSON.stringify(fieldName ? getLiveA2UIFieldValidationErrors(surfaceId, fieldName) : []),
+    () => "[]"
+  )
+
+  return fieldName ? getLiveA2UIFieldValidationErrors(surfaceId, fieldName) : []
 }
 
 const TextFieldComponent = createBinderlessComponentImplementation(
@@ -204,6 +247,10 @@ const TextFieldComponent = createBinderlessComponentImplementation(
         if (isDynamicPath(valueBinding)) {
           rememberLiveFieldValue(context.dataContext.surface.id, valueBinding.path, nextValue)
           context.dataContext.set(valueBinding.path, nextValue)
+          const fieldName = getFieldNameFromDataPath(valueBinding.path)
+          if (fieldName) {
+            context.dataContext.set(getFieldDirtyPath(fieldName), true)
+          }
         }
       },
       [context, valueBinding]
@@ -211,6 +258,10 @@ const TextFieldComponent = createBinderlessComponentImplementation(
     const fieldName = isDynamicPath(valueBinding)
       ? getFieldNameFromDataPath(valueBinding.path)
       : null
+    const validationErrors = useLiveA2UIValidationErrors(
+      context.dataContext.surface.id,
+      fieldName
+    )
 
     return (
       <A2UIBasicTextField
@@ -218,7 +269,102 @@ const TextFieldComponent = createBinderlessComponentImplementation(
         value={draft}
         variant={normalizeTextFieldVariant(rawProps.variant)}
         setValue={setBoundValue}
+        validationErrors={validationErrors}
         fieldName={fieldName ?? undefined}
+      />
+    )
+  }
+)
+
+const SelectFieldComponent = createBinderlessComponentImplementation(
+  SelectFieldApi,
+  ({ context }) => {
+    const [, refresh] = useState(0)
+    const rawProps = context.componentModel.properties
+    const valueBinding = rawProps.value
+
+    const resolveProp = useCallback(
+      (value: unknown) =>
+        isDynamicValue(value)
+          ? context.dataContext.resolveDynamicValue(value as DynamicValue)
+          : value,
+      [context]
+    )
+
+    const getCurrentValue = useCallback(() => {
+      const resolved = resolveProp(valueBinding)
+      return resolved === null || resolved === undefined ? "" : String(resolved)
+    }, [resolveProp, valueBinding])
+
+    const [draft, setDraft] = useState(getCurrentValue)
+
+    useEffect(() => {
+      setDraft(getCurrentValue())
+    }, [getCurrentValue])
+
+    useEffect(() => {
+      const subscription = context.componentModel.onUpdated.subscribe(() => {
+        refresh((revision) => revision + 1)
+      })
+      return () => subscription.unsubscribe()
+    }, [context])
+
+    useEffect(() => {
+      if (!isDynamicPath(valueBinding)) return
+
+      const subscription = context.dataContext.subscribeDynamicValue<string>(
+        valueBinding,
+        (nextValue) => {
+          setDraft(nextValue === null || nextValue === undefined ? "" : String(nextValue))
+        }
+      )
+
+      return () => subscription.unsubscribe()
+    }, [context, valueBinding])
+
+    const setBoundValue = useCallback(
+      (nextValue: string) => {
+        setDraft(nextValue)
+        if (isDynamicPath(valueBinding)) {
+          rememberLiveFieldValue(context.dataContext.surface.id, valueBinding.path, nextValue)
+          context.dataContext.set(valueBinding.path, nextValue)
+          const fieldNameFromPath = getFieldNameFromDataPath(valueBinding.path)
+          if (fieldNameFromPath) {
+            context.dataContext.set(getFieldDirtyPath(fieldNameFromPath), true)
+          }
+        }
+      },
+      [context, valueBinding]
+    )
+    const boundFieldName = isDynamicPath(valueBinding)
+      ? getFieldNameFromDataPath(valueBinding.path)
+      : null
+    const validationErrors = useLiveA2UIValidationErrors(
+      context.dataContext.surface.id,
+      boundFieldName
+    )
+
+    const rawOptions = rawProps.options as unknown
+    const options: BasicSelectOption[] = Array.isArray(rawOptions)
+      ? rawOptions.flatMap((row) => {
+          if (!row || typeof row !== "object") return []
+          const r = row as { label?: unknown; value?: unknown }
+          const opt: BasicSelectOption = {
+            label: String(resolveProp(r.label) ?? ""),
+            value: r.value == null ? "" : String(r.value),
+          }
+          return opt.value === "" ? [] : [opt]
+        })
+      : []
+
+    return (
+      <A2UIBasicSelectField
+        label={String(resolveProp(rawProps.label) ?? "")}
+        value={draft}
+        options={options}
+        setValue={setBoundValue}
+        validationErrors={validationErrors}
+        fieldName={boundFieldName ?? undefined}
       />
     )
   }
@@ -299,6 +445,7 @@ const ChartComponent = createComponentImplementation(ChartApi, ({ props }) => (
 const financeChatComponents: ReactComponentImplementation[] = [
   ...Array.from(basicCatalog.components.values()),
   TextFieldComponent,
+  SelectFieldComponent,
   ButtonComponent,
   BadgeComponent,
   MetricCardComponent,
@@ -381,7 +528,22 @@ export function useA2UIMessageProcessor({
           .getSurface(action.surfaceId)
           ?.dataModel.get("/")
         const liveFields = getLiveA2UIFieldValues(action.surfaceId)
+        const liveDirtyFieldNames = getLiveA2UIDirtyFieldNames(action.surfaceId)
         const hasLiveFields = Object.keys(liveFields).length > 0
+        const actionSurfaceFieldMeta =
+          actionSurfaceData && typeof actionSurfaceData === "object"
+            ? ((actionSurfaceData as { fieldMeta?: Record<string, Record<string, unknown>> })
+                .fieldMeta ?? {})
+            : {}
+        const liveFieldMeta = Object.fromEntries(
+          liveDirtyFieldNames.map((fieldName) => [
+            fieldName,
+            {
+              ...(actionSurfaceFieldMeta[fieldName] ?? {}),
+              dirty: true,
+            },
+          ])
+        )
         const mergedSurfaceData =
           actionSurfaceData && typeof actionSurfaceData === "object"
             ? {
@@ -390,9 +552,13 @@ export function useA2UIMessageProcessor({
                   ...((actionSurfaceData as { fields?: Record<string, unknown> }).fields ?? {}),
                   ...liveFields,
                 },
+                fieldMeta: {
+                  ...actionSurfaceFieldMeta,
+                  ...liveFieldMeta,
+                },
               }
             : hasLiveFields
-              ? { fields: liveFields }
+              ? { fields: liveFields, fieldMeta: liveFieldMeta }
               : undefined
         const clientDataModel =
           mergedSurfaceData
@@ -439,6 +605,11 @@ export function useA2UIMessageProcessor({
     if (!stored) return
 
     try {
+      for (const message of stored.messages) {
+        if ("createSurface" in message) {
+          clearLiveA2UISurfaceValues(message.createSurface.surfaceId)
+        }
+      }
       processor.processMessages(stored.messages)
       processedStoredContentRef.current = content
       setRevision((v) => v + 1)
@@ -458,6 +629,9 @@ export function useA2UIMessageProcessor({
       if (!message || processedEventIdsRef.current.has(event.id)) continue
 
       try {
+        if ("createSurface" in message) {
+          clearLiveA2UISurfaceValues(message.createSurface.surfaceId)
+        }
         processor.processMessages([message])
         processedEventIdsRef.current.add(event.id)
         processedAny = true

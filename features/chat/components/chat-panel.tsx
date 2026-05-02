@@ -84,13 +84,13 @@ export default function ChatPanel({
   if (!FEATURE_FLAGS.CURSOR_STYLE_UI_ENABLED) {
     return (
       <div className="flex h-full min-h-0 flex-col bg-[var(--chat-surface)] text-[var(--color-foreground)]">
-        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <ChatDisplay centerContent={!hitlOpen} />
           </div>
           {hitlOpen && (
             <aside
-              className="flex max-h-[min(50vh,380px)] shrink-0 flex-col border-t border-white/[0.08] bg-[#080b10] shadow-[0_-8px_32px_rgba(0,0,0,0.35)] md:max-h-none md:w-[380px] md:border-t-0 md:border-l md:shadow-[-6px_0_32px_rgba(0,0,0,0.45)]"
+              className="flex min-h-0 max-h-[min(50vh,380px)] shrink-0 flex-col overflow-hidden border-t border-white/[0.08] bg-[#080b10] shadow-[0_-8px_32px_rgba(0,0,0,0.35)] md:max-h-none md:w-[380px] md:border-t-0 md:border-l md:shadow-[-6px_0_32px_rgba(0,0,0,0.45)]"
               aria-label="Screening parameters"
             >
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-l-xl md:border md:border-white/10 md:border-r-0 md:bg-[#0B0F14]">
@@ -102,7 +102,7 @@ export default function ChatPanel({
         <div
           className={
             hitlOpen
-              ? "w-full shrink-0 border-t border-white/[0.08]"
+              ? "relative z-10 w-full shrink-0 border-t border-white/[0.08] bg-[var(--chat-surface)]"
               : "mx-auto w-full max-w-3xl shrink-0"
           }
         >
@@ -185,13 +185,13 @@ export default function ChatPanel({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <ChatDisplay />
         </div>
         {hitlOpen && (
           <aside
-            className="flex max-h-[min(45vh,360px)] shrink-0 flex-col border-t border-white/[0.08] bg-[#080b10] shadow-[0_-8px_32px_rgba(0,0,0,0.35)] md:max-h-none md:w-[min(100%,380px)] md:max-w-[380px] md:border-t-0 md:border-l md:shadow-[-6px_0_32px_rgba(0,0,0,0.45)]"
+            className="flex min-h-0 max-h-[min(45vh,360px)] shrink-0 flex-col overflow-hidden border-t border-white/[0.08] bg-[#080b10] shadow-[0_-8px_32px_rgba(0,0,0,0.35)] md:max-h-none md:w-[min(100%,380px)] md:max-w-[380px] md:border-t-0 md:border-l md:shadow-[-6px_0_32px_rgba(0,0,0,0.45)]"
             aria-label="Screening parameters"
           >
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-l-xl md:border md:border-white/10 md:border-r-0 md:bg-[#0B0F14]">
@@ -201,14 +201,22 @@ export default function ChatPanel({
         )}
       </div>
 
-      <UserTextEnter
-        onSendMessage={onSendMessage}
-        disabled={disabled}
-        onStopSend={onStopSend}
-        sessionId={sessionId}
-        chatModes={chatModes}
-        llmModels={llmModels}
-      />
+      <div
+        className={
+          hitlOpen
+            ? "relative z-10 shrink-0 border-t border-white/[0.08] bg-[var(--chat-surface)]"
+            : "shrink-0"
+        }
+      >
+        <UserTextEnter
+          onSendMessage={onSendMessage}
+          disabled={disabled}
+          onStopSend={onStopSend}
+          sessionId={sessionId}
+          chatModes={chatModes}
+          llmModels={llmModels}
+        />
+      </div>
     </div>
   )
 }

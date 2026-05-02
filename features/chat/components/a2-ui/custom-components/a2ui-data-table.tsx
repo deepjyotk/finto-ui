@@ -4,15 +4,97 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 import { cn } from "@/lib/utils"
 
+// Same base URL resolution as company-logo.tsx
+const CDN_BASE =
+  process.env.NEXT_PUBLIC_CDN_BASE_URL?.replace(/\/$/, "") ??
+  "https://pub-02ae21b71a13498f94e99ef653d36c8a.r2.dev"
+
+const GCS_BASE =
+  process.env.NEXT_PUBLIC_GCS_LOGOS_BASE_URL?.replace(/\/$/, "") ??
+  "https://storage.googleapis.com/finto-logos"
+
 export interface TableColumn {
   key: string
   label: string
-  format?: "text" | "currency_inr" | "number" | "percentage" | "date" | "boolean"
+  format?: "text" | "currency_inr" | "number" | "percentage" | "date" | "boolean" | "company_identity"
 }
 
 interface DataTableProps {
   columns?: TableColumn[]
   rows: unknown[]
+}
+
+// ── Company identity cell ────────────────────────────────────────────────────
+// Expects value shaped as "Company Name - SYMBOL" or "Company Name - SYMBOL.NS".
+// Strips the exchange suffix (.NS / .BO) before building logo URLs so they
+// match CDN/GCS file names (e.g. RELIANCE.svg, not RELIANCE.NS.svg).
+//
+// Probe order mirrors company-logo.tsx:
+//   CDN .svg → CDN .png → GCS .svg → GCS .png → initials fallback
+
+function extractSymbolForLogo(rawSymbol: string): string {
+  return rawSymbol.replace(/\.(NS|BO|BSE)$/i, "").toUpperCase()
+}
+
+function buildLogoCandidates(symbol: string): string[] {
+  const s = symbol.toUpperCase()
+  return [
+    `${CDN_BASE}/${s}.svg`,
+    `${CDN_BASE}/${s}.png`,
+    `${GCS_BASE}/${s}.svg`,
+    `${GCS_BASE}/${s}.png`,
+  ]
+}
+
+// Mirrors the PALETTE + pickColor from company-logo.tsx for consistent colours.
+const LOGO_PALETTE = [
+  "bg-violet-600",
+  "bg-cyan-600",
+  "bg-emerald-600",
+  "bg-orange-600",
+  "bg-rose-600",
+  "bg-blue-600",
+]
+
+function pickLogoColor(symbol: string): string {
+  let hash = 0
+  for (const ch of symbol) hash = ((hash * 31) + ch.charCodeAt(0)) >>> 0
+  return LOGO_PALETTE[hash % LOGO_PALETTE.length]
+}
+
+function CompanyIdentityCell({ value }: { value: string }) {
+  const lastDash = value.lastIndexOf(" - ")
+  const rawSymbol = lastDash >= 0 ? value.slice(lastDash + 3).trim() : value.trim()
+  const logoSymbol = extractSymbolForLogo(rawSymbol)
+  const candidates = buildLogoCandidates(logoSymbol)
+  const [candidateIdx, setCandidateIdx] = useState(0)
+
+  const allFailed = candidateIdx >= candidates.length
+
+  return (
+    <span className="flex items-center gap-2">
+      {allFailed ? (
+        <span
+          className={`flex shrink-0 items-center justify-center rounded-full font-bold text-white ${pickLogoColor(logoSymbol)}`}
+          style={{ width: 20, height: 20, fontSize: 8 }}
+        >
+          {logoSymbol.slice(0, 2)}
+        </span>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key={candidates[candidateIdx]}
+          src={candidates[candidateIdx]}
+          alt={rawSymbol}
+          width={20}
+          height={20}
+          className="shrink-0 rounded-full object-contain"
+          onError={() => setCandidateIdx((i) => i + 1)}
+        />
+      )}
+      <span>{value}</span>
+    </span>
+  )
 }
 
 function formatCellValue(value: unknown, format: string): string {
@@ -102,6 +184,7 @@ function getColumnWidth(column: TableColumn, columnIndex: number): number {
   const key = column.key.toLowerCase()
   const labelLength = column.label.length
 
+  if (column.format === "company_identity") return 280
   if (key === "symbol" || key === "ticker") return 116
   if (key === "recommendation" || key === "reason" || key === "notes") return 300
   if (key === "sector" || key === "industry") return 220
@@ -214,13 +297,15 @@ export function A2UIDataTable({ columns, rows }: DataTableProps) {
             >
               {resolvedColumns.map((col, ci) => {
                 const raw = getCellValue(row, col, ci)
-                const formatted = formatCellValue(raw, col.format ?? "text")
+                const isCompanyIdentity = col.format === "company_identity"
+                const formatted = isCompanyIdentity ? String(raw ?? "") : formatCellValue(raw, col.format ?? "text")
                 const isNumeric = rightAlignFormats.has(col.format ?? "")
                 const key = col.key.toLowerCase()
                 const isIdentifier = ci === 0 || key === "symbol" || key === "ticker"
                 const isLongText = key === "recommendation" || key === "reason" || key === "notes"
                 const isUrlCell =
                   !isNumeric &&
+                  !isCompanyIdentity &&
                   typeof raw === "string" &&
                   (col.key.toLowerCase() === "url" || isLikelyUrl(raw))
 
@@ -230,15 +315,18 @@ export function A2UIDataTable({ columns, rows }: DataTableProps) {
                     className={cn(
                       "px-3 py-3 align-top text-gray-200",
                       isNumeric && "whitespace-nowrap text-right font-mono tabular-nums",
-                      isIdentifier && "whitespace-nowrap font-semibold text-white",
+                      (isIdentifier || isCompanyIdentity) && "font-semibold text-white",
                       !isNumeric && !isIdentifier && "text-left",
-                      isLongText ? "whitespace-normal break-words leading-relaxed" : !isNumeric && !isIdentifier && "whitespace-nowrap"
+                      isCompanyIdentity && "whitespace-nowrap",
+                      isLongText ? "whitespace-normal break-words leading-relaxed" : !isNumeric && !isIdentifier && !isCompanyIdentity && "whitespace-nowrap"
                     )}
                     style={{ minWidth: columnWidths[ci], width: columnWidths[ci] }}
                   >
-                    {isUrlCell ? (
+                    {isCompanyIdentity ? (
+                      <CompanyIdentityCell value={formatted} />
+                    ) : isUrlCell ? (
                       <a
-                        href={raw}
+                        href={raw as string}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="break-all text-cyan-300 underline decoration-cyan-500/50 underline-offset-2 hover:text-cyan-200"

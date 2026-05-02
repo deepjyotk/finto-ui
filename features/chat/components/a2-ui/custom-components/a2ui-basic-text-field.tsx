@@ -50,6 +50,7 @@ export function A2UIBasicTextField({
           onInput={handleChange}
           rows={3}
           className={cn(inputClass, "resize-y")}
+          aria-invalid={hasError || undefined}
         />
       ) : (
         <input
@@ -60,6 +61,7 @@ export function A2UIBasicTextField({
           onChange={handleChange}
           onInput={handleChange}
           className={inputClass}
+          aria-invalid={hasError || undefined}
         />
       )}
       {hasError && <p className="text-xs text-red-300">{validationErrors?.[0]}</p>}
