@@ -154,17 +154,6 @@ export default function Header() {
               <ChatHeaderCreditWidget />
             )}
             
-            {/* Schedule demo — home (/) only */}
-            {pathname === "/" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.open("https://calendar.app.google/54M32xpq4xHS93Sm6", "_blank")}
-                className="text-white hover:bg-white/10 rounded-lg"
-              >
-                Schedule demo
-              </Button>
-            )}
             {isAuthenticated ? (
               <>
                 {/* Integrations button - icon-only on mobile, full button on desktop */}
