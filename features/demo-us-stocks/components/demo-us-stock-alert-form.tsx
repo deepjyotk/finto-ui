@@ -97,9 +97,9 @@ export function DemoUsStockAlertForm({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>Create US Stock Alert</DialogTitle>
+          <DialogTitle>Create price alert</DialogTitle>
           <DialogDescription>
-            Get alerted when a stock moves up or down by at least your threshold within the
+            Get notified when a stock moves up or down by at least your threshold within the
             selected window.
           </DialogDescription>
         </DialogHeader>
@@ -120,7 +120,7 @@ export function DemoUsStockAlertForm({
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Only symbols the demo streams from Alpaca are available.
+              Choose from the US symbols currently available for alerts.
             </p>
           </div>
 

@@ -35,7 +35,7 @@ export function DemoUsStockAlertList({
   if (alerts.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No alerts triggered yet. Once a window closes and a rule matches, it will appear here.
+        No alerts yet. Matching price moves will show up here.
       </p>
     )
   }

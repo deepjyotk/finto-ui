@@ -7,7 +7,7 @@ export default function AlertsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Alerts</h1>
           <p className="text-muted-foreground">
-            Price-movement alerts evaluated by the streaming pipeline
+            Track US stocks and get notified when price moves hit your thresholds
           </p>
         </div>
 

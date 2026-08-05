@@ -77,7 +77,7 @@ export function DemoUsStockAlerts() {
         if (!cancelled) setError(null)
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load the US stock demo")
+          setError(err instanceof Error ? err.message : "Failed to load alerts")
         }
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -109,8 +109,8 @@ export function DemoUsStockAlerts() {
     setRules((current) => [rule, ...current])
     setShowForm(false)
     toast({
-      title: "Alert rule created",
-      description: `${rule.symbol} will be evaluated on every completed window.`,
+      title: "Alert created",
+      description: `${rule.symbol} is now being watched for price moves.`,
     })
   }
 
@@ -174,41 +174,24 @@ export function DemoUsStockAlerts() {
   }
 
   return (
-    <section aria-labelledby="demo-us-stock-heading" className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2
-              id="demo-us-stock-heading"
-              className="text-xl font-semibold tracking-tight text-white"
-            >
-              US Stock Data Engineering Demo
-            </h2>
-            {unreadCount > 0 && <Badge>{unreadCount} new</Badge>}
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Live US prices stream through Redpanda into Spark Structured Streaming, which stores
-            them in TimescaleDB, windows them and evaluates your rules.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={isLoading || isRefreshing}
-          >
-            <RefreshCw
-              className={isRefreshing ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"}
-              aria-hidden
-            />
-            Refresh
-          </Button>
-          <Button onClick={() => setShowForm(true)} disabled={isLoading || symbols.length === 0}>
-            <Plus className="mr-2 h-4 w-4" aria-hidden />
-            Create US Stock Alert
-          </Button>
-        </div>
+    <section aria-label="US stock price alerts" className="space-y-4">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {unreadCount > 0 && <Badge className="mr-auto">{unreadCount} unread</Badge>}
+        <Button
+          variant="outline"
+          onClick={handleRefresh}
+          disabled={isLoading || isRefreshing}
+        >
+          <RefreshCw
+            className={isRefreshing ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"}
+            aria-hidden
+          />
+          Refresh
+        </Button>
+        <Button onClick={() => setShowForm(true)} disabled={isLoading || symbols.length === 0}>
+          <Plus className="mr-2 h-4 w-4" aria-hidden />
+          Create alert
+        </Button>
       </div>
 
       {error && (
@@ -240,10 +223,9 @@ export function DemoUsStockAlerts() {
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Your rules</CardTitle>
+                <CardTitle className="text-base">Alert rules</CardTitle>
                 <CardDescription>
-                  A rule triggers when the window move in the chosen direction reaches its
-                  threshold.
+                  Rules watch live prices and fire when a move hits your threshold.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -260,10 +242,10 @@ export function DemoUsStockAlerts() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <BellRing className="h-4 w-4 text-[#22d3ee]" aria-hidden />
-                  <CardTitle className="text-base">Triggered alerts</CardTitle>
+                  <CardTitle className="text-base">Recent alerts</CardTitle>
                 </div>
                 <CardDescription>
-                  Written by the Spark job once a window closes. Refresh to pick up new ones.
+                  Alerts that matched your rules. Refresh to check for new ones.
                 </CardDescription>
               </CardHeader>
               <CardContent>

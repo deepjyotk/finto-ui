@@ -336,7 +336,7 @@ export function DemoUsStockPriceChart({
           <div className="flex h-64 flex-col items-center justify-center gap-1 px-6 text-center text-sm text-gray-600">
             <p>No price data for {symbol} in this window.</p>
             <p className="text-xs text-gray-700">
-              Start the market-data producer and the Spark job to populate TimescaleDB.
+              Live quotes will appear here once market data is available.
             </p>
           </div>
         ) : (
@@ -417,7 +417,7 @@ export function DemoUsStockPriceChart({
             </div>
 
             <div className="mt-1 flex items-center justify-between pr-[62px] text-[10px] tracking-wide text-gray-700">
-              <span>{granularity ? `${granularity} bars from TimescaleDB` : ""}</span>
+              <span>{granularity ? `${granularity} bars` : ""}</span>
               <span>Volume</span>
             </div>
           </div>

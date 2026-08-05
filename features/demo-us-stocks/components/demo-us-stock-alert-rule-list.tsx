@@ -17,6 +17,11 @@ interface DemoUsStockAlertRuleListProps {
   onDelete: (rule: AlertRule) => void
 }
 
+const formatCreatedAt = (value: string): string => {
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString()
+}
+
 export function DemoUsStockAlertRuleList({
   rules,
   pendingRuleId,
@@ -26,7 +31,7 @@ export function DemoUsStockAlertRuleList({
   if (rules.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No rules yet. Create one to start evaluating price movements.
+        No alert rules yet. Create one to start watching a stock.
       </p>
     )
   }
@@ -51,6 +56,9 @@ export function DemoUsStockAlertRuleList({
                 Moves {formatDirection(rule.direction)} by at least{" "}
                 {formatPercentage(rule.percentage_threshold)}% within{" "}
                 {formatWindow(rule.window_seconds)}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Created {formatCreatedAt(rule.created_at)}
               </p>
             </div>
 
