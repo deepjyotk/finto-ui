@@ -95,6 +95,8 @@ export interface SendA2UIChatMessageOptions {
   sessionId: string
   brokerId?: string
   modelId: string
+  /** UI chat mode id: overall | portfolio | screener */
+  chatMode?: string
   signal?: AbortSignal
   /** Called for each structured A2UI event received from the stream */
   onEvent?: (event: A2UIClientEvent) => void
@@ -114,6 +116,7 @@ export const sendA2UIChatMessage = async ({
   sessionId,
   brokerId = "",
   modelId,
+  chatMode = "overall",
   signal,
   onEvent,
   onComplete,
@@ -128,6 +131,7 @@ export const sendA2UIChatMessage = async ({
         message_payload: { content },
         session_id: sessionId,
         broker_id: brokerId,
+        chat_mode: chatMode,
         model_payload: modelId,
       }),
       signal,

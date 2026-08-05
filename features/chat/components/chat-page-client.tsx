@@ -139,10 +139,10 @@ export default function ChatPageClient({
   ])
 
   const handleSendMessage = useCallback(
-    async (messageContent: string, modelId: string) => {
+    async (messageContent: string, modelId: string, chatMode: string) => {
       if (!messageContent.trim() || isLoading || !sessionId) return
 
-      await dispatch(sendMessage({ content: messageContent, modelId }))
+      await dispatch(sendMessage({ content: messageContent, modelId, chatMode }))
     },
     [dispatch, isLoading, sessionId]
   )

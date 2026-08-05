@@ -6,13 +6,6 @@ import { useEffect, useMemo } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { MessageSquare, Newspaper, Search, Bell, PieChart, Puzzle, Trophy } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { loadChatSessions, selectChatSessions, setChatSidebarOpen } from "@/features/chat/redux"
 import type { AppDispatch, RootState } from "@/lib/store"
 import { useOptionalChatShell } from "@/features/chat/components/chat-shell-context"
@@ -59,6 +52,7 @@ export default function PrimaryNavRail() {
   const isPortfolioActive = pathname === "/portfolio"
   const isIntegrationsActive = pathname === "/integrations" || pathname?.startsWith("/integrations/")
   const isGameActive = pathname === "/game" || pathname?.startsWith("/game/")
+  const isAlertsActive = pathname === "/alerts" || pathname?.startsWith("/alerts/")
 
   const handleSearch = () => {
     if (pathname?.startsWith("/chat") && chatShell) {
@@ -89,126 +83,118 @@ export default function PrimaryNavRail() {
   }
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <nav
-        aria-label="Primary"
-        className="flex h-full w-[148px] shrink-0 flex-col border-r border-white/[0.06] bg-[#111318] py-3 pl-2 pr-2"
-      >
-        <ul className="flex flex-col gap-0.5" role="list">
-          <li>
-            <Link
-              href="/"
-              className={itemClass(isHomeActive)}
-              aria-current={isHomeActive ? "page" : undefined}
-            >
-              <Newspaper
-                className={cn(
-                  "h-[18px] w-[18px] shrink-0",
-                  isHomeActive ? "text-[#22d3ee]" : "text-gray-500"
-                )}
-                aria-hidden
-              />
-              Home
-            </Link>
-          </li>
-          <li>
-            <Link
-              href={chatHref}
-              className={itemClass(isChatActive)}
-              aria-current={isChatActive ? "page" : undefined}
-            >
-              <MessageSquare
-                className={cn(
-                  "h-[18px] w-[18px] shrink-0",
-                  isChatActive ? "text-[#22d3ee]" : "text-gray-500"
-                )}
-                aria-hidden
-              />
-              Chat
-            </Link>
-          </li>
-          <li>
-            <button
-              type="button"
-              onClick={handleSearch}
-              className={itemClass(false)}
-            >
-              <Search className="h-[18px] w-[18px] shrink-0 text-gray-500" aria-hidden />
-              Search
-            </button>
-          </li>
-          <li>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex w-full">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    disabled
-                    aria-disabled="true"
-                    className={cn(
-                      itemClass(false),
-                      "h-auto cursor-not-allowed opacity-60 hover:bg-transparent hover:text-gray-400"
-                    )}
-                  >
-                    <Bell className="h-[18px] w-[18px] shrink-0 text-gray-500" aria-hidden />
-                    Alerts
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="right">Coming soon</TooltipContent>
-            </Tooltip>
-          </li>
-          <li>
-            <Link
-              href="/portfolio"
-              className={itemClass(isPortfolioActive)}
-              aria-current={isPortfolioActive ? "page" : undefined}
-            >
-              <PieChart
-                className={cn(
-                  "h-[18px] w-[18px] shrink-0",
-                  isPortfolioActive ? "text-[#22d3ee]" : "text-gray-500"
-                )}
-                aria-hidden
-              />
-              Portfolio
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/game"
-              className={itemClass(isGameActive)}
-              aria-current={isGameActive ? "page" : undefined}
-            >
-              <Trophy
-                className={cn(
-                  "h-[18px] w-[18px] shrink-0",
-                  isGameActive ? "text-[#22d3ee]" : "text-gray-500"
-                )}
-                aria-hidden
-              />
-              Game
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/integrations"
-              className={itemClass(isIntegrationsActive)}
-              aria-current={isIntegrationsActive ? "page" : undefined}
-            >
-              <Puzzle
-                className={cn(
-                  "h-[18px] w-[18px] shrink-0",
-                  isIntegrationsActive ? "text-[#22d3ee]" : "text-gray-500"
-                )}
-                aria-hidden
-              />
-              Integrations
-            </Link>
-          </li>
-        </ul>
-      </nav>
-    </TooltipProvider>
+    <nav
+      aria-label="Primary"
+      className="flex h-full w-[148px] shrink-0 flex-col border-r border-white/[0.06] bg-[#111318] py-3 pl-2 pr-2"
+    >
+      <ul className="flex flex-col gap-0.5" role="list">
+        <li>
+          <Link
+            href="/"
+            className={itemClass(isHomeActive)}
+            aria-current={isHomeActive ? "page" : undefined}
+          >
+            <Newspaper
+              className={cn(
+                "h-[18px] w-[18px] shrink-0",
+                isHomeActive ? "text-[#22d3ee]" : "text-gray-500"
+              )}
+              aria-hidden
+            />
+            Home
+          </Link>
+        </li>
+        <li>
+          <Link
+            href={chatHref}
+            className={itemClass(isChatActive)}
+            aria-current={isChatActive ? "page" : undefined}
+          >
+            <MessageSquare
+              className={cn(
+                "h-[18px] w-[18px] shrink-0",
+                isChatActive ? "text-[#22d3ee]" : "text-gray-500"
+              )}
+              aria-hidden
+            />
+            Chat
+          </Link>
+        </li>
+        <li>
+          <button
+            type="button"
+            onClick={handleSearch}
+            className={itemClass(false)}
+          >
+            <Search className="h-[18px] w-[18px] shrink-0 text-gray-500" aria-hidden />
+            Search
+          </button>
+        </li>
+        <li>
+          <Link
+            href="/alerts"
+            className={itemClass(isAlertsActive)}
+            aria-current={isAlertsActive ? "page" : undefined}
+          >
+            <Bell
+              className={cn(
+                "h-[18px] w-[18px] shrink-0",
+                isAlertsActive ? "text-[#22d3ee]" : "text-gray-500"
+              )}
+              aria-hidden
+            />
+            Alerts
+          </Link>
+        </li>
+        <li>
+          <Link
+            href="/portfolio"
+            className={itemClass(isPortfolioActive)}
+            aria-current={isPortfolioActive ? "page" : undefined}
+          >
+            <PieChart
+              className={cn(
+                "h-[18px] w-[18px] shrink-0",
+                isPortfolioActive ? "text-[#22d3ee]" : "text-gray-500"
+              )}
+              aria-hidden
+            />
+            Portfolio
+          </Link>
+        </li>
+        <li>
+          <Link
+            href="/game"
+            className={itemClass(isGameActive)}
+            aria-current={isGameActive ? "page" : undefined}
+          >
+            <Trophy
+              className={cn(
+                "h-[18px] w-[18px] shrink-0",
+                isGameActive ? "text-[#22d3ee]" : "text-gray-500"
+              )}
+              aria-hidden
+            />
+            Game
+          </Link>
+        </li>
+        <li>
+          <Link
+            href="/integrations"
+            className={itemClass(isIntegrationsActive)}
+            aria-current={isIntegrationsActive ? "page" : undefined}
+          >
+            <Puzzle
+              className={cn(
+                "h-[18px] w-[18px] shrink-0",
+                isIntegrationsActive ? "text-[#22d3ee]" : "text-gray-500"
+              )}
+              aria-hidden
+            />
+            Integrations
+          </Link>
+        </li>
+      </ul>
+    </nav>
   )
 }

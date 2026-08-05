@@ -29,7 +29,7 @@ import {
   type A2uiMessage,
   type DynamicValue,
 } from "@a2ui/web_core/v0_9"
-import { ButtonApi, TextFieldApi } from "@a2ui/web_core/v0_9/basic_catalog"
+import { ButtonApi, ImageApi, TextFieldApi } from "@a2ui/web_core/v0_9/basic_catalog"
 import { z } from "zod"
 
 import { cn } from "@/lib/utils"
@@ -65,6 +65,7 @@ import { A2UIDataTable } from "@/features/chat/components/a2-ui/custom-component
 import { A2UIInfoBox, normalizeInfoBoxVariant } from "@/features/chat/components/a2-ui/custom-components/a2ui-info-box"
 import { A2UIMetricCard } from "@/features/chat/components/a2-ui/custom-components/a2ui-metric-card"
 import { A2UISourceList } from "@/features/chat/components/a2-ui/custom-components/a2ui-source-list"
+import { A2UIImage } from "@/features/chat/components/a2-ui/custom-components/a2ui-image"
 
 export const FINANCE_CHAT_CATALOG_ID =
   "https://explainly.ai/catalogs/finance-chat-v1.json"
@@ -145,11 +146,13 @@ const SelectFieldApi = {
 const ChartApi = {
   name: "Chart",
   schema: z.object({
-    chartType: z.enum(["pie", "bar", "line", "area"]),
+    chartType: z.enum(["pie", "bar", "line", "area", "histogram"]),
     title: DynamicStringSchema.optional(),
     data: DynamicValueSchema,
     series: DynamicValueSchema.optional(),
     xKey: DynamicStringSchema.optional(),
+    xAxisLabel: DynamicStringSchema.optional(),
+    yAxisLabel: DynamicStringSchema.optional(),
     colors: DynamicValueSchema.optional(),
     unit: DynamicStringSchema.optional(),
   }),
@@ -370,6 +373,32 @@ const SelectFieldComponent = createBinderlessComponentImplementation(
   }
 )
 
+const ImageComponent = createComponentImplementation(ImageApi, ({ props }) => (
+  <A2UIImage
+    url={String(props.url ?? "")}
+    description={props.description !== undefined ? String(props.description) : undefined}
+    fit={
+      props.fit === "contain" ||
+      props.fit === "cover" ||
+      props.fit === "fill" ||
+      props.fit === "none" ||
+      props.fit === "scaleDown"
+        ? props.fit
+        : undefined
+    }
+    variant={
+      props.variant === "icon" ||
+      props.variant === "avatar" ||
+      props.variant === "smallFeature" ||
+      props.variant === "mediumFeature" ||
+      props.variant === "largeFeature" ||
+      props.variant === "header"
+        ? props.variant
+        : undefined
+    }
+  />
+))
+
 const ButtonComponent = createComponentImplementation(ButtonApi, ({ props, buildChild }) => {
   const isPrimary = props.variant === "primary"
   const isBorderless = props.variant === "borderless"
@@ -437,6 +466,8 @@ const ChartComponent = createComponentImplementation(ChartApi, ({ props }) => (
     data={Array.isArray(props.data) ? (props.data as ChartDataPoint[]) : []}
     series={Array.isArray(props.series) ? (props.series as ChartSeriesDefinition[]) : undefined}
     xKey={props.xKey !== undefined ? String(props.xKey) : "name"}
+    xAxisLabel={props.xAxisLabel !== undefined ? String(props.xAxisLabel) : undefined}
+    yAxisLabel={props.yAxisLabel !== undefined ? String(props.yAxisLabel) : undefined}
     colors={Array.isArray(props.colors) ? (props.colors as string[]) : undefined}
     unit={props.unit !== undefined ? String(props.unit) : undefined}
   />
@@ -447,6 +478,7 @@ const financeChatComponents: ReactComponentImplementation[] = [
   TextFieldComponent,
   SelectFieldComponent,
   ButtonComponent,
+  ImageComponent,
   BadgeComponent,
   MetricCardComponent,
   InfoBoxComponent,

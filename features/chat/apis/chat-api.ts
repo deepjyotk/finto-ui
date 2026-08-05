@@ -10,6 +10,8 @@ export interface C1ChatRequest {
   session_id: string;
   /** Omitted or empty: aggregate portfolio across all linked brokers. */
   broker_id?: string | null;
+  /** UI mode: overall | portfolio | screener */
+  chat_mode?: string;
   model_payload: string;
 }
 
@@ -90,6 +92,8 @@ export interface SendChatMessageOptions {
   sessionId: string;
   brokerId?: string;
   modelId: string;
+  /** UI chat mode id: overall | portfolio | screener */
+  chatMode?: string;
   /** When aborted, streaming stops; partial text is passed to `onAbort`. */
   signal?: AbortSignal;
   onChunk?: (chunk: string) => void;
@@ -108,6 +112,7 @@ export const sendChatMessage = async ({
   sessionId,
   brokerId = "",
   modelId,
+  chatMode = "overall",
   signal,
   onChunk,
   onComplete,
@@ -126,6 +131,7 @@ export const sendChatMessage = async ({
         message_payload: { content },
         session_id: sessionId,
         broker_id: brokerId,
+        chat_mode: chatMode,
         model_payload: modelId,
       }),
       signal,

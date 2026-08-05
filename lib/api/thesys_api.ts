@@ -12,6 +12,9 @@ type ThesysChatBody = {
   sessionId?: string;
   broker_id?: string;
   brokerId?: string;
+  /** UI mode: overall | portfolio | screener */
+  chat_mode?: string;
+  chatMode?: string;
   /** Model id string (e.g. gpt-4o-mini) or "auto" — must match backend C1ChatRequest.model_payload */
   model_payload?: string;
 };
@@ -55,16 +58,24 @@ const normalizeChatPayload = (
       ? body.model_payload.trim()
       : DEFAULT_MODEL_PAYLOAD;
 
+  const chatModeRaw = body.chat_mode ?? body.chatMode ?? "overall";
+  const chatMode =
+    typeof chatModeRaw === "string" && chatModeRaw.trim().length > 0
+      ? chatModeRaw.trim().toLowerCase()
+      : "overall";
+
   const out: {
     message_payload: { content: string };
     session_id: string;
     broker_id?: string | null;
+    chat_mode: string;
     model_payload: string;
   } = {
     message_payload: {
       content,
     },
     session_id: sessionId,
+    chat_mode: chatMode,
     model_payload: modelPayload,
   };
   if (brokerId != null && brokerId.trim() !== "") {
@@ -121,6 +132,7 @@ const forwardThesysChat = async ({
     message_payload: { content: string };
     session_id: string;
     broker_id?: string | null;
+    chat_mode: string;
     model_payload: string;
   };
   cookieHeader: string;

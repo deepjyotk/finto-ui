@@ -47,7 +47,7 @@ const MODEL_ICON_MAP: Record<string, LucideIcon> = {
 const DEFAULT_ICON: LucideIcon = BrainCircuit
 
 interface UserTextEnterProps {
-  onSendMessage: (message: string, modelId: string) => Promise<void>
+  onSendMessage: (message: string, modelId: string, chatMode: string) => Promise<void>
   /** True while a reply is streaming; shows stop control when `onStopSend` is set. */
   disabled?: boolean
   /** Stops the in-flight `/api/thesys/chat` stream (AbortController). */
@@ -102,8 +102,8 @@ export default function UserTextEnter({
     if (!input.trim() || disabled) return
     const message = input.trim()
     setInput("")
-    await onSendMessage(message, selectedModel)
-  }, [input, disabled, onSendMessage, selectedModel])
+    await onSendMessage(message, selectedModel, modeSelection || "overall")
+  }, [input, disabled, onSendMessage, selectedModel, modeSelection])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -137,12 +137,12 @@ export default function UserTextEnter({
         {/* Bottom toolbar */}
         <div className="flex items-center justify-between px-2.5 pb-2 pt-1">
           <div className="flex min-w-0 items-center gap-1">
-            {/* Mode: Overall / Portfolio / Screener */}
+            {/* Mode: Overall / Financial Analysis / Screener */}
             <Popover open={modeOpen} onOpenChange={setModeOpen}>
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className="flex h-7 max-w-[min(120px,40vw)] items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.04] pl-2 pr-2.5 text-[12px] font-medium text-white/75 transition-colors hover:bg-white/[0.08] hover:text-white/90"
+                  className="flex h-7 max-w-[min(180px,50vw)] items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.04] pl-2 pr-2.5 text-[12px] font-medium text-white/75 transition-colors hover:bg-white/[0.08] hover:text-white/90"
                 >
                   <Infinity className="h-3.5 w-3.5 shrink-0 text-white/45" strokeWidth={2} />
                   <span className="truncate">{explicitMode?.label}</span>

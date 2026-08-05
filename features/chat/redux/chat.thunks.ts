@@ -104,9 +104,9 @@ export const initializeChatSession = createAsyncThunk<
 
 export const sendMessage = createAsyncThunk<
   void,
-  { content: string; modelId: string },
+  { content: string; modelId: string; chatMode?: string },
   { state: RootState; dispatch: AppDispatch }
->("chat/sendMessage", async ({ content, modelId }, { getState, dispatch }) => {
+>("chat/sendMessage", async ({ content, modelId, chatMode = "overall" }, { getState, dispatch }) => {
   const trimmed = content.trim()
   const { sessionId, isLoading, selectedBrokerId } = getState().chat
   if (!trimmed || isLoading || !sessionId) return
@@ -147,6 +147,7 @@ export const sendMessage = createAsyncThunk<
         sessionId,
         brokerId: selectedBrokerId || "",
         modelId,
+        chatMode,
         signal,
         onChunk: (chunk) => {
           accumulatedContent += chunk
@@ -194,6 +195,7 @@ export const sendMessage = createAsyncThunk<
         sessionId,
         brokerId: selectedBrokerId || "",
         modelId,
+        chatMode,
         signal,
         onEvent: (event) => {
           // Append the A2UI event to the message so the renderer can react

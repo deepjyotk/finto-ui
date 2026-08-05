@@ -21,7 +21,7 @@ import { HitlScreenerPanel } from "./a2-ui/hitl"
 import { FEATURE_FLAGS } from "@/lib/feature-flags"
 
 interface ChatPanelProps {
-  onSendMessage: (message: string, modelId: string) => Promise<void>
+  onSendMessage: (message: string, modelId: string, chatMode: string) => Promise<void>
   disabled: boolean
   onStopSend?: () => void
   sessionId: string | null

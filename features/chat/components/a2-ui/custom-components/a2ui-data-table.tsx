@@ -16,7 +16,7 @@ const GCS_BASE =
 export interface TableColumn {
   key: string
   label: string
-  format?: "text" | "currency_inr" | "number" | "percentage" | "date" | "boolean" | "company_identity"
+  format?: "text" | "currency_inr" | "currency_usd" | "number" | "percentage" | "date" | "boolean" | "company_identity"
 }
 
 interface DataTableProps {
@@ -97,22 +97,69 @@ function CompanyIdentityCell({ value }: { value: string }) {
   )
 }
 
+/** Format money while preserving K/M/B/T (e.g. "$96.77B" must not become "$96.77"). */
+function formatMoneyCell(value: unknown, currency: "INR" | "USD"): string {
+  const symbol = currency === "INR" ? "₹" : "$"
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return formatCompactMoney(value, symbol)
+  }
+
+  const raw = value === null || value === undefined ? "" : String(value).trim()
+  if (!raw) return "—"
+
+  // Already compact: "$96.77B", "₹1.2L", "409M", "-$1.44B"
+  const compact = raw.match(
+    /^([+-]?)\s*[₹$]?\s*([0-9]+(?:\.[0-9]+)?)\s*([KMBTkmbt])\b/
+  )
+  if (compact) {
+    const [, sign, amount, suffix] = compact
+    return `${sign}${symbol}${amount}${suffix.toUpperCase()}`
+  }
+
+  const cleaned = raw.replace(/[₹$,\s]/g, "")
+  const num = parseFloat(cleaned)
+  if (Number.isNaN(num)) return raw
+  return formatCompactMoney(num, symbol)
+}
+
+function formatCompactMoney(value: number, symbol: string): string {
+  const sign = value < 0 ? "-" : ""
+  const abs = Math.abs(value)
+  const trim = (n: number) => {
+    const fixed = n >= 100 ? n.toFixed(0) : n >= 10 ? n.toFixed(1) : n.toFixed(2)
+    return fixed.replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1")
+  }
+
+  if (abs >= 1e12) return `${sign}${symbol}${trim(abs / 1e12)}T`
+  if (abs >= 1e9) return `${sign}${symbol}${trim(abs / 1e9)}B`
+  if (abs >= 1e6) return `${sign}${symbol}${trim(abs / 1e6)}M`
+  if (abs >= 1e3) return `${sign}${symbol}${trim(abs / 1e3)}K`
+  return `${sign}${symbol}${abs.toLocaleString(symbol === "₹" ? "en-IN" : "en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
 function formatCellValue(value: unknown, format: string): string {
   const raw = value === null || value === undefined ? "" : String(value)
-  if (!raw) return "—"
-  if (format === "currency_inr") {
-    const num = parseFloat(raw.replace(/[₹,]/g, ""))
-    if (Number.isNaN(num)) return raw
-    return `₹${num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-  }
+  if (!raw && typeof value !== "number") return "—"
+  if (format === "currency_inr") return formatMoneyCell(value, "INR")
+  if (format === "currency_usd") return formatMoneyCell(value, "USD")
   if (format === "percentage") {
     const num = parseFloat(raw)
     if (Number.isNaN(num)) return raw
     return `${num.toFixed(2)}%`
   }
   if (format === "number") {
-    const num = parseFloat(raw)
+    // Preserve compact suffixes on numeric text cells too ("1.44B")
+    const compact = raw.match(/^([+-]?)\s*([0-9]+(?:\.[0-9]+)?)\s*([KMBTkmbt])\b/)
+    if (compact) {
+      const [, sign, amount, suffix] = compact
+      return `${sign}${amount}${suffix.toUpperCase()}`
+    }
+    const num = typeof value === "number" ? value : parseFloat(raw)
     if (Number.isNaN(num)) return raw
+    if (Math.abs(num) >= 1e3) return formatCompactMoney(num, "")
     return num.toLocaleString("en-IN")
   }
   if (format === "date") {
@@ -190,7 +237,7 @@ function getColumnWidth(column: TableColumn, columnIndex: number): number {
   if (key === "sector" || key === "industry") return 220
   if (key.includes("name") || key.includes("company")) return 200
   if (key.includes("url") || key.includes("link")) return 260
-  if (column.format === "currency_inr") return 150
+  if (column.format === "currency_inr" || column.format === "currency_usd") return 150
   if (column.format === "percentage") return 120
   if (column.format === "number") return 110
   if (column.format === "date") return 150
@@ -206,7 +253,7 @@ export function A2UIDataTable({ columns, rows }: DataTableProps) {
     canScrollRight: false,
   })
 
-  const rightAlignFormats = new Set(["currency_inr", "number", "percentage"])
+  const rightAlignFormats = new Set(["currency_inr", "currency_usd", "number", "percentage"])
   const rowCount = rows?.length ?? 0
   const resolvedColumns = columns?.length ? columns : inferColumns(rows ?? [])
   const columnWidths = resolvedColumns.map(getColumnWidth)
